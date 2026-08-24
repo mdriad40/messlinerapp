@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messliner — Smart Dining & Mess Management Platform</title>
+  <meta name="description"
+    content="Messliner is the ultimate smart dining, mess, and hostel management platform. Track daily meals, split bazar expenses, calculate meal rate (Bazar Ratio) automatically, and run your mess stress-free. Available on Web, Android, iOS & Desktop.">
+  <meta name="keywords"
+    content="Messliner, Mess Management, Meal Rate Calculator, Bazar Ratio, Dining App, Hostel Management, Bill Splitting, Meal Manager">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Favicon -->
+  <link rel="icon" href="assets/messLiner-logo.png" type="image/png">
+</head>
+
+<body>
+
+  <!-- ==========================================
+       BACKGROUND GRAPH GRID & AMBIENT GLOWS
+       ========================================== -->
+  <div class="bg-grid-wrapper">
+    <div class="bg-grid-lines"></div>
+    <div class="glow-orb glow-orb-1"></div>
+    <div class="glow-orb glow-orb-2"></div>
+    <div class="glow-orb glow-orb-3"></div>
+  </div>
+
+  <!-- ==========================================
+       HEADER & GLASS NAVBAR
+       ========================================== -->
+  <header class="navbar" id="navbar">
+    <div class="container navbar-container">
+      <a href="#" class="nav-brand">
+        <img src="assets/messLiner-logo.png" alt="Messliner Logo" class="brand-logo-img"
+          onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'80\' font-size=\'80\'>🍽</text></svg>'">
+        <span class="text-gradient">Messliner</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#about" class="nav-link">What is Messliner</a></li>
+        <li><a href="how-it-works.html" class="nav-link">How it Works</a></li>
+        <li><a href="#features" class="nav-link">Features</a></li>
+        <li><a href="#pricing" class="nav-link">Pricing</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="https://mdriad40.github.io/messlinerapp/" target="_blank" class="btn btn-glass btn-sm">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          Open App
+        </a>
+        <button class="btn btn-primary btn-sm" onclick="window.scrollTo({ top: 0, behavior: 'smooth' });">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Download
+        </button>
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Menu">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================
+       HERO SECTION
+       ========================================== -->
+  <section class="hero" id="hero">
+    <div class="container">
+      <div class="hero-badge-container">
+        <span class="glass-pill">
+          <span
+            style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; animation: pulseGlow 1.5s infinite;"></span>
+          Messliner 2.4 — Complete Dining & Mess Automation System
+        </span>
+      </div>
+
+      <h1 class="hero-title">
+        Smart Mess Management with <br>
+        <span class="text-gradient typewriter-text" id="typewriterTarget">Zero Billing Disputes</span><span
+          class="typewriter-cursor">|</span>
+      </h1>
+
+      <p class="hero-description">
+        Automate daily meal counts, track shared bazar expenses, and compute real-time <strong>Bazar Ratio (Meal
+          Rate)</strong> with 100% financial transparency across Web, Mobile, and Desktop.
+      </p>
+
+      <div class="hero-actions">
+        <button class="btn btn-primary btn-lg" onclick="window.scrollTo({ top: 0, behavior: 'smooth' });">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Download the App
+        </button>
+        <a href="https://mdriad40.github.io/messlinerapp/" target="_blank" class="btn btn-glass btn-lg">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          Open Web App
+        </a>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="hero-stats">
+        <div class="glass-panel stat-card">
+          <div class="stat-number">50,000+</div>
+          <div class="stat-label">Meals Tracked</div>
+        </div>
+        <div class="glass-panel stat-card">
+          <div class="stat-number">৳ 0.00</div>
+          <div class="stat-label">Calculation Errors</div>
+        </div>
+        <div class="glass-panel stat-card">
+          <div class="stat-number">99.9%</div>
+          <div class="stat-label">System Uptime</div>
+        </div>
+        <div class="glass-panel stat-card">
+          <div class="stat-number">4.9★</div>
+          <div class="stat-label">User Rating</div>
+        </div>
+      </div>
+
+      <!-- App Interactive Preview Glass Frame -->
+      <div class="app-mockup-wrapper">
+        <div class="app-mockup-frame">
+          <div class="mockup-header">
+            <div class="mockup-dots">
+              <span class="mockup-dot dot-red"></span>
+              <span class="mockup-dot dot-yellow"></span>
+              <span class="mockup-dot dot-green"></span>
+            </div>
+            <div class="mockup-title-bar">
+              🔒 https://mdriad40.github.io/messlinerapp/
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-subtle);">LIVE DEMO PREVIEW</div>
+          </div>
+          <div class="mockup-body">
+            <!-- Sidebar -->
+            <div class="mockup-sidebar">
+              <div class="sidebar-item active">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Dashboard
+              </div>
+              <div class="sidebar-item">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                Daily Meals
+              </div>
+              <div class="sidebar-item">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                </svg>
+                Bazar Expenses
+              </div>
+              <div class="sidebar-item">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                </svg>
+                Members Ledger
+              </div>
+              <div class="sidebar-item">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                Analytics
+              </div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="mockup-main-content">
+              <div class="mockup-cards-grid">
+                <div class="mockup-card">
+                  <div style="font-size:0.8rem; color:var(--text-muted);">Current Meal Rate</div>
+                  <div class="mockup-card-val text-gradient">৳ 58.40</div>
+                  <div style="font-size:0.75rem; color:#10b981;">Live Bazar Ratio</div>
+                </div>
+                <div class="mockup-card">
+                  <div style="font-size:0.8rem; color:var(--text-muted);">Total Mess Expense</div>
+                  <div class="mockup-card-val">৳ 24,520</div>
+                  <div style="font-size:0.75rem; color:var(--text-subtle);">420 Total Meals</div>
+                </div>
+                <div class="mockup-card">
+                  <div style="font-size:0.8rem; color:var(--text-muted);">Deposit Balance</div>
+                  <div class="mockup-card-val" style="color:#06b6d4;">৳ 31,000</div>
+                  <div style="font-size:0.75rem; color:#10b981;">Surplus: ৳ 6,480</div>
+                </div>
+              </div>
+
+              <!-- Live Ledger Simulation Table -->
+              <div class="mockup-table-glass">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                  <strong style="font-size:0.9rem;">Recent Mess Member Activity</strong>
+                  <span class="glass-pill" style="font-size:0.75rem; padding:0.2rem 0.6rem;">Realtime Sync</span>
+                </div>
+                <div class="table-row">
+                  <div>
+                    <strong>Sabbir Ahmed</strong>
+                    <div style="font-size:0.75rem; color:var(--text-subtle);">Lunch + Dinner (2 Meals)</div>
+                  </div>
+                  <span style="color:#10b981; font-weight:600; font-family:var(--font-mono);">+৳ 116.80</span>
+                </div>
+                <div class="table-row">
+                  <div>
+                    <strong>Tanvir Hossain</strong>
+                    <div style="font-size:0.75rem; color:var(--text-subtle);">Added Bazar Expense</div>
+                  </div>
+                  <span style="color:#06b6d4; font-weight:600; font-family:var(--font-mono);">Deposit ৳ 2,500</span>
+                </div>
+                <div class="table-row">
+                  <div>
+                    <strong>Rakib Hasan</strong>
+                    <div style="font-size:0.75rem; color:var(--text-subtle);">Guest Meal (1 Extra)</div>
+                  </div>
+                  <span style="color:#f59e0b; font-weight:600; font-family:var(--font-mono);">+৳ 58.40</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       WHAT EXACTLY IS MESSLINER? SECTION
+       ========================================== -->
+  <section class="section" id="about" style="padding-bottom:3.5rem;">
+    <div class="container">
+      <div class="section-header">
+        <span class="glass-pill">Everything You Need to Know</span>
+        <h2 class="section-title">What Exactly is <span class="text-gradient">Messliner</span>?</h2>
+        <p class="section-subtitle">
+          Messliner is an end-to-end Mess & Dining Management Solution engineered specifically for university halls,
+          bachelor messes, corporate cafeterias, and hostel dining groups.
+        </p>
+      </div>
+
+      <div class="overview-grid">
+        <div class="overview-card-list">
+          <div class="glass-panel overview-item-card">
+            <div class="overview-icon-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+            </div>
+            <div>
+              <h3 class="overview-item-title">Automated Bazar Ratio Calculation</h3>
+              <p class="overview-item-desc">No more manual spreadsheets or napkin calculations. Messliner dynamically
+                recalculates your daily meal rate every time a manager inputs a new grocery receipt.</p>
+            </div>
+          </div>
+
+          <div class="glass-panel overview-item-card">
+            <div class="overview-icon-box"
+              style="background:rgba(6,182,212,0.15); border-color:rgba(6,182,212,0.3); color:#06b6d4;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div>
+              <h3 class="overview-item-title">Transparent Member Ledger</h3>
+              <p class="overview-item-desc">Every member gets their own transparent dashboard showing exact meals eaten,
+                deposit balance, guest meals, and shared fixed expenses (Cook salary, wifi, gas).</p>
+            </div>
+          </div>
+
+          <div class="glass-panel overview-item-card">
+            <div class="overview-icon-box"
+              style="background:rgba(99,102,241,0.15); border-color:rgba(99,102,241,0.3); color:#6366f1;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <div>
+              <h3 class="overview-item-title">Cross-Platform Web & Native Apps</h3>
+              <p class="overview-item-desc">Access Messliner anywhere — whether on your mobile phone via Android
+                APK, or directly in your web browser with 24/7 online Support!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side Glass Highlight Card -->
+        <div class="glass-panel" style="padding:2.5rem; text-align:center; position:relative; overflow:hidden;">
+          <div
+            style="width:70px; height:70px; border-radius:50%; background:var(--gradient-emerald-cyan); display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem auto; font-size:2rem;">
+            🍽
+          </div>
+          <h3 style="font-size:1.75rem; font-weight:800; margin-bottom:1rem;">Built to Solve Real Mess Problems</h3>
+          <p style="color:var(--text-muted); line-height:1.7; margin-bottom:2rem;">
+            Managing a dining group shouldn't lead to arguments over money or lost receipts. Messliner acts as an
+            impartial, automated accountant for your mess — keeping every taka transparent and accounted for.
+          </p>
+          <a href="https://mdriad40.github.io/messlinerapp/" target="_blank" class="btn btn-primary" style="width:100%;">
+            Explore Web Application
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       BAZER RATIO SPOTLIGHT & INTERACTIVE CALCULATOR
+       ========================================== -->
+  <section class="section" id="bazar-ratio" style="padding-top:3.5rem; padding-bottom:3.5rem;">
+    <div class="container">
+      <div class="bazar-spotlight-box">
+        <div class="bazar-grid">
+          <div>
+            <span class="glass-pill" style="color:#06b6d4;">Core Algorithm Spotlight</span>
+            <h2 style="font-size:2.5rem; font-weight:900; margin-top:0.75rem; margin-bottom:1rem;">
+              How Does the <span class="text-gradient">Bazar Ratio</span> Work?
+            </h2>
+            <p style="color:var(--text-muted); line-height:1.7; font-size:1.05rem;">
+              Messliner supports two flexible calculation modes — <strong>Dynamic Bazar Ratio</strong> and <strong>Fixed
+                Meal Rate</strong>:
+            </p>
+
+            <ul
+              style="margin: 0.75rem 0 1.25rem 1.25rem; color:var(--text-muted); font-size:0.925rem; line-height:1.6;">
+              <li style="margin-bottom:0.5rem;">
+                <strong style="color:var(--text-main);">Dynamic Bazar Ratio:</strong> Sums total grocery & market
+                expenses and divides them by total consumed meals of all members.
+              </li>
+              <li>
+                <strong style="color:var(--text-main);">Fixed Meal Rate Mode:</strong> Manager sets a fixed taka price
+                per meal. It remains constant regardless of daily market expense fluctuations.
+              </li>
+            </ul>
+
+            <div class="bazar-formula-badge">
+              Dynamic Rate = Total Mess Expense ÷ Total Consumed Meals
+            </div>
+
+            <p style="color:var(--text-muted); line-height:1.6; font-size:0.95rem; margin-top:0.8rem;">
+              Each member's personal meal expense is calculated by: <br>
+              <code
+                style="color:#10b981; font-family:var(--font-mono);">(Member's Total Meals × Meal Rate) + Fixed Shared Costs</code>
+            </p>
+          </div>
+
+          <!-- Interactive Calculator Widget -->
+          <div class="calculator-card">
+            <h3
+              style="font-size:1.25rem; font-weight:800; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="16" y1="14" x2="16" y2="18"></line>
+                <path d="M16 10h.01"></path>
+                <path d="M12 10h.01"></path>
+                <path d="M8 10h.01"></path>
+                <path d="M12 14h.01"></path>
+                <path d="M8 14h.01"></path>
+                <path d="M12 18h.01"></path>
+                <path d="M8 18h.01"></path>
+              </svg>
+              Live Bazar Ratio Calculator
+            </h3>
+
+            <div class="calc-field">
+              <div class="calc-label">
+                <span>Total Mess Expense (৳)</span>
+              </div>
+              <input type="number" id="calcTotalExpense" class="calc-input" value="25000" placeholder="e.g. 25000">
+            </div>
+
+            <div class="calc-field">
+              <div class="calc-label">
+                <span>Total Consumed Meals</span>
+              </div>
+              <input type="number" id="calcTotalMeals" class="calc-input" value="450" placeholder="e.g. 450">
+            </div>
+
+            <div class="calc-field">
+              <div class="calc-label">
+                <span>Your Individual Meals</span>
+              </div>
+              <input type="number" id="calcUserMeals" class="calc-input" value="40" placeholder="e.g. 40">
+            </div>
+
+            <div class="calc-result-box">
+              <div
+                style="font-size:0.85rem; color:var(--text-subtle); text-transform:uppercase; letter-spacing:0.05em;">
+                Calculated Meal Rate</div>
+              <div class="calc-rate-val" id="calcResultRate">৳ 55.56 / meal</div>
+              <div style="font-size:0.9rem; color:var(--text-muted); margin-top:0.4rem;">
+                Your Meal Expense: <strong id="calcResultUserTotal" style="color:#10b981;">৳ 2,222.22</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       HOW IT WORKS SECTION (SUMMARY CARDS)
+       ========================================== -->
+  <section class="section" id="how-it-works" style="padding-top:3.5rem; padding-bottom:3.5rem;">
+    <div class="container">
+      <div class="section-header" style="margin-bottom:2rem;">
+        <span class="glass-pill">Step-by-Step Guide</span>
+        <h2 class="section-title">How <span class="text-gradient">Messliner</span> Works</h2>
+        <p class="section-subtitle">Tailored workflows engineered for both Mess Managers (Admins) and Mess Members.</p>
+      </div>
+
+      <!-- Dual Role Summary Grid -->
+      <div class="dual-workflow-container">
+        <!-- 1. MESS MANAGER / ADMIN CARD -->
+        <div class="workflow-column glass-panel workflow-admin"
+          style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div class="workflow-badge admin-badge" style="margin-bottom:0.75rem;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z">
+                </path>
+              </svg>
+              Mess Manager (Admin)
+            </div>
+            <h3 class="workflow-title" style="font-size:1.35rem; font-weight:800; margin-bottom:0.6rem;">Admin Setup &
+              Management</h3>
+            <p style="color:var(--text-muted); font-size:0.95rem; line-height:1.65; margin-bottom:1.5rem;">
+              Set up your mess in 2 minutes, configure cutoff times and fixed bills, invite housemates via a 6-digit
+              code, log market receipts with photos, and automate monthly bill settlements.
+            </p>
+          </div>
+          <div>
+            <a href="how-it-works.html" class="btn btn-glass"
+              style="width:100%; border:1.5px solid rgba(16, 185, 129, 0.4); color:#047857; font-weight:700; background:transparent;">
+              See How It Works &rarr;
+            </a>
+          </div>
+        </div>
+
+        <!-- 2. MESS MEMBER / USER CARD -->
+        <div class="workflow-column glass-panel workflow-user"
+          style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div class="workflow-badge user-badge" style="margin-bottom:0.75rem;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              Mess Member (User)
+            </div>
+            <h3 class="workflow-title" style="font-size:1.35rem; font-weight:800; margin-bottom:0.6rem;">Member Join &
+              Meal Control</h3>
+            <p style="color:var(--text-muted); font-size:0.95rem; line-height:1.65; margin-bottom:1.5rem;">
+              Join instantly using your manager's 6-digit invite code, toggle daily meals ON/OFF before lock deadlines,
+              and monitor real-time meal rates, deposit ledgers, and market receipt photos.
+            </p>
+          </div>
+          <div>
+            <a href="how-it-works.html" class="btn btn-glass"
+              style="width:100%; border:1.5px solid rgba(6, 182, 212, 0.4); color:#0e7490; font-weight:700; background:transparent;">
+              See How It Works &rarr;
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       FEATURES / POWER SUITE SECTION
+       ========================================== -->
+  <section class="section" id="features" style="padding-top:3.5rem; padding-bottom:3.5rem;">
+    <div class="container">
+      <div class="section-header">
+        <span class="glass-pill">Packed With Power</span>
+        <h2 class="section-title">Features Built for <span class="text-gradient">Modern Dining</span></h2>
+        <p class="section-subtitle">Explore the rich suite of tools inside Messliner designed for members, mess
+          managers, and hostel administrators.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="glass-panel feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </div>
+          <h3 class="feature-title">Smart Daily Meal Toggle</h3>
+          <p class="feature-desc">Easily turn off meals before Cut off time to avoid food
+            waste and ensure accurate meal counts.</p>
+        </div>
+
+        <div class="glass-panel feature-card">
+          <div class="feature-icon"
+            style="background:rgba(16,185,129,0.12); color:#10b981; border-color:rgba(16,185,129,0.25);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+          </div>
+          <h3 class="feature-title">Bazar Expense Tracker</h3>
+          <p class="feature-desc">Record who went to market, total expense amount, receipt notes for 100% transparency.
+          </p>
+        </div>
+
+        <div class="glass-panel feature-card">
+          <div class="feature-icon"
+            style="background:rgba(99,102,241,0.12); color:#6366f1; border-color:rgba(99,102,241,0.25);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <h3 class="feature-title">Guest Meal & Utility Costs</h3>
+          <p class="feature-desc">Log guest meals separately with custom pricing, and split fixed utility bills fairly.
+          </p>
+        </div>
+
+        <div class="glass-panel feature-card">
+          <div class="feature-icon"
+            style="background:rgba(245,158,11,0.12); color:#f59e0b; border-color:rgba(245,158,11,0.25);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+          </div>
+          <h3 class="feature-title">Analytics & PDF Statements</h3>
+          <p class="feature-desc">Visual statements of meal rate trends, expense distribution,
+            and 1-click downloadable PDF balance statements.</p>
+        </div>
+
+        <div class="glass-panel feature-card">
+          <div class="feature-icon"
+            style="background:rgba(236,72,153,0.12); color:#ec4899; border-color:rgba(236,72,153,0.25);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+              <line x1="12" y1="18" x2="12.01" y2="18"></line>
+            </svg>
+          </div>
+          <h3 class="feature-title">Mobile App & Web Apps</h3>
+          <p class="feature-desc">Install Android App or Desktop with instant push notifications for any updates and
+            enjoy your mess life.
+          </p>
+        </div>
+
+        <div class="glass-panel feature-card">
+          <div class="feature-icon"
+            style="background:rgba(16,185,129,0.12); color:#10b981; border-color:rgba(16,185,129,0.25);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <h3 class="feature-title">Role Permissions & Messliner AI</h3>
+          <p class="feature-desc">Manager administrative controls, transparent Member view mode, plus built-in Messliner
+            AI assistant.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       PRICING SECTION
+       ========================================== -->
+  <section class="section" id="pricing" style="padding-top:3.5rem; padding-bottom:3.5rem;">
+    <div class="container">
+      <div class="section-header">
+        <span class="glass-pill">Flexible Plans</span>
+        <h2 class="section-title">Transparent <span class="text-gradient">Pricing</span></h2>
+        <p class="section-subtitle">Simple plans tailored for small bachelor messes to large university hostels.</p>
+      </div>
+
+      <div class="pricing-toggle-wrap">
+        <span>Monthly Billing</span>
+        <div class="toggle-switch" id="pricingToggle">
+          <div class="toggle-knob"></div>
+        </div>
+        <span>Annual Billing <span class="glass-pill"
+            style="font-size:0.75rem; color:#10b981; padding:0.1rem 0.5rem;">Save 20%</span></span>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- Starter Free -->
+        <div class="glass-panel pricing-card">
+          <div class="plan-name">Starter Mess</div>
+          <div class="plan-desc">Perfect for small bachelor groups up to 6 members.</div>
+          <div class="plan-price-wrap">
+            <span class="plan-price" id="priceFree">৳ 0</span>
+            <span class="plan-price-period">/ forever free</span>
+          </div>
+          <ul class="plan-features-list">
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Up to 6 Active Members</li>
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Automated Bazar Ratio</li>
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Daily Meal Manager</li>
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Web App Access</li>
+          </ul>
+          <a href="https://mdriad40.github.io/messlinerapp/" target="_blank" class="btn btn-glass" style="margin-top:auto;">Start Free</a>
+        </div>
+
+        <!-- Pro Mess (Featured) -->
+        <div class="glass-panel pricing-card featured">
+          <div class="pricing-badge">Most Popular</div>
+          <div class="plan-name">Mess Pro</div>
+          <div class="plan-desc">Ideal for standard messes, flats, and student groups.</div>
+          <div class="plan-price-wrap">
+            <span class="plan-price text-gradient" id="pricePro">৳ 499</span>
+            <span class="plan-price-period">/ month (billed monthly)</span>
+          </div>
+          <ul class="plan-features-list">
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Up to 25 Active Members</li>
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Instant SMS & Push Deposit Alerts</li>
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Receipt Photo Attachments</li>
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> 1-Click PDF Report Export</li>
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Guest Meal & Fixed Charges</li>
+          </ul>
+          <button class="btn btn-primary" onclick="window.scrollTo({ top: 0, behavior: 'smooth' });"
+            style="margin-top:auto;">Get Mess Pro</button>
+        </div>
+
+        <!-- Enterprise / Hostel -->
+        <div class="glass-panel pricing-card">
+          <div class="plan-name">Hostel Enterprise</div>
+          <div class="plan-desc">For University Halls, Large Hostels, & Dining Facilities.</div>
+          <div class="plan-price-wrap">
+            <span class="plan-price" id="priceEnterprise">৳ 1,299</span>
+            <span class="plan-price-period">/ month (billed monthly)</span>
+          </div>
+          <ul class="plan-features-list">
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Unlimited Dining Members</li>
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Multiple Mess Group Control</li>
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Instant SMS & Push Deposit Alerts</li>
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Custom Domain & Branding</li>
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Automated Audit & Priority Backups</li>
+            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> Priority 24/7 Support</li>
+          </ul>
+          <button class="btn btn-glass" data-modal="modalSupport" style="margin-top:auto;">Contact Sales</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SECURITY & COMPLIANCE SECTION
+       ========================================== -->
+  <section class="section" id="security">
+    <div class="container">
+      <div class="security-box">
+        <div class="section-header" style="margin-bottom:2.5rem;">
+          <span class="glass-pill" style="color:#6366f1;">Enterprise Grade Trust</span>
+          <h2 class="section-title">Bank-Level <span class="text-gradient-purple">Security & Reliability</span></h2>
+          <p class="section-subtitle">Your dining ledgers, deposit histories, and meal records are secured with
+            real-time Google Firebase Cloud architecture.</p>
+        </div>
+
+        <div class="security-grid">
+          <div class="security-item">
+            <div class="security-icon">🔒</div>
+            <div>
+              <h4 style="font-size:1.1rem; margin-bottom:0.3rem;">Real-Time 256-bit Encryption</h4>
+              <p style="color:var(--text-muted); font-size:0.9rem;">All member ledgers, deposit histories, and
+                credentials are encrypted using SSL/TLS 256-bit in transit & AES-256 at rest via Firebase Realtime
+                Database.</p>
+            </div>
+          </div>
+
+          <div class="security-item">
+            <div class="security-icon" style="background:rgba(16,185,129,0.15); color:#10b981;">⚡</div>
+            <div>
+              <h4 style="font-size:1.1rem; margin-bottom:0.3rem;">Real-Time Sync & Auto Backups</h4>
+              <p style="color:var(--text-muted); font-size:0.9rem;">Never lose your mess balance history. Instant
+                Firebase RTDB synchronization with automated cloud snapshot backups ensures complete data safety.</p>
+            </div>
+          </div>
+
+          <div class="security-item">
+            <div class="security-icon" style="background:rgba(6,182,212,0.15); color:#06b6d4;">🛡</div>
+            <div>
+              <h4 style="font-size:1.1rem; margin-bottom:0.3rem;">Firebase Security Rules & Role</h4>
+              <p style="color:var(--text-muted); font-size:0.9rem;">Messliner enforces strict Firebase Database Rules —
+                giving Mess Managers administrative control and Members view-only transparency.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       FAQ SECTION
+       ========================================== -->
+  <section class="section" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <span class="glass-pill">Have Questions?</span>
+        <h2 class="section-title">Frequently Asked <span class="text-gradient">Questions</span></h2>
+        <p class="section-subtitle">Find quick answers to common queries about Messliner, onboarding workflows, meal
+          rates, and security.</p>
+      </div>
+
+      <div class="faq-search-wrap">
+        <svg class="faq-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="faqSearchInput" class="faq-search-input"
+          placeholder="Search FAQ topics (e.g. create mess, join mess, meal rate, security)...">
+      </div>
+
+      <div class="faq-accordion">
+        <!-- Question 1: What is Messliner -->
+        <div class="faq-item open">
+          <div class="faq-question">
+            <span>What is Messliner and how does it help?</span>
+            <svg class="faq-toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div class="faq-answer">
+            <p>Messliner is a complete dining, mess, and hostel management platform. It automates daily meal counting,
+              market (bazar) expense tracking, meal rate (Bazar Ratio) calculations, and member deposit ledgers across
+              Web, Android, and Desktop.</p>
+          </div>
+        </div>
+
+        <!-- Question 2: How to Create Mess -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How do I create a new mess as a Manager (Admin)?</span>
+            <svg class="faq-toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div class="faq-answer">
+            <p>Sign into Messliner, select "Create New Mess" in the onboarding wizard, set your mess name, pick meal
+              times to track (Breakfast, Lunch, Dinner), configure cutoff lock times, and get your unique 6-digit invite
+              code to share with housemates.</p>
+          </div>
+        </div>
+
+        <!-- Question 3: How to Join Mess -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How do I join an existing mess as a Member?</span>
+            <svg class="faq-toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div class="faq-answer">
+            <p>Register account with your email and password, select "Join Existing Mess" in the wizard screen, enter
+              the 6-digit invite code provided by your Mess Manager, and connect instantly.</p>
+          </div>
+        </div>
+
+        <!-- Question 4: Download App -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How do I download the Native Mobile or Desktop App?</span>
+            <svg class="faq-toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div class="faq-answer">
+            <p>You can download the Android App file directly from our website by clicking the "Download" button. For
+              Desktop (Windows/Mac) you can browse our website from your browser.</p>
+          </div>
+        </div>
+
+        <!-- Question 5: Bazar Ratio -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>How does Messliner calculate the Meal Rate (Bazar Ratio)?</span>
+            <svg class="faq-toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div class="faq-answer">
+            <p>Messliner supports two calculation modes: Dynamic Bazar Ratio (sums total grocery expenses and divides
+              them by total consumed meals) and Fixed Meal Rate (manager sets a fixed taka price per meal). Both
+              calculate in real-time.</p>
+          </div>
+        </div>
+
+        <!-- Question 6: Turn Off Meals -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Can members turn off meals for specific days?</span>
+            <svg class="faq-toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div class="faq-answer">
+            <p>Yes! Members can toggle their individual meals (Breakfast, Lunch, Dinner) ON or OFF in advance. Mess
+              managers set daily cutoff lock times (e.g. 7 AM Breakfast, 8 AM Lunch, 4 PM Dinner) to prevent late
+              cancellations and food waste.</p>
+          </div>
+        </div>
+
+        <!-- Question 7: Fixed Expenses -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>What happens to fixed mess expenses like Rent, Wifi, and Cook Salary?</span>
+            <svg class="faq-toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div class="faq-answer">
+            <p>Messliner has a dedicated Fixed Expense Manager. Shared utility costs (Cook salary, house rent, wifi,
+              gas) are divided equally among active mess members independent of their consumed meal count.</p>
+          </div>
+        </div>
+
+        <!-- Question 8: Security -->
+        <div class="faq-item">
+          <div class="faq-question">
+            <span>Is my mess data safe and private?</span>
+            <svg class="faq-toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div class="faq-answer">
+            <p>Absolutely. We use Google Firebase Realtime Database with strict Database Security Rules & SSL/TLS
+              256-bit encryption. Only authorized members of your specific mess group can view or interact with your
+              ledger.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       CALL TO ACTION BANNER
+       ========================================== -->
+  <section class="section">
+    <div class="container">
+      <div class="cta-banner">
+        <h2 class="cta-title">Ready to Upgrade Your <span class="text-gradient">Mess Experience</span>?</h2>
+        <p class="cta-subtitle">Empower your dining group with effortless meal tracking, transparent deposit ledgers,
+          and zero billing conflicts.</p>
+        <div style="display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
+          <button class="btn btn-primary btn-lg" onclick="window.scrollTo({ top: 0, behavior: 'smooth' });">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download the App Now
+          </button>
+          <a href="https://mdriad40.github.io/messlinerapp/" target="_blank" class="btn btn-glass btn-lg">
+            Launch Web App
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       FOOTER
+       ========================================== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="#" class="nav-brand" style="font-size:1.4rem;">
+            <img src="assets/messLiner-logo.png" alt="Messliner Logo" class="brand-logo-img">
+            <span class="text-gradient">Messliner</span>
+          </a>
+          <p class="footer-brand-desc">
+            Smart Dining, Mess & Hostel Management Platform. Automating meals, bazar ratio, deposit ledgers, and bill
+            splits.
+          </p>
+        </div>
+
+        <div>
+          <div class="footer-column-title">Product</div>
+          <ul class="footer-links">
+            <li class="footer-link-item"><a href="#about">What is Messliner</a></li>
+            <li class="footer-link-item"><a href="#bazar-ratio">Bazar Ratio Guide</a></li>
+            <li class="footer-link-item"><a href="#features">Features</a></li>
+            <li class="footer-link-item"><a href="#pricing">Pricing Plans</a></li>
+            <li class="footer-link-item"><a href="../dashboard.html" target="_blank">Web Dashboard</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-column-title">Resources & Guides</div>
+          <ul class="footer-links">
+            <li class="footer-link-item"><a href="how-it-works.html">How it Works</a></li>
+            <li class="footer-link-item"><a href="data-safety.html">Security & Data Safety</a></li>
+            <li class="footer-link-item"><a href="#faq">FAQ Center</a></li>
+            <li class="footer-link-item"><a href="#" data-modal="modalSupport">Support & Help</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-column-title">Legal & Trust</div>
+          <ul class="footer-links">
+            <li class="footer-link-item"><a href="privacy-policy.html">Privacy Policy</a></li>
+            <li class="footer-link-item"><a href="terms-and-conditions.html">Terms and Conditions</a></li>
+            <li class="footer-link-item"><a href="data-safety.html">Data Safety</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 Messliner Inc. All rights reserved.</div>
+        <div style="display:flex; gap:1.5rem;">
+          <a href="privacy-policy.html" style="color:var(--text-subtle);">Privacy</a>
+          <a href="terms-and-conditions.html" style="color:var(--text-subtle);">Terms</a>
+          <a href="data-safety.html" style="color:var(--text-subtle);">Data Safety</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================
+       MODALS SYSTEM
+       ========================================== -->
+
+
+  <!-- 2. Privacy Policy Modal -->
+  <div class="modal-overlay" id="modalPrivacy">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Privacy Policy</div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>1. Information We Collect</h4>
+        <p>Messliner collects essential information necessary to calculate mess meals, deposits, and bazar expenses.
+          This includes member names, meal selections, deposit transaction records, and optional receipt photos uploaded
+          by mess managers.</p>
+
+        <h4>2. Data Security & Storage</h4>
+        <p>All data is secured using SSL/TLS 256-bit encryption. Financial deposits and meal records are stored in
+          encrypted databases hosted on Google Firebase enterprise cloud infrastructure with automated real-time
+          backups.</p>
+
+        <h4>3. How We Use Information</h4>
+        <p>Your information is solely used to compute your mess meal rate (Bazar Ratio), generate member ledger
+          statements, and deliver real-time meal notifications. We never sell or share your personal mess data with
+          third-party advertisers.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Terms & Conditions Modal -->
+  <div class="modal-overlay" id="modalTerms">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Terms & Conditions</div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>1. Acceptance of Terms</h4>
+        <p>By downloading or using Messliner (Web, Android, iOS, or Desktop), you agree to abide by these terms.
+          Messliner is designed to facilitate fair dining mess meal accounting.</p>
+
+        <h4>2. User Responsibilities</h4>
+        <p>Mess managers are responsible for ensuring accurate logging of bazar expenses and verified deposit records.
+          Messliner provides automated math calculations based on user input.</p>
+
+        <h4>3. Service Availability</h4>
+        <p>We strive to maintain 99.9% system availability. Scheduled maintenance window notices will be posted inside
+          the app prior to updates.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Security Overview Modal -->
+  <div class="modal-overlay" id="modalSecurity">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Security & Compliance</div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>Bank-Grade Encryption</h4>
+        <p>All communication between the Messliner mobile/desktop apps and cloud databases passes through TLS 1.3
+          encrypted tunnels.</p>
+
+        <h4>Role-Based Authorization</h4>
+        <p>Only designated Mess Managers have authority to edit meal prices, add bazar entries, or adjust member deposit
+          balances. General members enjoy complete transparent view-only access to prevent unauthorized edits.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Support Modal -->
+  <div class="modal-overlay" id="modalSupport">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Messliner Support & Help Desk</div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Need assistance setting up your mess or installing native apps? Our support team is here to help.</p>
+
+        <form onsubmit="event.preventDefault(); triggerAppDownload('Support Ticket'); closeAllModals();">
+          <div class="calc-field">
+            <div class="calc-label"><span>Your Name</span></div>
+            <input type="text" class="calc-input" placeholder="e.g. Anisur Rahman" required>
+          </div>
+          <div class="calc-field">
+            <div class="calc-label"><span>Email Address</span></div>
+            <input type="email" class="calc-input" placeholder="e.g. manager@messliner.com" required>
+          </div>
+          <div class="calc-field">
+            <div class="calc-label"><span>Message / Issue</span></div>
+            <textarea class="calc-input" rows="4" placeholder="How can we help your mess?" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Submit Support Inquiry</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/main.js"></script>
+</body>
+
+</html>

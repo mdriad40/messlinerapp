@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messliner | Terms and Conditions</title>
+  <meta name="description"
+    content="Official Terms and Conditions for Messliner Web App and Messliner Mobile Flutter Application. Read user obligations, mess manager responsibilities, financial disclaimers, Supabase OTP authentication, and deposit confirmation SMS terms.">
+  <meta name="keywords"
+    content="Messliner Terms and Conditions, Mess Management Terms of Service, User Agreement, Mess Math Disclaimer, Supabase Auth, Deposit SMS">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Custom Messliner Minimal Styles -->
+  <style>
+    body {
+      background-color: #fcfdfd;
+      color: #1e293b;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .bg-grid-wrapper {
+      display: none;
+    }
+
+    .minimal-navbar {
+      padding: 1.25rem 0;
+      border-bottom: 1px solid #e2e8f0;
+      background: #ffffff;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .minimal-nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .back-home-link {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #64748b;
+      transition: color 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      text-decoration: none;
+    }
+
+    .back-home-link:hover {
+      color: #059669;
+    }
+
+    .minimal-doc-container {
+      max-width: 860px;
+      margin: 3.5rem auto 6rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .doc-header-badge {
+      margin-bottom: 0.75rem;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 9999px;
+      background: rgba(5, 150, 105, 0.08);
+      color: #059669;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 1px solid rgba(5, 150, 105, 0.2);
+    }
+
+    .doc-main-title {
+      font-size: 2.85rem;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.4rem;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .doc-date-meta {
+      font-size: 0.88rem;
+      color: #64748b;
+      font-family: var(--font-mono);
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    /* CUSTOM GLASS PALATE EXECUTIVE SUMMARY CARD */
+    .messliner-summary-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 18px;
+      padding: 1.6rem 1.85rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.12);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .messliner-summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--gradient-emerald-cyan);
+    }
+
+    .summary-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .summary-icon-glass {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-primary);
+    }
+
+    .summary-card-title {
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: #047857;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .messliner-summary-card p {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.65;
+      color: #1e293b;
+    }
+
+    .doc-body-content p {
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: #334155;
+      margin-bottom: 1.5rem;
+    }
+
+    .doc-body-content h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 2.75rem;
+      margin-bottom: 1rem;
+      letter-spacing: -0.01em;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .doc-body-content ul {
+      margin-bottom: 1.75rem;
+      padding-left: 1.25rem;
+      color: #334155;
+    }
+
+    .doc-body-content li {
+      font-size: 1.02rem;
+      line-height: 1.7;
+      margin-bottom: 0.65rem;
+    }
+
+    .item-lead {
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .minimal-card-callout {
+      background: #fffbeb;
+      border-left: 4px solid #d97706;
+      border-radius: 0 12px 12px 0;
+      padding: 1.5rem;
+      margin: 1.75rem 0;
+    }
+
+    .callout-header-title-amber {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #b45309;
+      margin-bottom: 0.5rem;
+    }
+
+    .minimal-card-callout p {
+      font-size: 0.96rem;
+      margin: 0;
+      color: #78350f;
+    }
+
+    .minimal-footer {
+      border-top: 1px solid #e2e8f0;
+      padding: 2.5rem 0;
+      background: #ffffff;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    .minimal-footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .minimal-footer-links a {
+      color: #64748b;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .minimal-footer-links a:hover {
+      color: #059669;
+    }
+  </style>
+
+  <!-- Favicon -->
+  <link rel="icon" href="assets/messLiner-logo.png" type="image/png">
+</head>
+
+<body>
+
+  <!-- MINIMAL NAVBAR -->
+  <header class="minimal-navbar">
+    <div class="minimal-nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/messLiner-logo.png" alt="Messliner Logo" class="brand-logo-img"
+          onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'80\' font-size=\'80\'>🍽</text></svg>'">
+        <span class="text-gradient">Messliner</span>
+      </a>
+
+      <a href="index.html" class="back-home-link">
+        &larr; Back to home
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN DOCUMENT CONTAINER -->
+  <main class="minimal-doc-container">
+
+    <!-- CUSTOM BRANDED HEADER SECTION WITH GLASS SVG ICONS -->
+    <div class="doc-header-badge">
+      <span class="pill-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1" />
+          <path d="M18 8h4a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-4" />
+          <circle cx="8" cy="12" r="2" />
+        </svg>
+        Agreement & Usage Terms
+      </span>
+    </div>
+
+    <h1 class="doc-main-title">Terms & Conditions</h1>
+
+    <div class="doc-date-meta">
+      <span style="display:inline-flex; align-items:center; gap:0.35rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+        Effective Date: August, 2026
+      </span>
+      <span>&bull;</span>
+      <span>Applies to Web, Android & Desktop</span>
+    </div>
+
+    <!-- CUSTOM GLASS PALATE EXECUTIVE SUMMARY CARD -->
+    <div class="messliner-summary-card">
+      <div class="summary-card-header">
+        <span class="summary-icon-glass">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+        </span>
+        <span class="summary-card-title">Executive Summary</span>
+      </div>
+      <p>
+        Messliner is a digital calculation tool for mess meal tracking, bazar ratio calculation, and member ledgers.
+        Mess Managers are responsible for logging accurate financial records. Messliner is strictly an accounting
+        computation tool and does not process physical cash or bank deposits.
+      </p>
+    </div>
+
+    <div class="doc-body-content">
+
+      <h2>1. Acceptance of Terms</h2>
+      <p>
+        By accessing or using Messliner, you agree to be bound by these Terms and Conditions. If you do not agree to all
+        of these terms, you must not access or use our services.
+      </p>
+
+      <h2>2. Service Description</h2>
+      <p>
+        Messliner provides an automated dining and mess accounting software platform. Our tools allow shared mess
+        residents, bachelor accommodations, and hostels to:
+      </p>
+      <ul>
+        <li>Log daily member meal selections (breakfast, lunch, dinner).</li>
+        <li>Automatically compute real-time <span class="item-lead">Bazar Ratio (Meal Rate)</span> (`Total Bazar
+          Expenses ÷ Total Meals`).</li>
+        <li>Maintain transparent member deposit ledgers and personal balance calculations.</li>
+        <li>Authenticate securely using <strong>Supabase Auth</strong> with email verification and Forgot Password OTP
+          codes.</li>
+        <li>Receive real-time push notifications (OneSignal/FCM) and optional automated cash deposit confirmation SMS
+          alerts on mobile numbers when enabled by Mess Managers.</li>
+      </ul>
+
+      <h2>3. Mess Roles & Responsibilities</h2>
+      <p>Messliner uses role-based access control to enforce operational transparency:</p>
+      <ul>
+        <li><span class="item-lead">Mess Manager Responsibilities</span> &mdash; Managers are required to enter accurate
+          bazar expense entries, upload verifiable purchase receipts, record member cash/mobile banking deposits
+          promptly, and configure SMS deposit notification settings responsibly.</li>
+        <li><span class="item-lead">Member Responsibilities</span> &mdash; Members must enter or update their meal
+          choices before daily manager deadlines, inspect personal balance ledgers regularly, and maintain valid
+          email/mobile details for OTP and deposit SMS receipts.</li>
+      </ul>
+
+      <h2>4. Financial & Math Disclaimer</h2>
+      <div class="minimal-card-callout">
+        <div class="callout-header-title-amber">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          Computation Tool Notice
+        </div>
+        <p>
+          Messliner is strictly an automated mathematical computation software tool. Messliner does <strong>NOT</strong>
+          process, hold, transfer, or escrow physical currency or digital bank deposits.
+        </p>
+      </div>
+      <p>
+        All calculations depend entirely on user-entered numerical values. Mess Managers are solely responsible for
+        handling physical cash, bKash, Nagad, or bank deposits within their mess group. Messliner Inc. is not liable for
+        financial discrepancies resulting from incorrect data inputs.
+      </p>
+
+      <h2>5. Mobile Application, OTP & Communication Terms</h2>
+      <p>
+        The Messliner Android Mobile Application is built using Flutter and operates as a native WebView wrapper.
+      </p>
+      <p>
+        <strong>Authentication & Email OTP:</strong> Account registration and password recovery ("Forgot Password") use
+        Supabase Auth to send transactional emails and 6-digit OTP verification codes. By initiating account setup or
+        password resets, you consent to receiving these transactional authentication emails.
+      </p>
+      <p>
+        <strong>Push Notifications & Cash Deposit SMS:</strong> The app integrates OneSignal for push alerts.
+        Furthermore, when a Mess Manager enables the Deposit Confirmation SMS setting in the admin panel, cash deposits
+        logged for a user will trigger an automated transactional SMS receipt sent to the member's registered mobile
+        number.
+      </p>
+
+      <h2>6. Acceptable Use Policy</h2>
+      <p>When using Messliner, you agree NOT to:</p>
+      <ul>
+        <li>Falsify expense figures or enter fraudulent financial records.</li>
+        <li>Attempt to tamper with role-based access controls or access unauthorized mess data.</li>
+        <li>Abuse the Supabase OTP verification system or send automated spam SMS requests.</li>
+        <li>Use automated scripts, web scrapers, or bots to harvest data from our servers.</li>
+        <li>Decompile, reverse-engineer, or attempt to extract source code from the Flutter APK or Web App.</li>
+      </ul>
+
+      <h2>7. Cloud Infrastructure & Security</h2>
+      <p>
+        Messliner uses <strong>Google Firebase</strong> enterprise infrastructure for data storage and <strong>Supabase
+          Auth</strong> for secure identity verification. Data in transit is protected using 256-bit SSL/TLS 1.3
+        encryption. Users are responsible for keeping account login credentials confidential.
+      </p>
+
+      <h2>8. Intellectual Property Rights</h2>
+      <p>
+        All software code, visual interface designs, logos, calculation algorithms, and documentation are the exclusive
+        intellectual property of Messliner Inc.
+      </p>
+
+      <h2>9. Service Availability & Maintenance</h2>
+      <p>
+        We strive for 99.9% platform availability. Scheduled server maintenance or system updates will be announced
+        inside the app dashboard whenever possible.
+      </p>
+
+      <h2>10. Limitation of Liability</h2>
+      <p>
+        To the maximum extent permitted by law, Messliner Inc. shall not be liable for any indirect, incidental, or
+        consequential damages arising from service usage or cash handling disputes between mess members.
+      </p>
+
+      <h2>11. Contact Legal Support</h2>
+      <p>For questions or legal inquiries regarding these Terms and Conditions, please contact us:</p>
+      <p>
+        Email: <a href="mailto:messliner.app@gmail.com"
+          style="color:#059669; font-weight:600;">messliner.app@gmail.com</a><br>
+        Web Portal: <a href="https://messliner.netlify.app"
+          style="color:#059669; font-weight:600;">https://messliner.netlify.app</a>
+      </p>
+    </div>
+  </main>
+
+  <!-- MINIMAL FOOTER -->
+  <footer class="minimal-footer">
+    <div class="container">
+      <div>© 2026 Messliner Inc. All rights reserved.</div>
+      <div class="minimal-footer-links">
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <a href="terms-and-conditions.html">Terms & Conditions</a>
+        <a href="data-safety.html">Data Safety</a>
+        <a href="index.html">Home</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script src="js/main.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messliner | Privacy Policy</title>
+  <meta name="description"
+    content="Official Privacy Policy for Messliner Web App and Messliner Flutter Android WebView Mobile App. Learn how we collect, store, protect, and process user data, Firebase cloud database, Supabase authentication OTPs, OneSignal push notifications, and SMS deposit confirmations.">
+  <meta name="keywords"
+    content="Messliner Privacy Policy, Data Safety, OneSignal Push Notifications, Firebase Security, Supabase Auth OTP, Deposit SMS Notifications, Mess Management Privacy">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Custom Messliner Minimal Styles -->
+  <style>
+    body {
+      background-color: #fcfdfd;
+      color: #1e293b;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .bg-grid-wrapper {
+      display: none;
+    }
+
+    .minimal-navbar {
+      padding: 1.25rem 0;
+      border-bottom: 1px solid #e2e8f0;
+      background: #ffffff;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .minimal-nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .back-home-link {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #64748b;
+      transition: color 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      text-decoration: none;
+    }
+
+    .back-home-link:hover {
+      color: #059669;
+    }
+
+    .minimal-doc-container {
+      max-width: 860px;
+      margin: 3.5rem auto 6rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .doc-header-badge {
+      margin-bottom: 0.75rem;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 9999px;
+      background: rgba(5, 150, 105, 0.08);
+      color: #059669;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 1px solid rgba(5, 150, 105, 0.2);
+    }
+
+    .doc-main-title {
+      font-size: 2.85rem;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.4rem;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .doc-date-meta {
+      font-size: 0.88rem;
+      color: #64748b;
+      font-family: var(--font-mono);
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    /* CUSTOM GLASS PALATE EXECUTIVE SUMMARY CARD */
+    .messliner-summary-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 18px;
+      padding: 1.6rem 1.85rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.12);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .messliner-summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--gradient-emerald-cyan);
+    }
+
+    .summary-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .summary-icon-glass {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-primary);
+    }
+
+    .summary-card-title {
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: #047857;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .messliner-summary-card p {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.65;
+      color: #1e293b;
+    }
+
+    .doc-body-content p {
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: #334155;
+      margin-bottom: 1.5rem;
+    }
+
+    .doc-body-content h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 2.75rem;
+      margin-bottom: 1rem;
+      letter-spacing: -0.01em;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .doc-body-content ul {
+      margin-bottom: 1.75rem;
+      padding-left: 1.25rem;
+      color: #334155;
+    }
+
+    .doc-body-content li {
+      font-size: 1.02rem;
+      line-height: 1.7;
+      margin-bottom: 0.65rem;
+    }
+
+    .item-lead {
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .minimal-card-callout {
+      background: rgba(8, 145, 178, 0.05);
+      border: 1px solid rgba(8, 145, 178, 0.2);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin: 1.75rem 0;
+    }
+
+    .callout-header-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0e7490;
+      margin-bottom: 0.5rem;
+    }
+
+    .minimal-card-callout p {
+      font-size: 0.96rem;
+      margin: 0;
+      color: #334155;
+    }
+
+    .legal-table-wrapper {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .legal-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+
+    .legal-table th {
+      background: rgba(5, 150, 105, 0.08);
+      color: #0f172a;
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .legal-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid #e2e8f0;
+      color: #475569;
+    }
+
+    .legal-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .minimal-footer {
+      border-top: 1px solid #e2e8f0;
+      padding: 2.5rem 0;
+      background: #ffffff;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    .minimal-footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .minimal-footer-links a {
+      color: #64748b;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .minimal-footer-links a:hover {
+      color: #059669;
+    }
+  </style>
+
+  <!-- Favicon -->
+  <link rel="icon" href="assets/messLiner-logo.png" type="image/png">
+</head>
+
+<body>
+
+  <!-- MINIMAL NAVBAR -->
+  <header class="minimal-navbar">
+    <div class="minimal-nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/messLiner-logo.png" alt="Messliner Logo" class="brand-logo-img"
+          onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'80\' font-size=\'80\'>🍽</text></svg>'">
+        <span class="text-gradient">Messliner</span>
+      </a>
+
+      <a href="index.html" class="back-home-link">
+        &larr; Back to home
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN DOCUMENT CONTAINER -->
+  <main class="minimal-doc-container">
+
+    <!-- CUSTOM BRANDED HEADER SECTION WITH GLASS SVG ICONS -->
+    <div class="doc-header-badge">
+      <span class="pill-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+        Enterprise Data Protection & Trust
+      </span>
+    </div>
+
+    <h1 class="doc-main-title"><span class="text-gradient">Messliner</span> Privacy Policy</h1>
+
+    <div class="doc-date-meta">
+      <span style="display:inline-flex; align-items:center; gap:0.35rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+        Effective Date: August, 2026
+      </span>
+      <span>&bull;</span>
+      <span>v1.0.0 (Web & Mobile)</span>
+    </div>
+
+    <!-- CUSTOM GLASS PALATE EXECUTIVE SUMMARY CARD -->
+    <div class="messliner-summary-card">
+      <div class="summary-card-header">
+        <span class="summary-icon-glass">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+        </span>
+        <span class="summary-card-title">Executive Summary</span>
+      </div>
+      <p>
+        We collect only essential operational data required to run Messliner (Web &amp; Flutter Mobile App). We never
+        sell your data. Your mess records are strictly visible only to verified members of your mess group. You can
+        request full account deletion at any time.
+      </p>
+    </div>
+
+    <div class="doc-body-content">
+
+      <h2>1. Information We Collect</h2>
+      <p>We collect essential information to calculate daily mess meal rates (Bazar Ratio), maintain transparent deposit
+        ledgers, verify member accounts, and deliver real-time mess updates:</p>
+      <ul>
+        <li><span class="item-lead">Account information</span> &mdash; name, email address, mobile phone number, and
+          profile preferences provided during registration. Mobile numbers are also used to deliver instant cash deposit
+          confirmation SMS alerts when enabled by Mess Managers.</li>
+        <li><span class="item-lead">Authentication & Security Data</span> &mdash; Supabase-generated email verification
+          OTPs and password reset security tokens used to verify user identity during account setup or password
+          recovery.</li>
+        <li><span class="item-lead">Mess meal logs</span> &mdash; daily breakfast, lunch, and dinner meal entries
+          recorded for each member.</li>
+        <li><span class="item-lead">Bazar expense records</span> &mdash; purchase dates, itemized expense amounts,
+          purchaser name, and optional receipt photos uploaded by mess managers.</li>
+        <li><span class="item-lead">Deposit ledger entries</span> &mdash; member cash or mobile banking deposit
+          transaction records logged by designated Mess Managers.</li>
+        <li><span class="item-lead">Device & technical telemetry</span> &mdash; operating system version, device model,
+          browser type, IP address, and connection timestamps.</li>
+      </ul>
+
+      <h2>2. Mobile App, Notifications & Communication Policy</h2>
+      <p>
+        Messliner communicates with members through push notifications, transactional emails, and SMS message gateways:
+      </p>
+
+      <div class="minimal-card-callout">
+        <div class="callout-header-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          Push Notifications (OneSignal & FCM)
+        </div>
+        <p>
+          Upon launching the Flutter Android mobile app, users may grant Push Notification Permissions
+          (`POST_NOTIFICATIONS`) to receive real-time meal cut-off warnings, deposit updates, and manager announcements.
+        </p>
+      </div>
+
+      <div class="minimal-card-callout">
+        <div class="callout-header-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+          Email Verification & Password Reset OTP (Supabase)
+        </div>
+        <p>
+          Messliner uses <strong>Supabase Auth Infrastructure</strong> to dispatch transactional verification emails and
+          6-digit One-Time Password (OTP) codes when you register a new account or request a password reset ("Forgot
+          Password").
+        </p>
+      </div>
+
+      <div class="minimal-card-callout">
+        <div class="callout-header-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+          </svg>
+          Cash Deposit Confirmation SMS (Admin System)
+        </div>
+        <p>
+          Messliner features an automated SMS notification system within the Admin Panel. When enabled by a Mess
+          Manager/Admin, whenever a cash deposit is logged for a member, an instant deposit confirmation SMS message is
+          sent directly to that member's registered mobile phone number.
+        </p>
+      </div>
+
+      <h2>3. How We Use Information</h2>
+      <p>We process your data strictly to operate, maintain, and improve the Messliner platform:</p>
+      <ul>
+        <li>Computing automated meal rates in real-time (`Total Bazar Cost ÷ Total Meals Count = Meal Rate`).</li>
+        <li>Generating transparent member debit/credit ledgers (`Total Deposit - (User Meals × Meal Rate + Fixed Shared
+          Expenses)`).</li>
+        <li>Authenticating users and processing Forgot Password OTP requests via Supabase.</li>
+        <li>Delivering push notification alerts via OneSignal and automated cash deposit SMS receipts.</li>
+        <li>Ensuring platform security and preventing unauthorized expense tampering.</li>
+      </ul>
+      <p>
+        <span class="item-lead">Zero Data Sales Guarantee:</span> We do not sell, rent, monetize, or share your personal
+        mess records with third-party advertisers or data brokers.
+      </p>
+
+      <h2>4. Data Infrastructure & Cloud Storage</h2>
+      <p>
+        Your data is stored securely using Google Cloud Firebase enterprise infrastructure and Supabase cloud
+        authentication servers. All communications between your device and our servers are encrypted in transit using
+        256-bit SSL/TLS 1.3. Cloud databases utilize hardware-level AES-256 encryption at rest, along with automated
+        multi-region backups to guard against data loss.
+      </p>
+
+      <h2>5. Third-Party Services Disclosure</h2>
+      <p>We work with trusted enterprise technology providers to deliver essential mobile, web, and messaging features:
+      </p>
+
+      <div class="legal-table-wrapper">
+        <table class="legal-table">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Purpose</th>
+              <th>Data Processed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:700;">Google Firebase</td>
+              <td>Database, Cloud Storage & Backups</td>
+              <td>Meal counts, bazar expenses, deposit logs, receipt images</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700;">Supabase Auth</td>
+              <td>Authentication & Transactional Email OTP</td>
+              <td>Email address, password reset tokens, verification OTPs</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700;">OneSignal SDK</td>
+              <td>Push Notification Delivery</td>
+              <td>Device push token, OS version, notification status</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700;">Telecom SMS Gateway</td>
+              <td>Deposit Confirmation SMS</td>
+              <td>Registered mobile phone number, cash deposit amount</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>6. Security & Role-Based Access</h2>
+      <p>
+        Messliner enforces strict Role-Based Access Control (RBAC). Only designated Mess Managers have permission to log
+        bazar expenditures, adjust meal rates, activate deposit SMS settings, or enter member deposit receipts. General
+        members enjoy view-only access to verify all records, ensuring full mess transparency while protecting data
+        integrity.
+      </p>
+
+      <h2>7. Cookies & Local Storage</h2>
+      <p>
+        Messliner uses standard browser `LocalStorage` and secure session tokens to keep you logged in and preserve your
+        active mess preferences across sessions. You can clear local storage in your browser settings at any time.
+      </p>
+
+      <h2>8. Data Retention & Account Deletion</h2>
+      <p>
+        Mess records are retained as long as your mess group remains active. When a Mess Manager closes a mess session,
+        historical ledgers are archived for 12 months for member report downloads before permanent deletion.
+      </p>
+      <p>
+        <span class="item-lead">Data Deletion Requests:</span> You have the right to request permanent deletion of your
+        profile and mess records. To request account deletion, email <a href="mailto:messliner.app@gmail.com"
+          style="color:#059669; font-weight:600;">messliner.app@gmail.com</a> or submit an inquiry through our support
+        desk.
+      </p>
+
+      <h2>9. Contact Us</h2>
+      <p>If you have any questions or concerns regarding this Privacy Policy or data handling practices, please contact
+        us:</p>
+      <p>
+        Email: <a href="mailto:messliner.app@gmail.com"
+          style="color:#059669; font-weight:600;">messliner.app@gmail.com</a><br>
+        Web Portal: <a href="https://messliner.netlify.app"
+          style="color:#059669; font-weight:600;">https://messliner.netlify.app</a>
+      </p>
+    </div>
+  </main>
+
+  <!-- MINIMAL FOOTER -->
+  <footer class="minimal-footer">
+    <div class="container">
+      <div>© 2026 Messliner Inc. All rights reserved.</div>
+      <div class="minimal-footer-links">
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <a href="terms-and-conditions.html">Terms & Conditions</a>
+        <a href="data-safety.html">Data Safety</a>
+        <a href="index.html">Home</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script src="js/main.js"></script>
+</body>
+
+</html>
