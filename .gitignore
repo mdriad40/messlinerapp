@@ -1,0 +1,12 @@
+# Editor/IDE configs
+.gemini/
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Exclude Landing Web Portal from main app repo
+Mess-Liner-web/

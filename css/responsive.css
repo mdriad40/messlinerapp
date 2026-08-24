@@ -1,0 +1,1642 @@
+/* ============================================
+   Messliner — Responsive Styles (responsive.css)
+   ============================================ */
+
+/* ======== TABLET & BELOW (< 1024px) ======== */
+@media (max-width: 1023px) {
+
+  /* Sidebar hidden, show toggle */
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  /* Bottom nav visible */
+  .bottom-nav {
+    display: block;
+  }
+
+  .bottom-nav-items {
+    display: flex;
+  }
+
+  /* Add padding for bottom nav */
+  .content-area {
+    padding-bottom: calc(var(--bottom-nav-height) + var(--space-6));
+  }
+
+  /* Adjust FAB position */
+  .fab {
+    bottom: calc(var(--bottom-nav-height) + var(--space-4));
+  }
+
+  /* Stat cards stack */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Users grid */
+  .users-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Overview stats */
+  .overview-stats {
+    display: block;
+  }
+
+  .overview-desktop-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .overview-desktop-stats .stat-card:nth-child(9) {
+    grid-column: span 2;
+  }
+
+  /* Toast positioning */
+  .toast-container {
+    top: auto;
+    bottom: calc(var(--bottom-nav-height) + var(--space-4));
+    right: var(--space-4);
+    left: var(--space-4);
+  }
+
+  .toast {
+    min-width: auto;
+    max-width: 100%;
+  }
+
+  /* Top Header */
+  .top-header {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--bg-primary);
+    z-index: var(--z-overlay);
+    /* 300 - higher than bottom-nav (200) */
+  }
+
+  /* Notification panel */
+  .notification-panel {
+    position: fixed;
+    top: auto;
+    bottom: var(--bottom-nav-height);
+    left: 0;
+    right: 0;
+    width: 100%;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    max-height: 60vh;
+    z-index: var(--z-modal);
+    /* 400 - make sure it's on top of everything inside header context */
+  }
+
+  /* Chart */
+  .chart-canvas {
+    height: 200px;
+  }
+
+  /* Profile stats */
+  .profile-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Settings */
+  .settings-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  /* Form row */
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Content area padding */
+  .content-area {
+    padding: var(--space-4);
+    padding-bottom: calc(var(--bottom-nav-height) + var(--space-6));
+  }
+
+  /* Page section padding */
+  .page-section {
+    padding: var(--space-4);
+  }
+
+  /* Header */
+  .top-header {
+    padding: 0 var(--space-4);
+  }
+  .header-title {
+    font-size: 1.1rem;
+  }
+  .header-greeting {
+    font-size: 0.78rem;
+  }
+}
+
+/* ======== MOBILE (< 768px) ======== */
+@media (max-width: 767px) {
+
+  /* Single column stats */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+
+  .stat-card {
+    padding: var(--space-4);
+  }
+
+  .stat-card .stat-value {
+    font-size: var(--font-xl);
+  }
+
+  .stat-card .stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .stat-card .stat-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Meal toggles single column */
+  .meal-toggles-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Meal toggle card responsive adjustments */
+  .meal-toggle-card {
+    padding: var(--space-3) var(--space-3) !important;
+    gap: var(--space-2.5) !important;
+  }
+
+  .meal-toggle-info {
+    gap: var(--space-2.5) !important;
+  }
+
+  .meal-toggle-text h4 {
+    font-size: 13px !important;
+  }
+
+  .meal-status-badge {
+    font-size: 9px !important;
+    padding: 1.5px 4px !important;
+  }
+
+  .meal-cutoff-subtitle {
+    font-size: 11px !important;
+    margin-top: 3px !important;
+  }
+
+  .quantity-selector {
+    height: 36px !important;
+  }
+
+  .qty-btn {
+    width: 36px !important;
+    font-size: 18px !important;
+  }
+
+  /* Meal users grid */
+  .meal-users-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+  }
+
+  .meal-user-chip {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  /* Quick actions */
+  .quick-actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Overview */
+  .overview-stats {
+    display: block;
+  }
+
+  .overview-desktop-stats {
+    display: none !important;
+  }
+
+  .overview-mobile-stats {
+    display: block !important;
+  }
+
+  .overview-table-grid .table-cell {
+    padding: var(--space-3) var(--space-3.5);
+    gap: var(--space-3);
+  }
+
+  .overview-table-grid .cell-icon-box {
+    width: 32px;
+    height: 32px;
+  }
+
+  .overview-table-grid .cell-icon-box svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .overview-table-grid .cell-value {
+    font-size: var(--font-base);
+    /* 14px */
+    font-weight: var(--weight-bold);
+  }
+
+  .overview-table-grid .cell-label {
+    font-size: 11px;
+    font-weight: var(--weight-semibold);
+  }
+
+  .overview-table-grid .table-cell-full {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .overview-table-grid .cell-full-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .overview-table-grid .cell-full-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .overview-table-grid .cell-full-label {
+    font-size: 10px;
+    font-weight: var(--weight-bold);
+    opacity: 0.9;
+  }
+
+  .overview-table-grid .cell-full-value {
+    font-size: var(--font-lg);
+    /* 18px */
+    font-weight: var(--weight-extrabold);
+  }
+
+  .overview-table-grid .cell-full-info {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  /* Finance actions */
+  .finance-actions {
+    flex-direction: column;
+  }
+
+  .finance-actions .btn {
+    width: 100%;
+  }
+
+  /* User card */
+  .user-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .user-card-stats {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: var(--space-2);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--gray-100);
+  }
+
+  /* Page header */
+  .page-header h2 {
+    font-size: var(--font-xl);
+  }
+
+  /* Section title */
+  .section-title-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .section-title-bar .btn {
+    width: 100%;
+  }
+
+  /* Modal full width on mobile */
+  .modal {
+    max-width: 100%;
+    margin: 0;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    max-height: 90vh;
+    align-self: flex-end;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  /* Card compact padding */
+  .card {
+    padding: var(--space-4);
+  }
+
+  /* Table font size */
+  .data-table th,
+  .data-table td {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-sm);
+  }
+
+  /* Users header stacks */
+  .users-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Chart */
+  .chart-canvas {
+    height: 180px;
+  }
+
+  /* Meal date selector */
+  .meal-date-selector {
+    flex-wrap: wrap;
+  }
+
+  /* Finance summary */
+  .finance-summary-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  /* Header title hidden on very small */
+  .header-title {
+    font-size: var(--font-md);
+  }
+
+  /* Auth adjustments */
+  .auth-card {
+    padding: var(--space-6);
+  }
+
+  .auth-brand h1 {
+    font-size: var(--font-2xl);
+  }
+
+  .auth-brand {
+    margin-bottom: var(--space-6);
+  }
+
+  /* Member quick access grid responsive */
+  .member-nav-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  /* Admin Dining Overview Mobile Responsiveness */
+  #overviewMemberStatsSection .table-wrapper {
+    border: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  #memberStatsTable,
+  #memberStatsTable thead,
+  #memberStatsTable tbody,
+  #memberStatsTable tr,
+  #memberStatsTable th,
+  #memberStatsTable td {
+    display: block;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  #memberStatsTable thead {
+    display: none !important;
+  }
+
+  #memberStatsTable tbody tr {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: var(--space-4) !important;
+    margin-bottom: var(--space-4);
+    gap: var(--space-3);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+  }
+
+  #memberStatsTable tbody tr:hover {
+    background: var(--bg-primary) !important;
+    transform: none !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+
+  #memberStatsTable td {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 !important;
+    border-bottom: none !important;
+    font-size: var(--font-sm);
+    color: var(--text-primary);
+    background: transparent !important;
+  }
+
+  #memberStatsTable td:first-child {
+    justify-content: flex-start;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding-bottom: var(--space-3) !important;
+    margin-bottom: var(--space-1);
+  }
+
+  #memberStatsTable td:not(:first-child)::before {
+    font-size: var(--font-xs);
+    font-weight: var(--weight-bold);
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  #memberStatsTable td:nth-child(2)::before {
+    content: "Total Meals";
+  }
+
+  #memberStatsTable td:nth-child(3)::before {
+    content: "Deposit";
+  }
+
+  #memberStatsTable td:nth-child(4)::before {
+    content: "Meal Cost";
+  }
+
+  #memberStatsTable td:nth-child(5)::before {
+    content: "Balance";
+  }
+
+  #memberStatsTable td:nth-child(6)::before {
+    content: "Status";
+  }
+
+  #memberStatsTable td[colspan] {
+    display: block !important;
+    text-align: center;
+    justify-content: center;
+    padding: var(--space-6) !important;
+    color: var(--text-tertiary);
+  }
+
+  #memberStatsTable td[colspan]::before {
+    display: none !important;
+  }
+
+  .timeline {
+    padding-left: var(--space-6) !important;
+  }
+
+  .timeline::before {
+    left: 11px !important;
+  }
+
+  .timeline .timeline-dot {
+    left: -17px !important;
+    width: 14px !important;
+    height: 14px !important;
+    top: 5px !important;
+  }
+}
+
+/* ======== SMALL MOBILE (< 480px) ======== */
+@media (max-width: 479px) {
+  html {
+    font-size: 15px;
+  }
+
+  .meal-toggle-card {
+    padding: 6px 8px !important;
+    gap: var(--space-1.5) !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .meal-toggle-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-1.5) !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+
+  .meal-toggle-icon {
+    width: 32px !important;
+    height: 32px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .meal-toggle-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .meal-toggle-text {
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+
+  .meal-title-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: var(--space-1) !important;
+  }
+
+  .meal-toggle-text h4 {
+    font-size: 11.5px !important;
+    white-space: nowrap !important;
+  }
+
+  .meal-status-badge {
+    font-size: 8px !important;
+    padding: 1px 3px !important;
+    white-space: nowrap !important;
+  }
+
+  .meal-cutoff-subtitle {
+    font-size: 9.5px !important;
+    margin-top: 2px !important;
+    white-space: nowrap !important;
+  }
+
+  .quantity-selector {
+    height: 34px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .qty-btn {
+    width: 34px !important;
+    font-size: 16px !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
+
+  .stat-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+
+  .stat-card .stat-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .stat-card .stat-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .stat-card .stat-value {
+    font-size: var(--font-lg);
+  }
+
+  .stat-card .stat-label {
+    font-size: var(--font-xs);
+  }
+
+  .meal-users-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+  }
+
+  .quick-action-card {
+    padding: var(--space-3);
+  }
+
+  .overview-stats {
+    display: block;
+  }
+
+  .overview-table-grid .table-cell {
+    padding: var(--space-2.5) var(--space-3);
+    gap: var(--space-2.5);
+  }
+
+  .overview-table-grid .cell-icon-box {
+    width: 30px;
+    height: 30px;
+  }
+
+  .overview-table-grid .cell-icon-box svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .overview-table-grid .cell-value {
+    font-size: var(--font-base);
+    /* 14px */
+    font-weight: var(--weight-bold);
+  }
+
+  .overview-table-grid .cell-label {
+    font-size: 10px;
+    font-weight: var(--weight-semibold);
+  }
+
+  .overview-table-grid .table-cell-full {
+    padding: var(--space-2.5) var(--space-3);
+  }
+
+  .overview-table-grid .cell-full-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .overview-table-grid .cell-full-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .overview-table-grid .cell-full-label {
+    font-size: 9px;
+    font-weight: var(--weight-bold);
+    opacity: 0.9;
+  }
+
+  .overview-table-grid .cell-full-value {
+    font-size: var(--font-md);
+    /* 16px */
+    font-weight: var(--weight-extrabold);
+  }
+
+  .overview-table-grid .cell-full-info {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .profile-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-2) !important;
+  }
+
+  .profile-stats .stat-value {
+    font-size: var(--font-base) !important;
+  }
+
+  .auth-card {
+    padding: var(--space-5);
+  }
+
+  .content-area {
+    padding: var(--space-3);
+    padding-bottom: calc(var(--bottom-nav-height) + var(--space-6));
+  }
+
+  .page-section {
+    padding: var(--space-3);
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+
+  .finance-summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .meal-type-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+
+  .meal-type-tabs::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ======== EXTRA SMALL MOBILE (< 380px) ======== */
+@media (max-width: 379px) {
+  .overview-table-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .overview-table-grid .table-cell {
+    border-right: none !important;
+  }
+}
+
+/* ======== LARGE DESKTOP (>= 1280px) ======== */
+@media (min-width: 1280px) {
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .meal-toggles-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+
+  .users-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .meal-users-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .quick-actions {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ======== EXTRA LARGE (>= 1536px) ======== */
+@media (min-width: 1536px) {
+  .content-area {
+    padding: var(--space-8);
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-5);
+  }
+
+  .users-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ======== PRINT STYLES ======== */
+@media print {
+
+  .sidebar,
+  .bottom-nav,
+  .top-header,
+  .fab,
+  .toast-container,
+  .modal-overlay {
+    display: none !important;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .content-area {
+    padding: 0;
+  }
+
+  body {
+    background: white;
+  }
+
+  .card,
+  .stat-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+
+  .page-section.active {
+    animation: none;
+  }
+}
+
+/* ======== REDUCED MOTION ======== */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ======== LANDSCAPE MOBILE ======== */
+@media (max-height: 500px) and (orientation: landscape) {
+  .auth-brand {
+    margin-bottom: var(--space-4);
+  }
+
+  .auth-card {
+    padding: var(--space-4);
+  }
+
+  .bottom-nav {
+    height: 52px;
+  }
+
+  .content-area {
+    padding-bottom: calc(52px + var(--space-4));
+  }
+}
+
+/* ======== MEAL CARD BADGES & TITLE ROW (GLOBAL) ======== */
+.meal-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: nowrap;
+}
+
+.meal-status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.meal-status-badge.on {
+  background: #D1FAE5;
+  color: #065F46;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.meal-status-badge.off {
+  background: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.meal-status-badge.locked {
+  background: #FFFBEB;
+  color: #92400E;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.meal-cutoff-subtitle {
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+}
+
+/* ======== MEALS PAGE (ADMIN) RESPONSIVENESS OVERRIDES ======== */
+#page-meals,
+#page-mymeal {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+#mealLogTable {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px) {
+
+  /* Page Header & Date Input */
+  #page-meals .meal-date-selector {
+    width: 100% !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: var(--space-2) !important;
+  }
+
+  #page-meals .meal-date-selector>.flex {
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: var(--space-2) !important;
+  }
+
+  #page-meals .meal-date-selector>.flex .btn {
+    flex: 1 1 auto !important;
+    justify-content: center !important;
+    font-size: var(--font-xs) !important;
+    padding: 6px 10px !important;
+  }
+
+  /* Profile page overrides */
+  #page-profile {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  #page-profile .card {
+    padding: var(--space-3.5) !important;
+    margin-top: var(--space-4) !important;
+    margin-bottom: var(--space-4) !important;
+  }
+
+  #profileSettingsSection {
+    margin-top: var(--space-4) !important;
+  }
+
+  .profile-header {
+    gap: var(--space-3) !important;
+    margin-bottom: var(--space-4) !important;
+  }
+
+  .profile-avatar {
+    width: 56px !important;
+    height: 56px !important;
+    font-size: var(--font-xl) !important;
+  }
+
+  .profile-info h3 {
+    font-size: var(--font-lg) !important;
+  }
+
+  .profile-info p {
+    font-size: var(--font-sm) !important;
+  }
+
+  .profile-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-2) !important;
+  }
+
+  .profile-stats .stat-card {
+    padding: var(--space-3) !important;
+    gap: var(--space-2) !important;
+    border-radius: var(--radius-lg) !important;
+  }
+
+  .profile-stats .stat-label {
+    font-size: 10px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .profile-stats .stat-value {
+    font-size: var(--font-sm) !important;
+  }
+
+  .profile-info-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-4) var(--space-2.5) !important;
+  }
+
+  #page-meals .meal-date-selector .form-group {
+    width: 100% !important;
+  }
+
+  #page-meals #mealDateInput {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Glass Plate Panels (Locked Meals & Download Slip) */
+  #page-meals #completeLockedMealsPanel,
+  #page-meals #savedMealSlipPanel {
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: var(--space-3.5) !important;
+    border-radius: var(--radius-lg) !important;
+    box-sizing: border-box !important;
+  }
+
+  #page-meals .glass-plate-header {
+    gap: var(--space-1) !important;
+    padding-bottom: var(--space-2.5) !important;
+  }
+
+  #page-meals .glass-plate-title {
+    font-size: var(--font-sm) !important;
+  }
+
+  #page-meals .glass-plate-subtitle {
+    font-size: 11px !important;
+    word-break: break-word !important;
+    line-height: 1.4 !important;
+  }
+
+  #page-meals .glass-plate-options {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-2) !important;
+  }
+
+  #page-meals .glass-option-row {
+    padding: var(--space-2.5) var(--space-3) !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  #page-meals .glass-option-circle {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 16px !important;
+  }
+
+  #page-meals .glass-option-label {
+    font-size: var(--font-xs) !important;
+  }
+
+  #page-meals .glass-option-sublabel {
+    font-size: 10px !important;
+  }
+
+  #page-meals .glass-option-count-box {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: var(--font-xs) !important;
+  }
+
+  /* Manual Lock Overrides */
+  #page-meals .manual-lock-overrides {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: var(--space-2.5) !important;
+    padding: var(--space-3) !important;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
+  }
+
+  #page-meals .manual-lock-overrides>span {
+    width: 100% !important;
+    font-size: var(--font-xs) !important;
+  }
+
+  #page-meals .manual-lock-overrides>div {
+    width: 100% !important;
+    margin-left: 0 !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: var(--space-2) !important;
+  }
+
+  #page-meals #manualLockMealType,
+  #page-meals #manualLockState {
+    flex: 1 1 calc(50% - var(--space-1)) !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 34px !important;
+    font-size: var(--font-xs) !important;
+  }
+
+  #page-meals .manual-lock-overrides button {
+    width: 100% !important;
+    height: 34px !important;
+    padding: 0 var(--space-3) !important;
+    font-size: var(--font-xs) !important;
+    justify-content: center !important;
+  }
+
+  /* Action Buttons in Locked Meal & Slip Panel */
+  #page-meals .locked-meal-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: var(--space-2) !important;
+  }
+
+  #page-meals .locked-meal-actions .btn-glass-complete,
+  #page-meals .locked-meal-actions .btn-glass-preview {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 38px !important;
+    font-size: var(--font-xs) !important;
+  }
+
+  /* Saved Slip Panel target date row */
+  #page-meals #savedMealSlipPanel .flex.items-center.gap-3.p-4 {
+    padding: var(--space-3) !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: var(--space-2) !important;
+  }
+
+  #page-meals #savedMealSlipPanel .form-group {
+    width: 100% !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  #page-meals #downloadSlipDateInput {
+    flex: 1 !important;
+    width: auto !important;
+    max-width: 180px !important;
+  }
+
+  #page-meals #downloadSlipMealsOptions {
+    padding: var(--space-3) !important;
+  }
+
+  /* Meal Type Tabs */
+  #page-meals .meal-type-tabs {
+    display: flex !important;
+    width: 100% !important;
+    background: rgba(0, 0, 0, 0.04) !important;
+    padding: 3px !important;
+    border-radius: var(--radius-xl) !important;
+    gap: 4px !important;
+    margin-bottom: var(--space-4) !important;
+    box-sizing: border-box !important;
+  }
+
+  #page-meals .meal-type-tab {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 8px 4px !important;
+    font-size: var(--font-xs) !important;
+    white-space: nowrap !important;
+    border-radius: var(--radius-lg) !important;
+    text-align: center !important;
+  }
+
+  /* Bulk Actions Bar */
+  #page-meals>.flex.items-center.justify-between.mb-4.flex-wrap {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: var(--space-3) !important;
+    background: var(--bg-primary);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-sizing: border-box !important;
+  }
+
+  #page-meals>.flex.items-center.justify-between.mb-4.flex-wrap>.flex:first-child {
+    width: 100% !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  #page-meals>.flex.items-center.justify-between.mb-4.flex-wrap>.flex:last-child {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: var(--space-3) !important;
+  }
+
+  #page-meals>.flex.items-center.justify-between.mb-4.flex-wrap>.flex:last-child>div.flex {
+    flex: 1 1 calc(50% - var(--space-2)) !important;
+    justify-content: flex-start !important;
+  }
+
+  #page-meals #bulkOverrideSwitch {
+    flex: 1 1 calc(50% - var(--space-2)) !important;
+    margin-right: 0 !important;
+    justify-content: flex-end !important;
+    display: inline-flex !important;
+  }
+
+  #page-meals #saveMealsBtn {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 40px !important;
+    margin-top: var(--space-1) !important;
+    font-size: var(--font-sm) !important;
+  }
+
+  /* Users Grid & User Chips */
+  #page-meals .meal-users-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-2.5) !important;
+  }
+
+  #page-meals .meal-user-chip {
+    padding: var(--space-2.5) var(--space-3) !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    gap: var(--space-2) !important;
+  }
+
+  #page-meals .meal-user-chip .avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 10px !important;
+    flex-shrink: 0 !important;
+  }
+
+  #page-meals .meal-user-chip-name {
+    flex: 1 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: var(--font-xs) !important;
+  }
+
+  #page-meals .meal-user-chip .number-spinner {
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+    height: 26px !important;
+  }
+
+  #page-meals .meal-user-chip .number-spinner button {
+    width: 22px !important;
+    font-size: 12px !important;
+  }
+
+  #page-meals .meal-user-chip .number-spinner input {
+    width: 28px !important;
+    font-size: var(--font-xs) !important;
+  }
+
+  /* Meal Log Table - Card-based Mobile Responsive Layout */
+  #page-meals #mealLogTable .table-wrapper {
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    border: none !important;
+  }
+
+  #page-meals #mealLogTable .data-table,
+  #page-meals #mealLogTable .data-table thead,
+  #page-meals #mealLogTable .data-table tbody,
+  #page-meals #mealLogTable .data-table tfoot,
+  #page-meals #mealLogTable .data-table tr,
+  #page-meals #mealLogTable .data-table th,
+  #page-meals #mealLogTable .data-table td {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #page-meals #mealLogTable .data-table thead {
+    display: none !important;
+  }
+
+  #page-meals #mealLogTable .data-table tbody tr {
+    display: flex !important;
+    flex-direction: column !important;
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-xl) !important;
+    padding: var(--space-4) !important;
+    margin-bottom: var(--space-4) !important;
+    gap: var(--space-3) !important;
+    box-shadow: var(--shadow-sm) !important;
+    transition: all var(--transition-base) !important;
+  }
+
+  #page-meals #mealLogTable .data-table tbody tr:hover {
+    background: var(--bg-primary) !important;
+    transform: none !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+
+  #page-meals #mealLogTable .data-table td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0 !important;
+    border-bottom: none !important;
+    font-size: var(--font-sm) !important;
+    color: var(--text-primary) !important;
+    background: transparent !important;
+  }
+
+  #page-meals #mealLogTable .data-table td:first-child {
+    justify-content: flex-start !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding-bottom: var(--space-3) !important;
+    margin-bottom: var(--space-1) !important;
+  }
+
+  #page-meals #mealLogTable .data-table td:first-child .flex {
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: var(--space-2) !important;
+  }
+
+  #page-meals #mealLogTable .data-table td:not(:first-child)::before {
+    font-size: var(--font-xs) !important;
+    font-weight: var(--weight-bold) !important;
+    color: var(--text-tertiary) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  #page-meals #mealLogTable .data-table td:nth-child(2)::before {
+    content: "☀️ Breakfast" !important;
+  }
+
+  #page-meals #mealLogTable .data-table td:nth-child(3)::before {
+    content: "🍱 Lunch" !important;
+  }
+
+  #page-meals #mealLogTable .data-table td:nth-child(4)::before {
+    content: "🌙 Dinner" !important;
+  }
+
+  #page-meals #mealLogTable .data-table td:nth-child(5)::before {
+    content: "Total Meals" !important;
+  }
+
+  /* Meal Log Table Footer Summary Card */
+  #page-meals #mealLogTable .data-table tfoot tr {
+    display: flex !important;
+    flex-direction: column !important;
+    background: var(--bg-card) !important;
+    border: 2px dashed var(--primary-300) !important;
+    border-radius: var(--radius-xl) !important;
+    padding: var(--space-4) !important;
+    margin-top: var(--space-4) !important;
+    gap: var(--space-3) !important;
+  }
+
+  #page-meals #mealLogTable .data-table tfoot td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0 !important;
+    border-bottom: none !important;
+    font-size: var(--font-sm) !important;
+    color: var(--text-primary) !important;
+    background: transparent !important;
+  }
+
+  #page-meals #mealLogTable .data-table tfoot td:first-child {
+    font-weight: var(--weight-bold) !important;
+    color: var(--primary-700) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding-bottom: var(--space-3) !important;
+    margin-bottom: var(--space-1) !important;
+    text-transform: uppercase !important;
+    font-size: var(--font-xs) !important;
+    letter-spacing: 0.05em !important;
+    justify-content: flex-start !important;
+  }
+
+  #page-meals #mealLogTable .data-table tfoot td:not(:first-child)::before {
+    font-size: var(--font-xs) !important;
+    font-weight: var(--weight-bold) !important;
+    color: var(--text-tertiary) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  #page-meals #mealLogTable .data-table tfoot td:nth-child(2)::before {
+    content: "Total Breakfast" !important;
+  }
+
+  #page-meals #mealLogTable .data-table tfoot td:nth-child(3)::before {
+    content: "Total Lunch" !important;
+  }
+
+  #page-meals #mealLogTable .data-table tfoot td:nth-child(4)::before {
+    content: "Total Dinner" !important;
+  }
+
+  #page-meals #mealLogTable .data-table tfoot td:nth-child(5)::before {
+    content: "Grand Total" !important;
+  }
+
+  /* ── Friday Admin Panel ───────────────────── */
+  #fridayMealPanel {
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Panel header: title + month nav stack on small screens */
+  #fridayMealPanel .friday-panel-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding: 12px 14px !important;
+  }
+
+  #fridayMealPanel .friday-panel-header-left {
+    width: 100% !important;
+  }
+
+  #fridayMealPanel .friday-month-nav {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Week selector row */
+  #fridayMealPanel .friday-week-selector-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 10px 14px !important;
+  }
+
+  #fridayMealPanel .custom-dropdown {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Section blocks */
+  #fridayMealPanel .friday-section-block {
+    padding: 12px 14px !important;
+  }
+
+  /* Member chips grid: 2 columns on mobile */
+  #fridayMealPanel .friday-meal-users-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  #fridayMealPanel .friday-meal-chip {
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 8px 10px !important;
+    gap: 8px !important;
+  }
+
+  #fridayMealPanel .friday-chip-name {
+    font-size: 11px !important;
+  }
+
+  /* Actions row: stack buttons full-width */
+  #fridayMealPanel .friday-actions-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 0 14px 14px !important;
+  }
+
+  #fridayMealPanel .friday-save-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    font-size: var(--font-xs) !important;
+  }
+
+  /* Bazar form */
+  #fridayMealPanel .friday-bazar-form>div:first-child {
+    grid-template-columns: 1fr !important;
+  }
+
+  #fridayMealPanel .friday-bazar-form>div[style*="justify-content: space-between"],
+  #fridayMealPanel .friday-bazar-form>div[style*="justify-content:space-between"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  #fridayMealPanel .friday-bazar-save-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    font-size: var(--font-xs) !important;
+  }
+
+  /* Friday Meal Log — no horizontal scroll, names truncate with ellipsis */
+  #fridayMealPanel #fridayMealLogTable {
+    overflow-x: hidden !important;
+  }
+
+  #fridayMealPanel #fridayMealLogTable .table-wrapper {
+    overflow-x: hidden !important;
+    border-radius: var(--radius-lg) !important;
+  }
+
+  /* Fixed layout so explicit column widths are respected */
+  #fridayMealPanel #fridayMealLogTable .data-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    min-width: 0 !important;
+  }
+
+  /* Name column: 70% width, clips long names */
+  #fridayMealPanel #fridayMealLogTable .data-table th:first-child,
+  #fridayMealPanel #fridayMealLogTable .data-table td:first-child {
+    width: 70% !important;
+    overflow: hidden !important;
+    padding: var(--space-2.5) var(--space-3) !important;
+  }
+
+  /* Meal count column: 30% width */
+  #fridayMealPanel #fridayMealLogTable .data-table th:nth-child(2),
+  #fridayMealPanel #fridayMealLogTable .data-table td:nth-child(2) {
+    width: 30% !important;
+    white-space: nowrap !important;
+    padding: var(--space-2.5) var(--space-2) !important;
+  }
+
+  /* Header text can wrap so it doesn't force column expansion */
+  #fridayMealPanel #fridayMealLogTable .data-table th {
+    white-space: normal !important;
+    line-height: 1.3 !important;
+    font-size: 10px !important;
+  }
+
+  /* Flex wrapper inside name cell must be able to shrink */
+  #fridayMealPanel #fridayMealLogTable .data-table td:first-child .flex {
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* Name text: truncate with ellipsis — same as user meal chart */
+  #fridayMealPanel #fridayMealLogTable .member-name-text {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+    display: block !important;
+    font-size: var(--font-xs) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #page-meals .meal-users-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-2) !important;
+  }
+
+  /* Friday panel: single column chips on very small screens */
+  #fridayMealPanel .friday-meal-users-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  #fridayMealPanel .friday-meal-chip {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+
+  #fridayMealPanel .friday-chip-name {
+    font-size: var(--font-xs) !important;
+  }
+
+  #fridayMealPanel .friday-panel-header {
+    padding: 10px 12px !important;
+  }
+
+  #fridayMealPanel .friday-section-block {
+    padding: 10px 12px !important;
+  }
+
+  #fridayMealPanel .friday-actions-row {
+    padding: 0 12px 12px !important;
+  }
+
+  #page-meals .meal-user-chip {
+    padding: var(--space-3) !important;
+  }
+
+  #page-meals .meal-user-chip .avatar {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: var(--font-xs) !important;
+  }
+
+  #page-meals .meal-user-chip-name {
+    font-size: var(--font-sm) !important;
+  }
+
+  #page-meals .meal-user-chip .number-spinner {
+    height: 28px !important;
+  }
+
+  #page-meals .meal-user-chip .number-spinner button {
+    width: 24px !important;
+    font-size: 14px !important;
+  }
+
+  #page-meals .meal-user-chip .number-spinner input {
+    width: 32px !important;
+  }
+
+  #page-meals .meal-date-selector>.flex {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+  }
+
+  #page-meals .meal-date-selector>.flex .btn {
+    width: 100% !important;
+  }
+}
