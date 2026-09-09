@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>Security Verification Code — Messliner</title>
+  
+  <style>
+    /* Reset & Email Client Compatibility Rules */
+    :root {
+      color-scheme: light dark;
+      supported-color-schemes: light dark;
+    }
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    table, td {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+      border-collapse: collapse !important;
+    }
+    img {
+      -ms-interpolation-mode: bicubic;
+      border: 0;
+      height: auto;
+      line-height: 100%;
+      outline: none;
+      text-decoration: none;
+    }
+    a {
+      text-decoration: none;
+    }
+    
+    /* Dark Mode Email Client Overrides */
+    @media (prefers-color-scheme: dark) {
+      body, .email-bg {
+        background-color: #090d16 !important;
+      }
+      .email-card {
+        background-color: #131b2e !important;
+        border-color: #1e293b !important;
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5) !important;
+      }
+      .text-title {
+        color: #f8fafc !important;
+      }
+      .text-body {
+        color: #94a3b8 !important;
+      }
+      .text-muted {
+        color: #64748b !important;
+      }
+      .otp-container {
+        background-color: #0a1120 !important;
+        border-color: #059669 !important;
+      }
+      .otp-code {
+        color: #34d399 !important;
+      }
+      .badge-warning {
+        background-color: #1e1b4b !important;
+        border-color: #312e81 !important;
+        color: #a5b4fc !important;
+      }
+      .footer-bg {
+        background-color: #0b111e !important;
+        border-color: #1e293b !important;
+      }
+      .divider {
+        border-color: #1e293b !important;
+      }
+    }
+
+    /* Target Apple Mail Dark Mode explicitly */
+    [data-ogsc] body, [data-ogsc] .email-bg { background-color: #090d16 !important; }
+    [data-ogsc] .email-card { background-color: #131b2e !important; border-color: #1e293b !important; }
+    [data-ogsc] .text-title { color: #f8fafc !important; }
+    [data-ogsc] .text-body { color: #94a3b8 !important; }
+    [data-ogsc] .otp-container { background-color: #0a1120 !important; border-color: #059669 !important; }
+    [data-ogsc] .otp-code { color: #34d399 !important; }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f0fdf4;" class="email-bg">
+
+  <!-- Outer Email Container Table -->
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" class="email-bg" style="background-color: #f0fdf4; padding: 40px 12px;">
+    <tr>
+      <td align="center">
+        
+        <!-- Email Main Card -->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" class="email-card" style="max-width: 520px; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #d1fae5; box-shadow: 0 15px 35px -5px rgba(16, 185, 129, 0.12), 0 5px 15px -3px rgba(0, 0, 0, 0.04);">
+          
+          <!-- Top Emerald Gradient Accent Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #14b8a6 100%); height: 8px;"></td>
+          </tr>
+
+          <!-- Header Logo & Brand -->
+          <tr>
+            <td align="center" style="padding: 38px 40px 16px 40px;">
+              <table border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <!-- Messliner Logo Box with Dining Fork & Spoon -->
+                    <div style="background: linear-gradient(135deg, #10b981 0%, #047857 100%); width: 52px; height: 52px; border-radius: 14px; box-shadow: 0 8px 18px rgba(16, 185, 129, 0.35); text-align: center;">
+                      <!-- Fork & Knife SVG Icon -->
+                      <table border="0" cellpadding="0" cellspacing="0" width="100%" height="100%">
+                        <tr>
+                          <td align="center" valign="middle">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/>
+                              <path d="M7 2v20"/>
+                              <path d="M21 15V2v0a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
+                            </svg>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <h1 class="text-title" style="margin: 14px 0 2px 0; font-size: 24px; font-weight: 800; letter-spacing: -0.6px; color: #064e3b;">Messliner</h1>
+              <span style="display: inline-block; background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #047857; text-transform: uppercase; margin-top: 4px;">
+                SECURITY VERIFICATION
+              </span>
+            </td>
+          </tr>
+
+          <!-- Main Email Body -->
+          <tr>
+            <td style="padding: 10px 36px 36px 36px; text-align: center;">
+              
+              <!-- Subject / Action Title -->
+              <h2 class="text-title" style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: #0f172a; letter-spacing: -0.3px;">
+                Verification Code
+              </h2>
+              
+              <!-- Explanatory Text -->
+              <p class="text-body" style="margin: 0 0 26px 0; font-size: 15px; line-height: 1.6; color: #475569;">
+                Use the 6-digit security code below to complete your authentication request on Messliner.
+              </p>
+
+              <!-- Prominent OTP Code Box Container -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 24px;">
+                <tr>
+                  <td align="center">
+                    <div class="otp-container" style="background-color: #f0fdf4; border: 2px dashed #34d399; border-radius: 16px; padding: 22px 28px; display: inline-block; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);">
+                      <span class="otp-code" style="font-family: 'Courier New', Courier, Monaco, Consolas, monospace; font-size: 38px; font-weight: 900; letter-spacing: 12px; color: #059669; display: block; margin-left: 12px;">
+                        {{ .Token }}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Expiration Warning Alert Box -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="center">
+                    <div class="badge-warning" style="background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px; padding: 10px 18px; display: inline-block;">
+                      <p style="margin: 0; font-size: 13px; font-weight: 600; color: #b45309; line-height: 1.4;">
+                        ⏱️ Valid for 10 minutes &middot; Never share your code with anyone
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Divider Line -->
+              <hr class="divider" style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0 24px 0;">
+
+              <!-- Security Information Note -->
+              <p class="text-muted" style="margin: 0; font-size: 13px; line-height: 1.5; color: #94a3b8;">
+                If you did not request this verification code, please ignore this email or make sure your account credentials are safe.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer Card Section -->
+          <tr>
+            <td class="footer-bg" style="background-color: #f8fafc; padding: 24px 40px; border-top: 1px solid #e2e8f0; text-align: center;">
+              <p class="text-body" style="margin: 0 0 6px 0; font-size: 13px; font-weight: 700; color: #047857;">
+                Messliner &mdash; Smart Dining & Mess Management
+              </p>
+              <p class="text-muted" style="margin: 0; font-size: 11px; color: #94a3b8; line-height: 1.4;">
+                This is an automated security message. Please do not reply directly to this email.<br>
+                &copy; 2026 Messliner. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- End Email Main Card -->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

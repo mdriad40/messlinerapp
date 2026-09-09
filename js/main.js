@@ -361,14 +361,14 @@ function initDynamicQrCode() {
   if (!qrContainer) return;
 
   // Read target URL from download button href
-  let targetUrl = downloadBtn ? downloadBtn.getAttribute('href') : '../Ml_webApp/dashboard.html';
+  let targetUrl = downloadBtn ? downloadBtn.getAttribute('href') : 'Ml_webApp/dashboard.html';
 
   // Convert relative URL to full absolute URL for mobile QR scanner compatibility
   if (targetUrl.startsWith('.')) {
     try {
       targetUrl = new URL(targetUrl, window.location.href).href;
     } catch (e) {
-      targetUrl = window.location.origin + '/dashboard.html';
+      targetUrl = window.location.origin + '/Ml_webApp/dashboard.html';
     }
   }
 

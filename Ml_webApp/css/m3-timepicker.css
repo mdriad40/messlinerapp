@@ -1,0 +1,677 @@
+/* ============================================
+   Messliner — Material 3 Clock Time Picker Modal
+   ============================================ */
+
+.m3-tp-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.m3-tp-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.m3-tp-dialog {
+  background-color: #e8eee3;
+  border-radius: 28px;
+  width: 328px;
+  padding: 24px 20px 18px 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  user-select: none;
+  -webkit-user-select: none;
+  transform: scale(0.92);
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+  font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  box-sizing: border-box;
+}
+
+.m3-tp-overlay.active .m3-tp-dialog {
+  transform: scale(1);
+}
+
+.m3-tp-header {
+  font-size: 13px;
+  font-weight: 500;
+  color: #444746;
+  margin-bottom: 18px;
+  letter-spacing: 0.1px;
+}
+
+/* Display Row */
+.m3-tp-display-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+
+.m3-tp-time-box {
+  width: 96px;
+  height: 80px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  background-color: #e2e7dc;
+  color: #1c1d1b;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.m3-tp-time-box.active {
+  background-color: #c2f4b3;
+  color: #132e0e;
+}
+
+.m3-tp-colon {
+  font-size: 38px;
+  font-weight: 400;
+  color: #1c1d1b;
+  width: 14px;
+  text-align: center;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+/* AM/PM Switcher */
+.m3-tp-ampm-group {
+  width: 52px;
+  height: 80px;
+  border-radius: 12px;
+  border: 1px solid #74796d;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.m3-tp-ampm-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #444746;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  padding: 0;
+  outline: none;
+}
+
+.m3-tp-ampm-btn:first-child {
+  border-bottom: 1px solid #74796d;
+}
+
+.m3-tp-ampm-btn.active {
+  background-color: #c7eaec;
+  color: #0b2b30;
+  font-weight: 600;
+}
+
+/* Dial Container */
+.m3-tp-dial-container {
+  width: 256px;
+  height: 256px;
+  margin: 0 auto;
+  position: relative;
+  border-radius: 50%;
+  background-color: #e2e7dc;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.m3-tp-numbers-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 256px;
+  height: 256px;
+  pointer-events: none;
+}
+
+.m3-tp-num {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1c1d1b;
+  border-radius: 50%;
+  box-sizing: border-box;
+  transition: color 0.15s ease;
+}
+
+.m3-tp-num.selected {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* SVG Pointer Hand */
+.m3-tp-clock-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 256px;
+  height: 256px;
+  pointer-events: none;
+}
+
+/* Keyboard View */
+.m3-tp-keyboard-container {
+  width: 256px;
+  height: 256px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.m3-tp-kb-inputs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.m3-tp-kb-input {
+  width: 80px;
+  height: 70px;
+  border-radius: 14px;
+  border: 2px solid #74796d;
+  background: #ffffff;
+  font-size: 36px;
+  font-weight: 600;
+  text-align: center;
+  color: #132e0e;
+  outline: none;
+}
+
+.m3-tp-kb-input:focus {
+  border-color: #2e6a26;
+  background: #f4fbf1;
+}
+
+/* Footer Actions */
+.m3-tp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.m3-tp-icon-btn {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  border-radius: 50%;
+  color: #35682d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition: background-color 0.2s ease;
+}
+
+.m3-tp-icon-btn:hover {
+  background-color: rgba(53, 104, 45, 0.12);
+}
+
+.m3-tp-action-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.m3-tp-btn {
+  background: transparent;
+  border: none;
+  color: #35682d;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.2s ease;
+}
+
+.m3-tp-btn:hover {
+  background-color: rgba(53, 104, 45, 0.12);
+}
+
+/* Custom Time Trigger Button for Cutoff Deadlines */
+.m3-time-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #0F172A;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  flex-shrink: 0;
+  height: 38px;
+  box-sizing: border-box;
+  margin-left: auto;
+}
+
+.m3-time-trigger span {
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.m3-time-trigger:hover {
+  border-color: #10B981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  background: #F8FAFC;
+  transform: translateY(-1px);
+}
+
+.m3-time-trigger svg {
+  color: #10B981;
+  flex-shrink: 0;
+}
+
+/* Responsive Cutoff Deadlines Grid & Cards */
+.meal-cutoffs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(295px, 1fr));
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.meal-cutoff-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.meal-cutoff-card-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.meal-cutoff-card-info .pro-settings-item-info {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.meal-cutoff-card-info h5 {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meal-cutoff-card-info p {
+  font-size: 0.76rem;
+  color: #64748B;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Premium Redesigned Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.toggle-slider {
+  width: 52px;
+  height: 28px;
+  background: #CBD5E1;
+  border-radius: 30px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch:hover .toggle-slider {
+  background: #94A3B8;
+}
+
+.toggle-switch input:checked+.toggle-slider {
+  background: #10B981;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15), 0 0 12px rgba(16, 185, 129, 0.25);
+}
+
+.toggle-switch input:checked+.toggle-slider::after {
+  transform: translateX(24px);
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* ============================================
+   Meals & Cut-off Times — Compact Refined Design
+   ============================================ */
+
+.meals-cutoff-card {
+  background: #ffffff;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-top: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-sizing: border-box;
+}
+
+.meals-cutoff-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.meals-cutoff-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin: 0 0 2px 0;
+}
+
+.meals-cutoff-subtitle {
+  font-size: 0.78rem;
+  color: #64748B;
+  margin: 0;
+}
+
+.meals-cutoff-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.meal-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.meal-row-item:hover {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+}
+
+.meal-row-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1E293B;
+}
+
+.meal-row-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Compact Time Trigger Box */
+.m3-time-trigger-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  height: 36px;
+  box-sizing: border-box;
+}
+
+.m3-time-trigger-pill:hover {
+  border-color: #10B981;
+  background: #F8FAFC;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.12);
+}
+
+.m3-time-trigger-pill svg {
+  color: #64748B;
+  flex-shrink: 0;
+}
+
+.m3-time-trigger-pill:hover svg {
+  color: #10B981;
+}
+
+/* Responsive Mobile Layout */
+@media (max-width: 860px) {
+  .settings-cards-row,
+  .settings-split-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .meal-row-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+  }
+  .meal-row-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* ============================================
+   Custom M3 Dropdown — Screenshot Exact Design
+   ============================================ */
+
+.m3-custom-dropdown {
+  position: relative;
+  display: inline-block;
+  user-select: none;
+}
+
+.m3-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #ECFDF5;
+  border: 1.5px solid #A7F3D0;
+  border-radius: 14px;
+  padding: 8px 16px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #047857;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.m3-dropdown-btn:hover {
+  background: #D1FAE5;
+  border-color: #34D399;
+}
+
+.m3-custom-dropdown.open .m3-dropdown-btn {
+  background: #D1FAE5;
+  border-color: #10B981;
+}
+
+.m3-dropdown-arrow {
+  color: #047857;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.m3-custom-dropdown.open .m3-dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu Popup */
+.m3-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 165px;
+  background: #ffffff;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 6px 0;
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+  display: none;
+  z-index: 1000;
+  overflow: hidden;
+  animation: m3FadeDown 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes m3FadeDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.m3-custom-dropdown.open .m3-dropdown-menu {
+  display: block;
+}
+
+/* Menu Items */
+.m3-dropdown-item {
+  padding: 10px 16px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-left: 4px solid transparent;
+}
+
+.m3-dropdown-item:hover {
+  background: #F8FAFC;
+  color: #0F172A;
+}
+
+/* Active Item with Left Green Accent Bar (Screenshot Match) */
+.m3-dropdown-item.active {
+  background: #ECFDF5;
+  color: #047857;
+  font-weight: 700;
+  border-left-color: #059669;
+}
+
+/* ============================================
+   Setting Info Badge Button & Modal Animations
+   ============================================ */
+
+.info-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.info-help-btn svg {
+  stroke: #64748B;
+  transition: stroke 0.2s ease, transform 0.2s ease;
+}
+
+.info-help-btn:hover svg {
+  stroke: #0F172A;
+  transform: scale(1.15);
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
