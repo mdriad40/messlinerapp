@@ -12,6 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initFaqSearch();
   initModalSystem();
   initMobileMenu();
+  initDynamicQrCode();
+  initScrollAnimations();
+  initIosClock();
+  initPinnedDemoScroll();
+  if (window.innerWidth <= 768) {
+    switchMockupView('mobile');
+  }
 });
 
 /* ==========================================
@@ -78,7 +85,7 @@ function initNavbarScroll() {
 
   // Smooth scroll links
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function(e) {
+    anchor.addEventListener('click', function (e) {
       const targetId = this.getAttribute('href');
       if (targetId === '#') return;
       const targetElem = document.querySelector(targetId);
@@ -97,7 +104,7 @@ function initBazarCalculator() {
   const expenseInput = document.getElementById('calcTotalExpense');
   const mealsInput = document.getElementById('calcTotalMeals');
   const userMealsInput = document.getElementById('calcUserMeals');
-  
+
   const rateDisplay = document.getElementById('calcResultRate');
   const userTotalDisplay = document.getElementById('calcResultUserTotal');
 
@@ -118,6 +125,10 @@ function initBazarCalculator() {
     const userCost = userMeals * mealRate;
 
     rateDisplay.textContent = `৳ ${mealRate.toFixed(2)} / meal`;
+    rateDisplay.classList.remove('pulse');
+    void rateDisplay.offsetWidth;
+    rateDisplay.classList.add('pulse');
+
     if (userTotalDisplay) {
       userTotalDisplay.textContent = `৳ ${userCost.toFixed(2)}`;
     }
@@ -171,10 +182,10 @@ function initFaqAccordion() {
     const question = item.querySelector('.faq-question');
     question.addEventListener('click', () => {
       const isOpen = item.classList.contains('open');
-      
+
       // Close all other items
       faqItems.forEach(i => i.classList.remove('open'));
-      
+
       if (!isOpen) {
         item.classList.add('open');
       }
@@ -269,18 +280,28 @@ function initMobileMenu() {
 
   if (!menuBtn || !navLinks) return;
 
-  menuBtn.addEventListener('click', () => {
-    const isFlex = navLinks.style.display === 'flex';
-    navLinks.style.display = isFlex ? 'none' : 'flex';
-    if (!isFlex) {
-      navLinks.style.flexDirection = 'column';
-      navLinks.style.position = 'absolute';
-      navLinks.style.top = '100%';
-      navLinks.style.left = '0';
-      navLinks.style.width = '100%';
-      navLinks.style.background = 'rgba(10, 15, 26, 0.95)';
-      navLinks.style.padding = '1.5rem';
-      navLinks.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isActive = navLinks.classList.toggle('active');
+    menuBtn.classList.toggle('active', isActive);
+    menuBtn.textContent = isActive ? '✕' : '☰';
+  });
+
+  // Close mobile menu when clicking any link inside it
+  navLinks.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      navLinks.classList.remove('active');
+      menuBtn.classList.remove('active');
+      menuBtn.textContent = '☰';
+    });
+  });
+
+  // Close mobile menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!navLinks.contains(e.target) && !menuBtn.contains(e.target)) {
+      navLinks.classList.remove('active');
+      menuBtn.classList.remove('active');
+      menuBtn.textContent = '☰';
     }
   });
 }
@@ -329,3 +350,179 @@ function showToast(message) {
     toast.style.transform = 'translateY(20px)';
   }, 3500);
 }
+
+/* ==========================================
+   9. DYNAMIC STYLISH QR CODE GENERATOR
+   ========================================== */
+function initDynamicQrCode() {
+  const downloadBtn = document.getElementById('ctaDownloadBtn');
+  const qrContainer = document.getElementById('qrCodeContainer');
+
+  if (!qrContainer) return;
+
+  // Read target URL from download button href
+  let targetUrl = downloadBtn ? downloadBtn.getAttribute('href') : '../Ml_webApp/dashboard.html';
+
+  // Convert relative URL to full absolute URL for mobile QR scanner compatibility
+  if (targetUrl.startsWith('.')) {
+    try {
+      targetUrl = new URL(targetUrl, window.location.href).href;
+    } catch (e) {
+      targetUrl = window.location.origin + '/dashboard.html';
+    }
+  }
+
+  // Generate stylish SVG QR Code with rounded finder patterns and capsule modules
+  if (typeof window.generateStylishQrSvg === 'function') {
+    qrContainer.innerHTML = window.generateStylishQrSvg(targetUrl, '#0f172a');
+  } else {
+    const qrImg = document.getElementById('ctaQrCodeImg');
+    if (qrImg) {
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(targetUrl)}&color=0f172a&bgcolor=ffffff`;
+    }
+  }
+}
+
+/* ==========================================
+   10. INTERSECTION OBSERVER SCROLL REVEAL ANIMATIONS
+   ========================================== */
+function initScrollAnimations() {
+  const animatedElements = document.querySelectorAll('[data-animate]');
+
+  if (!('IntersectionObserver' in window)) {
+    animatedElements.forEach(el => el.classList.add('is-visible'));
+    return;
+  }
+
+  const observerOptions = {
+    root: null,
+    rootMargin: '0px 0px -50px 0px',
+    threshold: 0.1
+  };
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const delay = el.getAttribute('data-delay') || 0;
+
+        setTimeout(() => {
+          el.classList.add('is-visible');
+        }, parseInt(delay, 10));
+
+        obs.unobserve(el);
+      }
+    });
+  }, observerOptions);
+
+  animatedElements.forEach(el => observer.observe(el));
+}
+
+/* ==========================================
+   11. LIVE DEMO MOCKUP DEVICE SWITCHER
+   ========================================== */
+function switchMockupView(mode) {
+  const desktopWrapper = document.getElementById('desktopMockupWrapper');
+  const phoneWrapper = document.getElementById('phoneMockupWrapper');
+  const btnDesktop = document.getElementById('btnViewDesktop');
+  const btnMobile = document.getElementById('btnViewMobile');
+
+  if (!desktopWrapper || !phoneWrapper) return;
+
+  if (mode === 'mobile') {
+    desktopWrapper.style.display = 'none';
+    phoneWrapper.style.display = 'block';
+    if (btnDesktop) btnDesktop.classList.remove('active');
+    if (btnMobile) btnMobile.classList.add('active');
+  } else {
+    desktopWrapper.style.display = 'block';
+    phoneWrapper.style.display = 'none';
+    if (btnDesktop) btnDesktop.classList.add('active');
+    if (btnMobile) btnMobile.classList.remove('active');
+  }
+}
+
+// Auto-switch to Mobile view on smaller screens
+window.addEventListener('resize', () => {
+  if (window.innerWidth <= 768) {
+    switchMockupView('mobile');
+  }
+});
+
+/* ==========================================
+   12. REALTIME IOS STATUS BAR CLOCK
+   ========================================== */
+function initIosClock() {
+  const clockEl = document.getElementById('iosClockTime');
+  if (!clockEl) return;
+
+  function updateTime() {
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    hours = hours % 12 || 12;
+    clockEl.textContent = `${hours}:${minutes}`;
+  }
+
+  updateTime();
+  setInterval(updateTime, 10000);
+}
+
+/* ==========================================
+   13. PINNED LIVE DEMO SCROLL-LINKED SHOWCASE
+   ========================================== */
+function initPinnedDemoScroll() {
+  const pinTrack = document.getElementById('demoScrollPinTrack');
+  const pinnedContent = document.getElementById('demoPinnedContent');
+  const phoneWrapper = document.getElementById('phoneMockupWrapper');
+
+  if (!pinTrack || !pinnedContent) return;
+
+  let ticking = false;
+
+  function getActiveContent() {
+    const isMobileVisible = phoneWrapper && phoneWrapper.style.display !== 'none';
+    return isMobileVisible
+      ? document.querySelector('.phone-scroll-content')
+      : document.querySelector('.mockup-main-content');
+  }
+
+  function updateMockupScroll() {
+    const activeContent = getActiveContent();
+    if (!activeContent) return;
+
+    const trackRect = pinTrack.getBoundingClientRect();
+    const stickyTop = window.innerWidth <= 768 ? 65 : 80;
+    const windowHeight = window.innerHeight;
+
+    // Total distance the track scrolls while pinned
+    const pinDistance = pinTrack.offsetHeight - (windowHeight - stickyTop);
+    if (pinDistance <= 0) return;
+
+    const scrolledDistance = stickyTop - trackRect.top;
+    let progress = scrolledDistance / pinDistance;
+    progress = Math.max(0, Math.min(1, progress));
+
+    const maxScroll = activeContent.scrollHeight - activeContent.clientHeight;
+    if (maxScroll > 0) {
+      activeContent.scrollTop = Math.round(progress * maxScroll);
+    }
+  }
+
+  function onScrollOrResize() {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        updateMockupScroll();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+
+  window.addEventListener('scroll', onScrollOrResize, { passive: true });
+  window.addEventListener('resize', onScrollOrResize, { passive: true });
+
+  // Initial sync
+  updateMockupScroll();
+}
+

@@ -55,14 +55,14 @@
       </ul>
 
       <div class="nav-actions">
-        <a href="https://mdriad40.github.io/messlinerapp/" target="_blank" class="btn btn-glass btn-sm">
+        <a href="../Ml_webApp/dashboard.html" target="_blank" class="btn btn-glass btn-sm">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="2" y1="12" x2="22" y2="12"></line>
             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
           </svg>
-          Open App
+          Login
         </a>
         <button class="btn btn-primary btn-sm" onclick="window.scrollTo({ top: 0, behavior: 'smooth' });">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -82,7 +82,7 @@
        ========================================== -->
   <section class="hero" id="hero">
     <div class="container">
-      <div class="hero-badge-container">
+      <div class="hero-badge-container" data-animate="fade-down">
         <span class="glass-pill">
           <span
             style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; animation: pulseGlow 1.5s infinite;"></span>
@@ -90,18 +90,18 @@
         </span>
       </div>
 
-      <h1 class="hero-title">
+      <h1 class="hero-title" data-animate="fade-up" data-delay="100">
         Smart Mess Management with <br>
         <span class="text-gradient typewriter-text" id="typewriterTarget">Zero Billing Disputes</span><span
           class="typewriter-cursor">|</span>
       </h1>
 
-      <p class="hero-description">
+      <p class="hero-description" data-animate="fade-up" data-delay="200">
         Automate daily meal counts, track shared bazar expenses, and compute real-time <strong>Bazar Ratio (Meal
           Rate)</strong> with 100% financial transparency across Web, Mobile, and Desktop.
       </p>
 
-      <div class="hero-actions">
+      <div class="hero-actions" data-animate="fade-up" data-delay="300">
         <button class="btn btn-primary btn-lg" onclick="window.scrollTo({ top: 0, behavior: 'smooth' });">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -110,7 +110,7 @@
           </svg>
           Download the App
         </button>
-        <a href="https://mdriad40.github.io/messlinerapp/" target="_blank" class="btn btn-glass btn-lg">
+        <a href="../Ml_webApp/dashboard.html" target="_blank" class="btn btn-glass btn-lg">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
@@ -123,123 +123,859 @@
 
       <!-- Stats Grid -->
       <div class="hero-stats">
-        <div class="glass-panel stat-card">
+        <div class="glass-panel stat-card" data-animate="zoom-in" data-delay="100">
           <div class="stat-number">50,000+</div>
           <div class="stat-label">Meals Tracked</div>
         </div>
-        <div class="glass-panel stat-card">
+        <div class="glass-panel stat-card" data-animate="zoom-in" data-delay="200">
           <div class="stat-number">৳ 0.00</div>
           <div class="stat-label">Calculation Errors</div>
         </div>
-        <div class="glass-panel stat-card">
+        <div class="glass-panel stat-card" data-animate="zoom-in" data-delay="300">
           <div class="stat-number">99.9%</div>
           <div class="stat-label">System Uptime</div>
         </div>
-        <div class="glass-panel stat-card">
+        <div class="glass-panel stat-card" data-animate="zoom-in" data-delay="400">
           <div class="stat-number">4.9★</div>
           <div class="stat-label">User Rating</div>
         </div>
       </div>
 
-      <!-- App Interactive Preview Glass Frame -->
-      <div class="app-mockup-wrapper">
-        <div class="app-mockup-frame">
-          <div class="mockup-header">
-            <div class="mockup-dots">
-              <span class="mockup-dot dot-red"></span>
-              <span class="mockup-dot dot-yellow"></span>
-              <span class="mockup-dot dot-green"></span>
-            </div>
-            <div class="mockup-title-bar">
-              🔒 https://mdriad40.github.io/messlinerapp/
-            </div>
-            <div style="font-size:0.75rem; color:var(--text-subtle);">LIVE DEMO PREVIEW</div>
+      <!-- Scroll Pin Track for Live Demo Showcase -->
+      <div class="demo-scroll-pin-track" id="demoScrollPinTrack">
+        <div class="demo-pinned-content" id="demoPinnedContent">
+          <!-- Device Switcher Bar -->
+          <div class="demo-switcher-bar" data-animate="fade-up">
+            <button class="demo-switch-btn active" id="btnViewDesktop" onclick="switchMockupView('desktop')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              Desktop Dashboard
+            </button>
+
+            <button class="demo-switch-btn" id="btnViewMobile" onclick="switchMockupView('mobile')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                <line x1="12" y1="18" x2="12.01" y2="18"></line>
+              </svg>
+              Mobile App View
+            </button>
           </div>
-          <div class="mockup-body">
-            <!-- Sidebar -->
-            <div class="mockup-sidebar">
-              <div class="sidebar-item active">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="14" width="7" height="7"></rect>
-                  <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                Dashboard
+
+          <!-- App Interactive Preview Glass Frame (Desktop) -->
+          <div class="app-mockup-wrapper" id="desktopMockupWrapper" data-animate="zoom-in" data-delay="450">
+            <div class="app-mockup-frame">
+              <div class="mockup-header">
+                <div class="mockup-dots">
+                  <span class="mockup-dot dot-red"></span>
+                  <span class="mockup-dot dot-yellow"></span>
+                  <span class="mockup-dot dot-green"></span>
+                </div>
+                <div class="mockup-title-bar">
+                  🔒 https://messliner.netlify.app/dashboard
+                </div>
+                <div style="font-size:0.75rem; color:var(--text-subtle); font-weight:600;">LIVE DEMO PREVIEW</div>
               </div>
-              <div class="sidebar-item">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                </svg>
-                Daily Meals
-              </div>
-              <div class="sidebar-item">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                </svg>
-                Bazar Expenses
-              </div>
-              <div class="sidebar-item">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                </svg>
-                Members Ledger
-              </div>
-              <div class="sidebar-item">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
-                Analytics
+
+              <div class="mockup-body">
+                <!-- Sidebar Navigation -->
+                <div class="mockup-sidebar">
+                  <div class="sidebar-brand-box">
+                    <img src="assets/messLiner-logo.png" alt="Messliner Logo" class="sidebar-brand-logo"
+                      onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'80\' font-size=\'80\'>🍽</text></svg>'">
+                    <div>
+                      <div class="sidebar-brand-title">Petuk Pandamic</div>
+                      <div class="sidebar-brand-sub">Admin Panel</div>
+                    </div>
+                  </div>
+
+                  <div class="sidebar-menu-list">
+                    <div class="sidebar-item active">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                      </svg>
+                      <span>Dashboard</span>
+                    </div>
+
+                    <div class="sidebar-item">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                      <span>AI Assistant</span>
+                    </div>
+
+                    <div class="sidebar-section-label">MANAGEMENT</div>
+
+                    <div class="sidebar-item">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      </svg>
+                      <span>Users</span>
+                      <span class="badge-count">16</span>
+                    </div>
+
+                    <div class="sidebar-item">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"></path>
+                        <path d="M7 2v20"></path>
+                        <path d="M21 15V2v0a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path>
+                      </svg>
+                      <span>Meals</span>
+                    </div>
+
+                    <div class="sidebar-item">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                      </svg>
+                      <span>Finance</span>
+                    </div>
+
+                    <div class="sidebar-item">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                      </svg>
+                      <span>Settings</span>
+                    </div>
+
+                    <div class="sidebar-item">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"></path>
+                        <path d="M7 2v20"></path>
+                        <path d="M21 15V2v0a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path>
+                      </svg>
+                      <span>My Meal</span>
+                    </div>
+
+                    <div class="sidebar-item">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                      <span>AI Control</span>
+                    </div>
+
+                    <div class="sidebar-section-label">MORE</div>
+
+                    <div class="sidebar-item">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="19" cy="12" r="1"></circle>
+                        <circle cx="5" cy="12" r="1"></circle>
+                      </svg>
+                      <span>More Menu</span>
+                    </div>
+                  </div>
+
+                  <!-- Sidebar User Profile Footer -->
+                  <div class="sidebar-user-footer">
+                    <div class="user-avatar-bubble">MR</div>
+                    <div style="flex:1; min-width:0;">
+                      <div class="user-name-text">Md. Riad Hasan</div>
+                      <div class="user-role-sub">Meal Manager</div>
+                    </div>
+                    <div style="font-size:0.75rem; color:#64748b;">▾</div>
+                  </div>
+                </div>
+
+                <!-- Main Dashboard Area -->
+                <div class="mockup-main-content">
+                  <!-- Top Greeting Header Bar -->
+                  <div class="mockup-top-header">
+                    <div>
+                      <span class="greeting-time">Good night,</span>
+                      <h3 class="greeting-user">Md. Riad Hasan</h3>
+                    </div>
+                    <button class="mockup-bell-btn" title="Notifications">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Monthly Overview Block -->
+                  <div class="mockup-block-wrapper">
+                    <div class="block-header-flex">
+                      <div class="block-title-wrap">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                          <line x1="16" y1="2" x2="16" y2="6"></line>
+                          <line x1="8" y1="2" x2="8" y2="6"></line>
+                          <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <strong>Monthly Overview</strong>
+                      </div>
+                      <div class="filter-dropdowns">
+                        <span class="mockup-filter-pill">August ▾</span>
+                        <span class="mockup-filter-pill">2026 ▾</span>
+                      </div>
+                    </div>
+
+                    <!-- 3x3 Stat Cards Grid -->
+                    <div class="dash-stats-grid">
+                      <div class="dash-stat-card">
+                        <div class="stat-icon-box box-green">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                          </svg>
+                        </div>
+                        <div>
+                          <div class="dash-stat-label">Total Deposit</div>
+                          <div class="dash-stat-val">৳37,183.1</div>
+                        </div>
+                      </div>
+
+                      <div class="dash-stat-card">
+                        <div class="stat-icon-box box-cyan">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+                            <path d="M7 2v20"></path>
+                            <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path>
+                          </svg>
+                        </div>
+                        <div>
+                          <div class="dash-stat-label">Total Meals</div>
+                          <div class="dash-stat-val">538</div>
+                        </div>
+                      </div>
+
+                      <div class="dash-stat-card">
+                        <div class="stat-icon-box box-teal">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                          </svg>
+                        </div>
+                        <div>
+                          <div class="dash-stat-label">Meal Rate</div>
+                          <div class="dash-stat-val text-emerald">৳53.92</div>
+                        </div>
+                      </div>
+
+                      <div class="dash-stat-card">
+                        <div class="stat-icon-box box-amber">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                          </svg>
+                        </div>
+                        <div>
+                          <div class="dash-stat-label">Total Bazar</div>
+                          <div class="dash-stat-val">৳29,008</div>
+                        </div>
+                      </div>
+
+                      <div class="dash-stat-card">
+                        <div class="stat-icon-box box-orange">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                          </svg>
+                        </div>
+                        <div>
+                          <div class="dash-stat-label">Total Meal Cost</div>
+                          <div class="dash-stat-val">৳29,008</div>
+                        </div>
+                      </div>
+
+                      <div class="dash-stat-card">
+                        <div class="stat-icon-box box-yellow">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                          </svg>
+                        </div>
+                        <div>
+                          <div class="dash-stat-label">Total Other Cost</div>
+                          <div class="dash-stat-val">৳1,730</div>
+                        </div>
+                      </div>
+
+                      <div class="dash-stat-card">
+                        <div class="stat-icon-box box-red">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="11" width="14" height="2" rx="1"></rect>
+                          </svg>
+                        </div>
+                        <div>
+                          <div class="dash-stat-label">Total Deduction</div>
+                          <div class="dash-stat-val">৳5,498.13</div>
+                        </div>
+                      </div>
+
+                      <div class="dash-stat-card">
+                        <div class="stat-icon-box box-rose">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                          </svg>
+                        </div>
+                        <div>
+                          <div class="dash-stat-label">Total Cost</div>
+                          <div class="dash-stat-val">৳30,738</div>
+                        </div>
+                      </div>
+
+                      <div class="dash-stat-card">
+                        <div class="stat-icon-box box-blue">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                          </svg>
+                        </div>
+                        <div>
+                          <div class="dash-stat-label">Net Balance</div>
+                          <div class="dash-stat-val text-cyan">৳946.97</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Quick Actions Row -->
+                  <div class="mockup-block-wrapper">
+                    <div class="block-title-simple">
+                      <strong>Quick Actions</strong>
+                    </div>
+                    <div class="quick-actions-row">
+                      <div class="action-btn-item">
+                        <div class="action-icon-circle bg-mint">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                            <line x1="17" y1="11" x2="23" y2="11"></line>
+                          </svg>
+                        </div>
+                        <span>Add Member</span>
+                      </div>
+
+                      <div class="action-btn-item">
+                        <div class="action-icon-circle bg-cyan">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+                            <path d="M7 2v20"></path>
+                            <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path>
+                          </svg>
+                        </div>
+                        <span>Add Meals</span>
+                      </div>
+
+                      <div class="action-btn-item">
+                        <div class="action-icon-circle bg-yellow">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                          </svg>
+                        </div>
+                        <span>Add Deposit</span>
+                      </div>
+
+                      <div class="action-btn-item">
+                        <div class="action-icon-circle bg-orange">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                          </svg>
+                        </div>
+                        <span>Other Costing</span>
+                      </div>
+
+                      <div class="action-btn-item">
+                        <div class="action-icon-circle bg-red">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                          </svg>
+                        </div>
+                        <span>Add Bazar</span>
+                      </div>
+
+                      <div class="action-btn-item">
+                        <div class="action-icon-circle bg-rose">
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                          </svg>
+                        </div>
+                        <span>Finance Fix</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Member Statistics Table Block -->
+                  <div class="mockup-block-wrapper">
+                    <div class="block-header-flex" style="margin-bottom:0.85rem;">
+                      <strong style="font-size:0.95rem;">Member Statistics</strong>
+                      <button class="mockup-btn-export">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="7 10 12 15 17 10"></polyline>
+                          <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Export Statistics
+                      </button>
+                    </div>
+
+                    <div class="dash-table-container">
+                      <table class="dash-mockup-table">
+                        <thead>
+                          <tr>
+                            <th>MEMBER</th>
+                            <th>TOTAL MEALS</th>
+                            <th>DEPOSIT</th>
+                            <th>MEAL COST</th>
+                            <th>BALANCE</th>
+                            <th>STATUS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>
+                              <div class="table-member-cell">
+                                <span class="member-avatar av-green">MR</span>
+                                <strong>Md. Riad Hasan</strong>
+                              </div>
+                            </td>
+                            <td>18</td>
+                            <td>৳1,500</td>
+                            <td>৳970.53</td>
+                            <td style="color:#059669; font-weight:700;">৳248.57</td>
+                            <td><span class="dash-pill-status paid">Paid</span></td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <div class="table-member-cell">
+                                <span class="member-avatar av-cyan">JD</span>
+                                <strong>John Doe</strong>
+                              </div>
+                            </td>
+                            <td>38</td>
+                            <td>৳3,020</td>
+                            <td>৳2,048.89</td>
+                            <td style="color:#059669; font-weight:700;">৳446.77</td>
+                            <td><span class="dash-pill-status paid">Paid</span></td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <div class="table-member-cell">
+                                <span class="member-avatar av-amber">AS</span>
+                                <strong>Alex Smith</strong>
+                              </div>
+                            </td>
+                            <td>43</td>
+                            <td>৳2,850</td>
+                            <td>৳2,318.48</td>
+                            <td style="color:#dc2626; font-weight:700;">-৳226.24</td>
+                            <td><span class="dash-pill-status due">Due</span></td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <div class="table-member-cell">
+                                <span class="member-avatar av-purple">MB</span>
+                                <strong>Michael Brown</strong>
+                              </div>
+                            </td>
+                            <td>29</td>
+                            <td>৳1,500</td>
+                            <td>৳1,563.63</td>
+                            <td style="color:#dc2626; font-weight:700;">-৳344.53</td>
+                            <td><span class="dash-pill-status due">Due</span></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
 
-            <!-- Main Content Grid -->
-            <div class="mockup-main-content">
-              <div class="mockup-cards-grid">
-                <div class="mockup-card">
-                  <div style="font-size:0.8rem; color:var(--text-muted);">Current Meal Rate</div>
-                  <div class="mockup-card-val text-gradient">৳ 58.40</div>
-                  <div style="font-size:0.75rem; color:#10b981;">Live Bazar Ratio</div>
-                </div>
-                <div class="mockup-card">
-                  <div style="font-size:0.8rem; color:var(--text-muted);">Total Mess Expense</div>
-                  <div class="mockup-card-val">৳ 24,520</div>
-                  <div style="font-size:0.75rem; color:var(--text-subtle);">420 Total Meals</div>
-                </div>
-                <div class="mockup-card">
-                  <div style="font-size:0.8rem; color:var(--text-muted);">Deposit Balance</div>
-                  <div class="mockup-card-val" style="color:#06b6d4;">৳ 31,000</div>
-                  <div style="font-size:0.75rem; color:#10b981;">Surplus: ৳ 6,480</div>
-                </div>
-              </div>
+          <!-- Mobile Phone Frame View Container (iPhone 16 Pro Real Mockup) -->
+          <div class="phone-mockup-wrapper" id="phoneMockupWrapper" style="display:none;" data-animate="zoom-in">
+            <div class="iphone-chassis">
+              <!-- iPhone Side Hardware Buttons -->
+              <div class="iphone-btn iphone-btn-action" title="Action Button"></div>
+              <div class="iphone-btn iphone-btn-vol-up" title="Volume Up"></div>
+              <div class="iphone-btn iphone-btn-vol-down" title="Volume Down"></div>
+              <div class="iphone-btn iphone-btn-power" title="Power Button"></div>
 
-              <!-- Live Ledger Simulation Table -->
-              <div class="mockup-table-glass">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-                  <strong style="font-size:0.9rem;">Recent Mess Member Activity</strong>
-                  <span class="glass-pill" style="font-size:0.75rem; padding:0.2rem 0.6rem;">Realtime Sync</span>
-                </div>
-                <div class="table-row">
-                  <div>
-                    <strong>Sabbir Ahmed</strong>
-                    <div style="font-size:0.75rem; color:var(--text-subtle);">Lunch + Dinner (2 Meals)</div>
+              <!-- iPhone Antenna Lines -->
+              <div class="iphone-antenna iphone-antenna-top-left"></div>
+              <div class="iphone-antenna iphone-antenna-top-right"></div>
+              <div class="iphone-antenna iphone-antenna-bottom-left"></div>
+              <div class="iphone-antenna iphone-antenna-bottom-right"></div>
+
+              <!-- Screen Inner Frame Bezel -->
+              <div class="iphone-screen-bezel">
+                <div class="phone-screen-body">
+                  <!-- Authentic iOS Status Bar with Dynamic Island -->
+                  <div class="ios-status-bar">
+                    <!-- Left: iOS Time -->
+                    <div class="ios-status-left">
+                      <span class="ios-status-time" id="iosClockTime">9:41</span>
+                    </div>
+
+                    <!-- Center: iPhone Dynamic Island Pill -->
+                    <div class="ios-dynamic-island" title="Dynamic Island">
+                      <div class="ios-camera-lens">
+                        <div class="ios-lens-glare"></div>
+                      </div>
+                      <div class="ios-sensor-dot"></div>
+                    </div>
+
+                    <!-- Right: iOS System Status Icons -->
+                    <div class="ios-status-right">
+                      <div class="ios-icon ios-signal-bars" title="Cellular 5G Signal">
+                        <span class="bar bar-1"></span>
+                        <span class="bar bar-2"></span>
+                        <span class="bar bar-3"></span>
+                        <span class="bar bar-4"></span>
+                      </div>
+                      <span class="ios-network-badge">5G</span>
+                      <div class="ios-icon ios-wifi-icon" title="Wi-Fi Connected">
+                        <svg width="14" height="10" viewBox="0 0 16 12" fill="none">
+                          <path
+                            d="M8 9.5C8.82843 9.5 9.5 8.82843 9.5 8C9.5 7.17157 8.82843 6.5 8 6.5C7.17157 6.5 6.5 7.17157 6.5 8C6.5 8.82843 7.17157 9.5 8 9.5Z"
+                            fill="#0f172a" />
+                          <path d="M4.5 5.5C5.55 4.5 6.7 4 8 4C9.3 4 10.45 4.5 11.5 5.5" stroke="#0f172a"
+                            stroke-width="1.5" stroke-linecap="round" />
+                          <path d="M2 3C3.7 1.5 5.75 0.7 8 0.7C10.25 0.7 12.3 1.5 14 3" stroke="#0f172a"
+                            stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                      </div>
+                      <div class="ios-icon ios-battery" title="Battery 92%">
+                        <div class="ios-battery-shell">
+                          <div class="ios-battery-level" style="width: 88%;"></div>
+                        </div>
+                        <div class="ios-battery-cap"></div>
+                      </div>
+                    </div>
                   </div>
-                  <span style="color:#10b981; font-weight:600; font-family:var(--font-mono);">+৳ 116.80</span>
-                </div>
-                <div class="table-row">
-                  <div>
-                    <strong>Tanvir Hossain</strong>
-                    <div style="font-size:0.75rem; color:var(--text-subtle);">Added Bazar Expense</div>
+                  <!-- Mobile Top Header -->
+                  <div class="phone-header-bar">
+                    <div class="phone-header-left">
+                      <button class="phone-menu-btn" title="Menu">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f172a" stroke-width="2.5"
+                          stroke-linecap="round">
+                          <line x1="3" y1="6" x2="21" y2="6"></line>
+                          <line x1="3" y1="12" x2="21" y2="12"></line>
+                          <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                      </button>
+                      <div>
+                        <span class="greeting-time">Good night,</span>
+                        <h3 class="greeting-user" style="font-size:1.05rem; margin-top:-2px;">Md. Riad Hasan</h3>
+                      </div>
+                    </div>
+                    <button class="mockup-bell-btn">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                      </svg>
+                    </button>
                   </div>
-                  <span style="color:#06b6d4; font-weight:600; font-family:var(--font-mono);">Deposit ৳ 2,500</span>
-                </div>
-                <div class="table-row">
-                  <div>
-                    <strong>Rakib Hasan</strong>
-                    <div style="font-size:0.75rem; color:var(--text-subtle);">Guest Meal (1 Extra)</div>
+
+                  <div class="phone-scroll-content">
+                    <!-- Monthly Overview Card -->
+                    <div class="phone-overview-card">
+                      <div class="overview-header-group">
+                        <div class="block-title-wrap">
+                          <div class="overview-icon-bubble">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#047857"
+                              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                              <line x1="16" y1="2" x2="16" y2="6"></line>
+                              <line x1="8" y1="2" x2="8" y2="6"></line>
+                              <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                          </div>
+                          <strong class="overview-main-title">Monthly Overview</strong>
+                        </div>
+                        <div class="filter-dropdowns">
+                          <span class="mockup-filter-pill">August ▾</span>
+                          <span class="mockup-filter-pill">2026 ▾</span>
+                        </div>
+                      </div>
+
+                      <div class="phone-stats-container">
+                        <div class="phone-stats-grid">
+                          <div class="dash-stat-card">
+                            <div class="stat-icon-box box-green">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                              </svg>
+                            </div>
+                            <div>
+                              <div class="dash-stat-label">TOTAL DEPOSIT</div>
+                              <div class="dash-stat-val" style="font-size:1.05rem;">৳37,183.1</div>
+                            </div>
+                          </div>
+
+                          <div class="dash-stat-card">
+                            <div class="stat-icon-box box-cyan">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+                                <path d="M7 2v20"></path>
+                                <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path>
+                              </svg>
+                            </div>
+                            <div>
+                              <div class="dash-stat-label">TOTAL MEALS</div>
+                              <div class="dash-stat-val" style="font-size:1.05rem;">538</div>
+                            </div>
+                          </div>
+
+                          <div class="dash-stat-card">
+                            <div class="stat-icon-box box-amber">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                              </svg>
+                            </div>
+                            <div>
+                              <div class="dash-stat-label">BAZAR COST</div>
+                              <div class="dash-stat-val" style="font-size:1.05rem;">৳29,008</div>
+                            </div>
+                          </div>
+
+                          <div class="dash-stat-card">
+                            <div class="stat-icon-box box-teal">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                              </svg>
+                            </div>
+                            <div>
+                              <div class="dash-stat-label">MEAL RATE</div>
+                              <div class="dash-stat-val text-emerald" style="font-size:1.05rem;">৳53.92</div>
+                            </div>
+                          </div>
+
+                          <div class="dash-stat-card">
+                            <div class="stat-icon-box box-orange">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="12" y1="18" x2="12" y2="12"></line>
+                                <line x1="9" y1="15" x2="15" y2="15"></line>
+                              </svg>
+                            </div>
+                            <div>
+                              <div class="dash-stat-label">MEAL COST</div>
+                              <div class="dash-stat-val" style="font-size:1.05rem;">৳29,008</div>
+                            </div>
+                          </div>
+
+                          <div class="dash-stat-card">
+                            <div class="stat-icon-box box-yellow">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                <line x1="8" y1="12" x2="16" y2="12"></line>
+                              </svg>
+                            </div>
+                            <div>
+                              <div class="dash-stat-label">OTHER COST</div>
+                              <div class="dash-stat-val" style="font-size:1.05rem;">৳1,730</div>
+                            </div>
+                          </div>
+
+                          <div class="dash-stat-card">
+                            <div class="stat-icon-box box-red">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="5" y="11" width="14" height="2" rx="1"></rect>
+                              </svg>
+                            </div>
+                            <div>
+                              <div class="dash-stat-label">TOTAL DEDUCTION</div>
+                              <div class="dash-stat-val" style="font-size:1.05rem;">৳5,498.13</div>
+                            </div>
+                          </div>
+
+                          <div class="dash-stat-card">
+                            <div class="stat-icon-box box-rose">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                              </svg>
+                            </div>
+                            <div>
+                              <div class="dash-stat-label">TOTAL COST</div>
+                              <div class="dash-stat-val" style="font-size:1.05rem;">৳30,738</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Solid Emerald Net Balance Banner -->
+                        <div class="phone-emerald-banner">
+                          <div class="emerald-banner-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                            </svg>
+                          </div>
+                          <div>
+                            <div class="emerald-banner-label">NET BALANCE</div>
+                            <div class="emerald-banner-val">৳946.97</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Quick Actions Block (2-Column Grid) -->
+                    <div class="phone-actions-block">
+                      <h4 style="font-size:1.1rem; font-weight:800; color:#0f172a; margin-bottom:0.85rem;">Quick Actions
+                      </h4>
+                      <div class="phone-actions-grid">
+                        <div class="phone-action-card">
+                          <div class="action-circle-lg bg-mint">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                              <circle cx="8.5" cy="7" r="4"></circle>
+                              <line x1="20" y1="8" x2="20" y2="14"></line>
+                              <line x1="17" y1="11" x2="23" y2="11"></line>
+                            </svg>
+                          </div>
+                          <span>Add Member</span>
+                        </div>
+
+                        <div class="phone-action-card">
+                          <div class="action-circle-lg bg-cyan">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+                              <path d="M7 2v20"></path>
+                              <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path>
+                            </svg>
+                          </div>
+                          <span>Add Meals</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <span style="color:#f59e0b; font-weight:600; font-family:var(--font-mono);">+৳ 58.40</span>
+
+                  <!-- Bottom Fixed Mobile Navigation Bar -->
+                  <div class="phone-bottom-nav">
+                    <div class="phone-nav-item active">
+                      <div class="active-indicator-bar"></div>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                      </svg>
+                      <span>Home</span>
+                    </div>
+
+                    <div class="phone-nav-item">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+                        <path d="M7 2v20"></path>
+                        <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path>
+                      </svg>
+                      <span>Meals</span>
+                    </div>
+
+                    <div class="phone-nav-item">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                      </svg>
+                      <span>Finance</span>
+                    </div>
+
+                    <div class="phone-nav-item">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+                        <path d="M7 2v20"></path>
+                        <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path>
+                      </svg>
+                      <span>My Meal</span>
+                    </div>
+
+                    <div class="phone-nav-item">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      <span>Profile</span>
+                    </div>
+                  </div>
+                  <!-- iPhone Home Bar Indicator -->
+                  <div class="iphone-home-bar-wrap">
+                    <div class="iphone-home-bar"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -252,9 +988,9 @@
   <!-- ==========================================
        WHAT EXACTLY IS MESSLINER? SECTION
        ========================================== -->
-  <section class="section" id="about" style="padding-bottom:3.5rem;">
+  <section class="section" id="about" style="padding-top:1.5rem; padding-bottom:3.5rem;">
     <div class="container">
-      <div class="section-header">
+      <div class="section-header" data-animate="fade-up">
         <span class="glass-pill">Everything You Need to Know</span>
         <h2 class="section-title">What Exactly is <span class="text-gradient">Messliner</span>?</h2>
         <p class="section-subtitle">
@@ -265,7 +1001,7 @@
 
       <div class="overview-grid">
         <div class="overview-card-list">
-          <div class="glass-panel overview-item-card">
+          <div class="glass-panel overview-item-card" data-animate="fade-right" data-delay="100">
             <div class="overview-icon-box">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
@@ -278,7 +1014,7 @@
             </div>
           </div>
 
-          <div class="glass-panel overview-item-card">
+          <div class="glass-panel overview-item-card" data-animate="fade-right" data-delay="200">
             <div class="overview-icon-box"
               style="background:rgba(6,182,212,0.15); border-color:rgba(6,182,212,0.3); color:#06b6d4;">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -295,7 +1031,7 @@
             </div>
           </div>
 
-          <div class="glass-panel overview-item-card">
+          <div class="glass-panel overview-item-card" data-animate="fade-right" data-delay="300">
             <div class="overview-icon-box"
               style="background:rgba(99,102,241,0.15); border-color:rgba(99,102,241,0.3); color:#6366f1;">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -313,7 +1049,8 @@
         </div>
 
         <!-- Right Side Glass Highlight Card -->
-        <div class="glass-panel" style="padding:2.5rem; text-align:center; position:relative; overflow:hidden;">
+        <div class="glass-panel" data-animate="fade-left" data-delay="200"
+          style="padding:2.5rem; text-align:center; position:relative; overflow:hidden;">
           <div
             style="width:70px; height:70px; border-radius:50%; background:var(--gradient-emerald-cyan); display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem auto; font-size:2rem;">
             🍽
@@ -323,8 +1060,7 @@
             Managing a dining group shouldn't lead to arguments over money or lost receipts. Messliner acts as an
             impartial, automated accountant for your mess — keeping every taka transparent and accounted for.
           </p>
-          <a href="https://mdriad40.github.io/messlinerapp/" target="_blank" class="btn btn-primary"
-            style="width:100%;">
+          <a href="../Ml_webApp/dashboard.html" target="_blank" class="btn btn-primary" style="width:100%;">
             Explore Web Application
           </a>
         </div>
@@ -335,47 +1071,49 @@
   <!-- ==========================================
        BAZER RATIO SPOTLIGHT & INTERACTIVE CALCULATOR
        ========================================== -->
-  <section class="section" id="bazar-ratio" style="padding-top:3.5rem; padding-bottom:3.5rem;">
+  <section class="section" id="bazar-ratio" style="padding-top:3rem; padding-bottom:3rem;">
     <div class="container">
       <div class="bazar-spotlight-box">
         <div class="bazar-grid">
-          <div>
+          <div data-animate="fade-right">
             <span class="glass-pill" style="color:#06b6d4;">Core Algorithm Spotlight</span>
             <h2 style="font-size:2.5rem; font-weight:900; margin-top:0.75rem; margin-bottom:1rem;">
               How Does the <span class="text-gradient">Bazar Ratio</span> Work?
             </h2>
-            <p style="color:var(--text-muted); line-height:1.7; font-size:1.05rem;">
-              Messliner supports two flexible calculation modes — <strong>Dynamic Bazar Ratio</strong> and <strong>Fixed
-                Meal Rate</strong>:
+            <p style="color:var(--text-muted); line-height:1.6; font-size:1.025rem;">
+              Messliner automatically calculates real-time <strong>Bazar Ratio (Meal Rate)</strong> with 100% financial transparency:
             </p>
 
-            <ul
-              style="margin: 0.75rem 0 1.25rem 1.25rem; color:var(--text-muted); font-size:0.925rem; line-height:1.6;">
-              <li style="margin-bottom:0.5rem;">
-                <strong style="color:var(--text-main);">Dynamic Bazar Ratio:</strong> Sums total grocery & market
-                expenses and divides them by total consumed meals of all members.
-              </li>
-              <li>
-                <strong style="color:var(--text-main);">Fixed Meal Rate Mode:</strong> Manager sets a fixed taka price
-                per meal. It remains constant regardless of daily market expense fluctuations.
-              </li>
-            </ul>
+            <div class="bazar-mode-pills">
+              <span class="bazar-mode-pill">
+                <span class="pill-icon-bubble bg-green-tint">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                </span>
+                Dynamic Bazar Ratio
+              </span>
+              <span class="bazar-mode-pill">
+                <span class="pill-icon-bubble bg-cyan-tint">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </span>
+                Fixed Meal Rate Mode
+              </span>
+            </div>
 
             <div class="bazar-formula-badge">
               Dynamic Rate = Total Mess Expense ÷ Total Consumed Meals
             </div>
-
-            <p style="color:var(--text-muted); line-height:1.6; font-size:0.95rem; margin-top:0.8rem;">
-              Each member's personal meal expense is calculated by: <br>
-              <code
-                style="color:#10b981; font-family:var(--font-mono);">(Member's Total Meals × Meal Rate) + Fixed Shared Costs</code>
-            </p>
           </div>
 
           <!-- Interactive Calculator Widget -->
-          <div class="calculator-card">
-            <h3
-              style="font-size:1.25rem; font-weight:800; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+          <div class="calculator-card" data-animate="fade-left" data-delay="200">
+            <h3 class="calc-card-title" style="font-size:1.2rem; font-weight:800; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
                 <rect x="4" y="2" width="16" height="20" rx="2"></rect>
                 <line x1="8" y1="6" x2="16" y2="6"></line>
@@ -413,11 +1151,10 @@
             </div>
 
             <div class="calc-result-box">
-              <div
-                style="font-size:0.85rem; color:var(--text-subtle); text-transform:uppercase; letter-spacing:0.05em;">
+              <div class="calc-result-label" style="font-size:0.8rem; color:var(--text-subtle); text-transform:uppercase; letter-spacing:0.05em;">
                 Calculated Meal Rate</div>
               <div class="calc-rate-val" id="calcResultRate">৳ 55.56 / meal</div>
-              <div style="font-size:0.9rem; color:var(--text-muted); margin-top:0.4rem;">
+              <div class="calc-result-sub" style="font-size:0.875rem; color:var(--text-muted); margin-top:0.35rem;">
                 Your Meal Expense: <strong id="calcResultUserTotal" style="color:#10b981;">৳ 2,222.22</strong>
               </div>
             </div>
@@ -432,7 +1169,7 @@
        ========================================== -->
   <section class="section" id="how-it-works" style="padding-top:3.5rem; padding-bottom:3.5rem;">
     <div class="container">
-      <div class="section-header" style="margin-bottom:2rem;">
+      <div class="section-header" data-animate="fade-up" style="margin-bottom:2rem;">
         <span class="glass-pill">Step-by-Step Guide</span>
         <h2 class="section-title">How <span class="text-gradient">Messliner</span> Works</h2>
         <p class="section-subtitle">Tailored workflows engineered for both Mess Managers (Admins) and Mess Members.</p>
@@ -441,7 +1178,7 @@
       <!-- Dual Role Summary Grid -->
       <div class="dual-workflow-container">
         <!-- 1. MESS MANAGER / ADMIN CARD -->
-        <div class="workflow-column glass-panel workflow-admin"
+        <div class="workflow-column glass-panel workflow-admin" data-animate="fade-right" data-delay="100"
           style="display:flex; flex-direction:column; justify-content:space-between;">
           <div>
             <div class="workflow-badge admin-badge" style="margin-bottom:0.75rem;">
@@ -467,7 +1204,7 @@
         </div>
 
         <!-- 2. MESS MEMBER / USER CARD -->
-        <div class="workflow-column glass-panel workflow-user"
+        <div class="workflow-column glass-panel workflow-user" data-animate="fade-left" data-delay="200"
           style="display:flex; flex-direction:column; justify-content:space-between;">
           <div>
             <div class="workflow-badge user-badge" style="margin-bottom:0.75rem;">
@@ -500,7 +1237,7 @@
        ========================================== -->
   <section class="section" id="features" style="padding-top:3.5rem; padding-bottom:3.5rem;">
     <div class="container">
-      <div class="section-header">
+      <div class="section-header" data-animate="fade-up">
         <span class="glass-pill">Packed With Power</span>
         <h2 class="section-title">Features Built for <span class="text-gradient">Modern Dining</span></h2>
         <p class="section-subtitle">Explore the rich suite of tools inside Messliner designed for members, mess
@@ -508,7 +1245,7 @@
       </div>
 
       <div class="features-grid">
-        <div class="glass-panel feature-card">
+        <div class="glass-panel feature-card" data-animate="fade-up" data-delay="100">
           <div class="feature-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 20h9"></path>
@@ -520,7 +1257,7 @@
             waste and ensure accurate meal counts.</p>
         </div>
 
-        <div class="glass-panel feature-card">
+        <div class="glass-panel feature-card" data-animate="fade-up" data-delay="200">
           <div class="feature-icon"
             style="background:rgba(16,185,129,0.12); color:#10b981; border-color:rgba(16,185,129,0.25);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -534,7 +1271,7 @@
           </p>
         </div>
 
-        <div class="glass-panel feature-card">
+        <div class="glass-panel feature-card" data-animate="fade-up" data-delay="300">
           <div class="feature-icon"
             style="background:rgba(99,102,241,0.12); color:#6366f1; border-color:rgba(99,102,241,0.25);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -547,7 +1284,7 @@
           </p>
         </div>
 
-        <div class="glass-panel feature-card">
+        <div class="glass-panel feature-card" data-animate="fade-up" data-delay="400">
           <div class="feature-icon"
             style="background:rgba(245,158,11,0.12); color:#f59e0b; border-color:rgba(245,158,11,0.25);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -561,7 +1298,7 @@
             and 1-click downloadable PDF balance statements.</p>
         </div>
 
-        <div class="glass-panel feature-card">
+        <div class="glass-panel feature-card" data-animate="fade-up" data-delay="500">
           <div class="feature-icon"
             style="background:rgba(236,72,153,0.12); color:#ec4899; border-color:rgba(236,72,153,0.25);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -575,7 +1312,7 @@
           </p>
         </div>
 
-        <div class="glass-panel feature-card">
+        <div class="glass-panel feature-card" data-animate="fade-up" data-delay="600">
           <div class="feature-icon"
             style="background:rgba(16,185,129,0.12); color:#10b981; border-color:rgba(16,185,129,0.25);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -595,13 +1332,13 @@
        ========================================== -->
   <section class="section" id="pricing" style="padding-top:3.5rem; padding-bottom:3.5rem;">
     <div class="container">
-      <div class="section-header">
+      <div class="section-header" data-animate="fade-up">
         <span class="glass-pill">Flexible Plans</span>
         <h2 class="section-title">Transparent <span class="text-gradient">Pricing</span></h2>
         <p class="section-subtitle">Simple plans tailored for small bachelor messes to large university hostels.</p>
       </div>
 
-      <div class="pricing-toggle-wrap">
+      <div class="pricing-toggle-wrap" data-animate="zoom-in">
         <span>Monthly Billing</span>
         <div class="toggle-switch" id="pricingToggle">
           <div class="toggle-knob"></div>
@@ -612,105 +1349,196 @@
 
       <div class="pricing-grid">
         <!-- Starter Free -->
-        <div class="glass-panel pricing-card">
-          <div class="plan-name">Starter Mess</div>
-          <div class="plan-desc">Perfect for small bachelor groups up to 6 members.</div>
+        <div class="glass-panel pricing-card" data-animate="fade-up" data-delay="100">
+          <div class="plan-header">
+            <div class="plan-name">Starter Mess</div>
+            <div class="plan-desc">Perfect for small bachelor groups up to 6 members.</div>
+          </div>
+
           <div class="plan-price-wrap">
-            <span class="plan-price" id="priceFree">৳ 0</span>
+            <div class="price-val-container">
+              <span class="plan-price" id="priceFree">৳ 0</span>
+            </div>
             <span class="plan-price-period">/ forever free</span>
           </div>
+
+          <div class="pricing-divider"></div>
+
           <ul class="plan-features-list">
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Up to 6 Active Members</li>
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Automated Bazar Ratio</li>
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Daily Meal Manager</li>
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Web App Access</li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check starter-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Up to 6 Active Members</span>
+            </li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check starter-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Automated Bazar Ratio</span>
+            </li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check starter-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Daily Meal Manager</span>
+            </li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check starter-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Web App Access</span>
+            </li>
           </ul>
-          <a href="https://mdriad40.github.io/messlinerapp/" target="_blank" class="btn btn-glass"
+
+          <a href="../Ml_webApp/dashboard.html" target="_blank" class="btn btn-glass btn-pricing"
             style="margin-top:auto;">Start Free</a>
         </div>
 
         <!-- Pro Mess (Featured) -->
-        <div class="glass-panel pricing-card featured">
-          <div class="pricing-badge">Most Popular</div>
-          <div class="plan-name">Mess Pro</div>
-          <div class="plan-desc">Ideal for standard messes, flats, and student groups.</div>
+        <div class="glass-panel pricing-card featured" data-animate="fade-up" data-delay="200">
+          <div class="pricing-badge">
+            <span class="badge-dot"></span>
+            Most Popular
+          </div>
+          <div class="plan-header">
+            <div class="plan-name">Mess Pro</div>
+            <div class="plan-desc">Ideal for standard messes, flats, and student groups.</div>
+          </div>
+
           <div class="plan-price-wrap">
-            <span class="plan-price text-gradient" id="pricePro">৳ 499</span>
+            <div class="price-val-container">
+              <span class="plan-price text-gradient" id="pricePro">৳ 499</span>
+            </div>
             <span class="plan-price-period">/ month (billed monthly)</span>
           </div>
+
+          <div class="pricing-divider"></div>
+
           <ul class="plan-features-list">
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Up to 25 Active Members</li>
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Instant SMS & Push Deposit Alerts</li>
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Receipt Photo Attachments</li>
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> 1-Click PDF Report Export</li>
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Guest Meal & Fixed Charges</li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check pro-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Up to 25 Active Members</span>
+            </li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check pro-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Instant SMS & Push Deposit Alerts</span>
+            </li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check pro-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Receipt Photo Attachments</span>
+            </li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check pro-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>1-Click PDF Report Export</span>
+            </li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check pro-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Guest Meal & Fixed Charges</span>
+            </li>
           </ul>
-          <button class="btn btn-primary" onclick="window.scrollTo({ top: 0, behavior: 'smooth' });"
+
+          <button class="btn btn-primary btn-pricing" onclick="window.scrollTo({ top: 0, behavior: 'smooth' });"
             style="margin-top:auto;">Get Mess Pro</button>
         </div>
 
         <!-- Enterprise / Hostel -->
-        <div class="glass-panel pricing-card">
-          <div class="plan-name">Hostel Enterprise</div>
-          <div class="plan-desc">For University Halls, Large Hostels, & Dining Facilities.</div>
+        <div class="glass-panel pricing-card" data-animate="fade-up" data-delay="300">
+          <div class="plan-header">
+            <div class="plan-name">Hostel Enterprise</div>
+            <div class="plan-desc">For University Halls, Large Hostels, & Dining Facilities.</div>
+          </div>
+
           <div class="plan-price-wrap">
-            <span class="plan-price" id="priceEnterprise">৳ 1,299</span>
+            <div class="price-val-container">
+              <span class="plan-price" id="priceEnterprise">৳ 1,299</span>
+            </div>
             <span class="plan-price-period">/ month (billed monthly)</span>
           </div>
+
+          <div class="pricing-divider"></div>
+
           <ul class="plan-features-list">
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Unlimited Dining Members</li>
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Multiple Mess Group Control</li>
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Instant SMS & Push Deposit Alerts</li>
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Custom Domain & Branding</li>
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Automated Audit & Priority Backups</li>
-            <li class="plan-feature-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> Priority 24/7 Support</li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check enterprise-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Unlimited Dining Members</span>
+            </li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check enterprise-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Multiple Mess Group Control</span>
+            </li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check enterprise-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Instant SMS & Push Deposit Alerts</span>
+            </li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check enterprise-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Custom Domain & Branding</span>
+            </li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check enterprise-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Automated Audit & Priority Backups</span>
+            </li>
+            <li class="plan-feature-item">
+              <span class="feature-icon-check enterprise-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span>Priority 24/7 Support</span>
+            </li>
           </ul>
-          <button class="btn btn-glass" data-modal="modalSupport" style="margin-top:auto;">Contact Sales</button>
+
+          <button class="btn btn-glass btn-pricing" data-modal="modalSupport" style="margin-top:auto;">Contact
+            Sales</button>
         </div>
       </div>
     </div>
@@ -721,7 +1549,7 @@
        ========================================== -->
   <section class="section" id="security">
     <div class="container">
-      <div class="security-box">
+      <div class="security-box" data-animate="zoom-in">
         <div class="section-header" style="margin-bottom:2.5rem;">
           <span class="glass-pill" style="color:#6366f1;">Enterprise Grade Trust</span>
           <h2 class="section-title">Bank-Level <span class="text-gradient-purple">Security & Reliability</span></h2>
@@ -767,14 +1595,14 @@
        ========================================== -->
   <section class="section" id="faq">
     <div class="container">
-      <div class="section-header">
+      <div class="section-header" data-animate="fade-up">
         <span class="glass-pill">Have Questions?</span>
         <h2 class="section-title">Frequently Asked <span class="text-gradient">Questions</span></h2>
         <p class="section-subtitle">Find quick answers to common queries about Messliner, onboarding workflows, meal
           rates, and security.</p>
       </div>
 
-      <div class="faq-search-wrap">
+      <div class="faq-search-wrap" data-animate="fade-up" data-delay="100">
         <svg class="faq-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"></circle>
@@ -784,7 +1612,7 @@
           placeholder="Search FAQ topics (e.g. create mess, join mess, meal rate, security)...">
       </div>
 
-      <div class="faq-accordion">
+      <div class="faq-accordion" data-animate="fade-up" data-delay="200">
         <!-- Question 1: What is Messliner -->
         <div class="faq-item open">
           <div class="faq-question">
@@ -914,26 +1742,51 @@
   </section>
 
   <!-- ==========================================
-       CALL TO ACTION BANNER
+       APP DOWNLOAD CTA SECTION
        ========================================== -->
-  <section class="section">
+  <section class="section" id="download-app">
     <div class="container">
-      <div class="cta-banner">
-        <h2 class="cta-title">Ready to Upgrade Your <span class="text-gradient">Mess Experience</span>?</h2>
-        <p class="cta-subtitle">Empower your dining group with effortless meal tracking, transparent deposit ledgers,
-          and zero billing conflicts.</p>
-        <div style="display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
-          <button class="btn btn-primary btn-lg" onclick="window.scrollTo({ top: 0, behavior: 'smooth' });">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Download the App Now
-          </button>
-          <a href="https://mdriad40.github.io/messlinerapp/" target="_blank" class="btn btn-glass btn-lg">
-            Launch Web App
-          </a>
+      <div class="cta-download-box" data-animate="zoom-in">
+        <!-- Floating Ambient Background Pills -->
+        <div class="cta-bg-pill cta-pill-1"></div>
+        <div class="cta-bg-pill cta-pill-2"></div>
+        <div class="cta-bg-pill cta-pill-3"></div>
+        <div class="cta-bg-pill cta-pill-4"></div>
+
+        <div class="cta-download-content">
+          <div class="cta-download-left">
+            <span class="cta-badge-pill">READY FOR ANDROID &amp; WEB</span>
+            <h2 class="cta-download-title">Get MessLiner on Your Device</h2>
+            <p class="cta-download-desc">
+              Experience effortless mess management today. Download the official Android app or open the web dashboard
+              instantly.
+            </p>
+            <div class="cta-buttons-group">
+              <a href="../Ml_webApp/dashboard.html" id="ctaDownloadBtn" target="_blank" class="btn btn-dark-pill"
+                onclick="triggerAppDownload('Android APK');">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download Android App
+              </a>
+              <a href="../Ml_webApp/dashboard.html" target="_blank" class="btn btn-light-pill">
+                Open Web App Dashboard
+              </a>
+            </div>
+          </div>
+
+          <div class="cta-download-right">
+            <div class="qr-code-card">
+              <div class="qr-code-wrapper" id="qrCodeContainer">
+                <img id="ctaQrCodeImg" src="" alt="Scan QR Code to Download" class="qr-code-img" />
+              </div>
+              <div class="qr-label-title">Scan QR to Install</div>
+              <div class="qr-label-sub">Android 7.0+ Supported</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -963,7 +1816,7 @@
             <li class="footer-link-item"><a href="#bazar-ratio">Bazar Ratio Guide</a></li>
             <li class="footer-link-item"><a href="#features">Features</a></li>
             <li class="footer-link-item"><a href="#pricing">Pricing Plans</a></li>
-            <li class="footer-link-item"><a href="../dashboard.html" target="_blank">Web Dashboard</a></li>
+            <li class="footer-link-item"><a href="../Ml_webApp/dashboard.html" target="_blank">Web Dashboard</a></li>
           </ul>
         </div>
 
@@ -1101,6 +1954,7 @@
   </div>
 
   <!-- JavaScript -->
+  <script src="js/qrcode-lib.js"></script>
   <script src="js/main.js"></script>
 </body>
 
