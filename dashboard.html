@@ -4919,7 +4919,6 @@
                   <p class="profile-member-caption">
                     <span id="profileDiningBrand">Messliner</span> · <span id="profileJoinedSub">Since setup</span>
                   </p>
-                  <div id="profileViewSwitchArea" style="display: none; margin-top: 6px;"></div>
                 </div>
 
                 <!-- Compatibility elements for JS setters -->
@@ -4927,30 +4926,36 @@
                 <span id="profileUserBalance" style="display: none;">৳0.00</span>
               </div>
 
-              <!-- Single-Line Meals Stat Card: Breakfast, Lunch, Dinner, Total Meals (Mockup Stats Style) -->
-              <div class="profile-meals-card">
-                <div class="profile-meal-stat-col" id="profileBreakfastCol">
-                  <span class="profile-meal-stat-num" id="profileBreakfastCount">0</span>
-                  <span class="profile-meal-stat-label">Breakfast</span>
-                </div>
-                <div class="profile-meal-stat-divider" id="profileBreakfastDivider"></div>
+              <!-- Hero Right Group: Meals Card & View Switcher Card -->
+              <div class="profile-hero-right-group">
+                <!-- Single-Line Meals Stat Card: Breakfast, Lunch, Dinner, Total Meals (Mockup Stats Style) -->
+                <div class="profile-meals-card">
+                  <div class="profile-meal-stat-col" id="profileBreakfastCol">
+                    <span class="profile-meal-stat-num" id="profileBreakfastCount">0</span>
+                    <span class="profile-meal-stat-label">Breakfast</span>
+                  </div>
+                  <div class="profile-meal-stat-divider" id="profileBreakfastDivider"></div>
 
-                <div class="profile-meal-stat-col" id="profileLunchCol">
-                  <span class="profile-meal-stat-num" id="profileLunchCount">0</span>
-                  <span class="profile-meal-stat-label">Lunch</span>
-                </div>
-                <div class="profile-meal-stat-divider" id="profileLunchDivider"></div>
+                  <div class="profile-meal-stat-col" id="profileLunchCol">
+                    <span class="profile-meal-stat-num" id="profileLunchCount">0</span>
+                    <span class="profile-meal-stat-label">Lunch</span>
+                  </div>
+                  <div class="profile-meal-stat-divider" id="profileLunchDivider"></div>
 
-                <div class="profile-meal-stat-col" id="profileDinnerCol">
-                  <span class="profile-meal-stat-num" id="profileDinnerCount">0</span>
-                  <span class="profile-meal-stat-label">Dinner</span>
-                </div>
-                <div class="profile-meal-stat-divider" id="profileDinnerDivider"></div>
+                  <div class="profile-meal-stat-col" id="profileDinnerCol">
+                    <span class="profile-meal-stat-num" id="profileDinnerCount">0</span>
+                    <span class="profile-meal-stat-label">Dinner</span>
+                  </div>
+                  <div class="profile-meal-stat-divider" id="profileDinnerDivider"></div>
 
-                <div class="profile-meal-stat-col" id="profileTotalCol">
-                  <span class="profile-meal-stat-num" id="profileUserTotalMeals">0</span>
-                  <span class="profile-meal-stat-label">Total Meals</span>
+                  <div class="profile-meal-stat-col" id="profileTotalCol">
+                    <span class="profile-meal-stat-num" id="profileUserTotalMeals">0</span>
+                    <span class="profile-meal-stat-label">Total Meals</span>
+                  </div>
                 </div>
+
+                <!-- Mode Switch Card (Placed beside Meals Card) -->
+                <div id="profileViewSwitchArea" class="profile-switch-area-wrapper" style="display: none;"></div>
               </div>
             </div>
 

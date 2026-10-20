@@ -124,51 +124,18 @@ const HistoryModule = {
     if (switchArea) {
       if (actualRole === 'admin') {
         const isCurrentlyAdminMode = currentViewRole === 'admin';
-        switchArea.style.display = 'block';
+        switchArea.style.display = 'flex';
         switchArea.innerHTML = `
-          <button onclick="Messliner.history.toggleViewMode()" class="card glass-card" style="
-            background: rgba(255, 255, 255, 0.45);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid ${isCurrentlyAdminMode ? 'rgba(16, 185, 129, 0.18)' : 'rgba(59, 130, 246, 0.18)'};
-            box-shadow: 0 4px 16px rgba(5, 150, 105, 0.05);
-            border-radius: var(--radius-xl);
-            padding: var(--space-3) var(--space-5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--space-3);
-            margin: 0;
-            width: 100%;
-            cursor: pointer;
-            color: ${isCurrentlyAdminMode ? 'var(--primary-700)' : '#1D4ED8'};
-            font-size: var(--font-sm);
-            font-weight: var(--weight-bold);
-            transition: all 0.2s ease;
-          " onmouseenter="this.style.background='rgba(255, 255, 255, 0.65)'; this.style.transform='translateY(-1px)';"
-            onmouseleave="this.style.background='rgba(255, 255, 255, 0.45)'; this.style.transform='translateY(0)';"
-            title="Click to switch view mode">
-            
-            <div style="
-              width: 32px;
-              height: 32px;
-              border-radius: var(--radius-md);
-              background: ${isCurrentlyAdminMode ? 'rgba(16, 185, 129, 0.08)' : 'rgba(59, 130, 246, 0.08)'};
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: ${isCurrentlyAdminMode ? 'var(--primary-600)' : '#2563EB'};
-              flex-shrink: 0;
-              border: 1px solid ${isCurrentlyAdminMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)'};
-            ">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 2.1l4 4-4 4" />
-                <path d="M3 6.1h18" />
-                <path d="M7 21.9l-4-4 4-4" />
-                <path d="M21 17.9H3" />
+          <button type="button" onclick="Messliner.history.toggleViewMode()" class="profile-switch-card ${isCurrentlyAdminMode ? 'mode-to-member' : 'mode-to-manager'}" title="${isCurrentlyAdminMode ? 'Switch to Member view' : 'Switch to Manager view'}">
+            <div class="profile-switch-icon-plate">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 3l4 4-4 4" />
+                <path d="M20 7H4" />
+                <path d="M8 21l-4-4 4-4" />
+                <path d="M4 17h16" />
               </svg>
             </div>
-            <span style="letter-spacing: 0.01em;">${isCurrentlyAdminMode ? 'Switch to Member' : 'Switch to Manager'}</span>
+            <span class="profile-switch-card-label">${isCurrentlyAdminMode ? 'To Member' : 'To Manager'}</span>
           </button>
         `;
       } else {
