@@ -2,6 +2,38 @@
    Messliner — Supabase Configuration & Auth Adapter
    ============================================ */
 
+// Clean Console: Silence redundant startup banners, module registrations, and Firebase index warnings
+(function () {
+  const _origLog = console.log;
+  const _origWarn = console.warn;
+
+  console.log = function (...args) {
+    const msg = args.map(a => (typeof a === 'object' ? (a?.message || JSON.stringify(a)) : String(a))).join(' ');
+    if (
+      msg.startsWith('[Messliner]') ||
+      msg.startsWith('[SMSAlert]') ||
+      msg.startsWith('[AIControl]')
+    ) {
+      return;
+    }
+    _origLog.apply(console, args);
+  };
+
+  console.warn = function (...args) {
+    const msg = args.map(a => (typeof a === 'object' ? (a?.message || JSON.stringify(a)) : String(a))).join(' ');
+    if (
+      msg.includes('FIREBASE WARNING') ||
+      msg.includes('unspecified index') ||
+      msg.includes('.indexOn') ||
+      msg.includes('sendBeacon') ||
+      msg.includes('Quirks Mode')
+    ) {
+      return;
+    }
+    _origWarn.apply(console, args);
+  };
+})();
+
 const SUPABASE_URL = "https://pgnjvtmofglkjplotrha.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnbmp2dG1vZmdsa2pwbG90cmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0MTQxMzcsImV4cCI6MjEwMjk5MDEzN30.qqJR5ob2_3g-yRi0-_uOvgfemjMy6UuzjcKth5_QbC0";
 

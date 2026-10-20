@@ -316,27 +316,40 @@ const MealChartModule = {
       const lunch = dayMeals.lunch || {};
       const dinner = dayMeals.dinner || {};
 
-      tbody.innerHTML = userEntries.map(([id, u]) => {
-        const bCount = breakfast[id] || 0;
-        const lCount = lunch[id] || 0;
-        const dCount = dinner[id] || 0;
+      // Filter only members who had at least one meal on this day (exclude members with 0 meals)
+      const activeEntries = userEntries.filter(([id]) => {
+        const b = trackedMeals.breakfast !== false ? (parseFloat(breakfast[id]) || 0) : 0;
+        const l = trackedMeals.lunch !== false ? (parseFloat(lunch[id]) || 0) : 0;
+        const d = trackedMeals.dinner !== false ? (parseFloat(dinner[id]) || 0) : 0;
+        return (b + l + d) > 0;
+      });
 
-        const bBadge = bCount > 0 
+      if (activeEntries.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-center p-6" style="color:var(--text-tertiary);">No meals recorded for this date.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = activeEntries.map(([id, u]) => {
+        const bCount = parseFloat(breakfast[id]) || 0;
+        const lCount = parseFloat(lunch[id]) || 0;
+        const dCount = parseFloat(dinner[id]) || 0;
+
+        const bBadge = bCount > 0
           ? `<span class="meal-badge active">${bCount}</span>`
           : `<span class="meal-badge inactive">—</span>`;
 
-        const lBadge = lCount > 0 
+        const lBadge = lCount > 0
           ? `<span class="meal-badge active">${lCount}</span>`
           : `<span class="meal-badge inactive">—</span>`;
 
-        const dBadge = dCount > 0 
+        const dBadge = dCount > 0
           ? `<span class="meal-badge active">${dCount}</span>`
           : `<span class="meal-badge inactive">—</span>`;
 
         let rowHTML = `
           <tr>
             <td>
-              <span style="font-weight:var(--weight-semibold); color:var(--text-primary);">${u.name}</span>
+              <span style="font-weight:var(--weight-semibold); color:var(--text-primary);">${u.name || 'Member'}</span>
             </td>`;
         if (trackedMeals.breakfast !== false) rowHTML += `<td class="text-center">${bBadge}</td>`;
         if (trackedMeals.lunch !== false) rowHTML += `<td class="text-center">${lBadge}</td>`;

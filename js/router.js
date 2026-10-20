@@ -3,10 +3,82 @@
    ============================================ */
 
 const Router = {
-  currentPage: 'dashboard',
-  adminPages: ['users', 'meals', 'finance', 'settings', 'mymeal', 'more', 'aicontrol'],
+  currentPage: null,
+  previousPage: null,
+  navigatedFromNotifications: false,
+  navigatedFromMobileNotifScreen: false,
+  navigatedFromDesktopPopover: false,
+  popoverOriginPage: null,
+  notificationOriginPage: null,
+  adminPages: ['users', 'meals', 'finance', 'ledger', 'settings', 'mymeal', 'more'],
   // Note: 'fridaymeal' is accessible to all roles
   scrollPositions: {},
+
+  /**
+   * Universal back button handler
+   */
+  handleBack() {
+    this._isBackNav = true;
+    // 1. If navigated from Desktop Popover: return directly to the exact page they clicked the notification on (defaulting to dashboard)
+    if (this.navigatedFromDesktopPopover) {
+      this.navigatedFromDesktopPopover = false;
+      const targetPage = (this.popoverOriginPage && this.popoverOriginPage !== 'overview') ? this.popoverOriginPage : 'dashboard';
+      this.popoverOriginPage = null;
+      this.navigate(targetPage);
+      setTimeout(() => {
+        if (window.innerWidth > 768 && window.Notifications && typeof Notifications.openDesktopPopover === 'function') {
+          Notifications.openDesktopPopover();
+        }
+      }, 160);
+      return;
+    }
+
+    // 2. If navigated from Mobile Notification Screen: return to notifications without history loop
+    if (this.navigatedFromMobileNotifScreen || this.navigatedFromNotifications) {
+      this.navigatedFromMobileNotifScreen = false;
+      this.navigatedFromNotifications = false;
+      if (window.history.replaceState) {
+        history.replaceState(null, '', '#notifications');
+        this._showPage('notifications');
+      } else {
+        this.navigate('notifications');
+      }
+      return;
+    }
+
+    // 3. If currently on Notifications screen: back button returns to origin page or dashboard (never loops back into detail pages!)
+    if (this.currentPage === 'notifications') {
+      const returnPage = (this.notificationOriginPage && this.notificationOriginPage !== 'overview') ? this.notificationOriginPage : 'dashboard';
+      this.notificationOriginPage = null;
+      if (window.history.replaceState) {
+        history.replaceState(null, '', `#${returnPage}`);
+        this._showPage(returnPage);
+      } else {
+        this.navigate(returnPage);
+      }
+      return;
+    }
+
+    if (this.currentPage === 'export-slip') {
+      this.navigate(this.previousPage === 'overview' ? 'overview' : 'dashboard');
+    } else if (['mealhistory', 'bazarroster', 'tasks', 'notices'].includes(this.currentPage)) {
+      this.navigate(this.role === 'admin' ? 'mymeal' : 'dashboard');
+    } else if (['bazar', 'mealchart', 'summary', 'history', 'fridaymeal'].includes(this.currentPage)) {
+      if (this.previousPage === 'overview' || this.role !== 'admin') {
+        this.navigate('overview');
+      } else if (this.previousPage && this.previousPage !== this.currentPage && this.previousPage !== 'notifications') {
+        this.navigate(this.previousPage);
+      } else {
+        this.navigate('dashboard');
+      }
+    } else if (this.currentPage === 'meals') {
+      this.navigate(this.previousPage === 'overview' ? 'overview' : 'dashboard');
+    } else if (this.previousPage && this.previousPage !== this.currentPage && this.previousPage !== 'notifications') {
+      this.navigate(this.previousPage);
+    } else {
+      this.navigate('dashboard');
+    }
+  },
 
   /**
    * Initialize the router
@@ -17,18 +89,57 @@ const Router = {
     // Listen for hash changes
     window.addEventListener('hashchange', () => {
       const page = location.hash.replace('#', '') || 'dashboard';
+      if (this.navigatedFromDesktopPopover && this.popoverOriginPage && page === this.popoverOriginPage) {
+        this.navigatedFromDesktopPopover = false;
+        this.popoverOriginPage = null;
+        this._showPage(page);
+        setTimeout(() => {
+          if (window.innerWidth > 768 && window.Notifications && typeof Notifications.openDesktopPopover === 'function') {
+            Notifications.openDesktopPopover();
+          }
+        }, 120);
+        return;
+      }
       this._showPage(page);
     });
 
     // Navigate to initial page from URL hash
+    this._initialNav = true;
     const initialPage = location.hash.replace('#', '') || 'dashboard';
     this._showPage(initialPage);
+    this._initialNav = false;
+
+    // Continuously preserve scroll position of active page
+    const contentArea = document.querySelector('.content-area');
+    if (contentArea) {
+      contentArea.addEventListener('scroll', () => {
+        if (this.currentPage && this.currentPage !== 'export-slip') {
+          this.scrollPositions[this.currentPage] = contentArea.scrollTop;
+        }
+      }, { passive: true });
+    }
+
+    // Initialize bottom navigation slide indicator
+    this.initBottomNavIndicator();
   },
 
   /**
    * Navigate to a page
    */
   navigate(page) {
+    // If already on this page, smoothly scroll to top without re-rendering or interrupting transitions
+    if (this.currentPage === page) {
+      // Prevent synthetic click from scrolling to top immediately after a tab navigation
+      if (Date.now() - (this._lastNavTime || 0) < 400) {
+        return;
+      }
+      const contentArea = document.querySelector('.content-area');
+      if (contentArea && contentArea.scrollTop > 0) {
+        contentArea.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
+
     // Role-based access
     if (this.role !== 'admin' && this.adminPages.includes(page)) {
       Notifications.toast('warning', 'Access Denied', 'You do not have permission to view this page.');
@@ -44,6 +155,10 @@ const Router = {
       }
     }
 
+    if (this.currentPage && this.currentPage !== page && this.currentPage !== 'notifications') {
+      this.previousPage = this.currentPage;
+    }
+
     location.hash = page;
     this._showPage(page);
 
@@ -55,11 +170,65 @@ const Router = {
   },
 
   /**
+   * Determine transition animation class based on tab sequence and navigation source
+   */
+  _getTransitionClass(prevPage, newPage) {
+    if (this._initialNav || !prevPage || prevPage === newPage) {
+      return '';
+    }
+
+    if (this._isBackNav) {
+      this._isBackNav = false;
+      return 'slide-backward';
+    }
+
+    // Subpage entries always glide forward
+    const subpages = ['mealchart', 'bazar', 'summary', 'fridaymeal', 'mealhistory', 'bazarroster', 'tasks', 'notices', 'export-slip'];
+    if (subpages.includes(newPage)) {
+      return 'slide-forward';
+    }
+
+    // Inspect visible bottom navigation items to match bottom nav slide direction precisely
+    const bottomNavBtns = Array.from(document.querySelectorAll('.bottom-nav-item:not([style*="display: none"]):not([style*="display:none"])'));
+    if (bottomNavBtns.length > 0) {
+      const mapToNavPage = (p) => {
+        if (['mealchart', 'bazar', 'summary', 'fridaymeal', 'export-slip'].includes(p)) return 'overview';
+        if (['mealhistory', 'bazarroster', 'tasks', 'notices'].includes(p)) return (this.role === 'admin' ? 'mymeal' : 'dashboard');
+        return p;
+      };
+      const pNav = mapToNavPage(prevPage);
+      const nNav = mapToNavPage(newPage);
+      const pIdx = bottomNavBtns.findIndex(b => b.dataset.page === pNav);
+      const nIdx = bottomNavBtns.findIndex(b => b.dataset.page === nNav);
+      if (pIdx !== -1 && nIdx !== -1 && pIdx !== nIdx) {
+        return nIdx > pIdx ? 'slide-forward' : 'slide-backward';
+      }
+    }
+
+    // Primary tab order fallback for desktop sidebar and other navigations
+    const tabOrder = ['dashboard', 'users', 'meals', 'finance', 'ledger', 'overview', 'mymeal', 'user-bills', 'profile', 'more', 'settings', 'help'];
+    const prevIdx = tabOrder.indexOf(prevPage);
+    const newIdx = tabOrder.indexOf(newPage);
+    if (prevIdx !== -1 && newIdx !== -1 && prevIdx !== newIdx) {
+      return newIdx > prevIdx ? 'slide-forward' : 'slide-backward';
+    }
+
+    return 'slide-fade';
+  },
+
+  /**
    * Show a specific page section and update nav state
    */
-  _showPage(page) {
+  _showPage(page, force = false) {
+    if (!force && this.currentPage === page && !this._initialNav) {
+      return;
+    }
+
+    this._lastNavTime = Date.now();
+    const prevPage = this.currentPage;
+
     // If leaving export-slip page, clean up its special layout class
-    if (this.currentPage === 'export-slip' && page !== 'export-slip') {
+    if (prevPage === 'export-slip' && page !== 'export-slip') {
       if (Messliner.overview && Messliner.overview._leaveExportPage) {
         Messliner.overview._leaveExportPage();
       }
@@ -67,9 +236,11 @@ const Router = {
 
     // Save scroll position of current page before switching (skip export-slip — it uses overflow:hidden)
     const contentArea = document.querySelector('.content-area');
-    if (this.currentPage && this.currentPage !== 'export-slip') {
-      const scrollY = window.scrollY || document.documentElement.scrollTop || (contentArea ? contentArea.scrollTop : 0);
-      this.scrollPositions[this.currentPage] = scrollY;
+    if (prevPage && prevPage !== 'export-slip') {
+      const scrollY = (contentArea && typeof contentArea.scrollTop === 'number')
+        ? contentArea.scrollTop
+        : (window.scrollY || document.documentElement.scrollTop || 0);
+      this.scrollPositions[prevPage] = scrollY;
     }
 
     // Validate page
@@ -91,16 +262,31 @@ const Router = {
       }
     }
 
+    if (page === 'notifications') {
+      this.navigatedFromNotifications = false;
+      this.navigatedFromMobileNotifScreen = false;
+      this.navigatedFromDesktopPopover = false;
+    }
+
+    // Determine transition direction relative to navigation context
+    const transitionClass = this._getTransitionClass(prevPage, page);
+
     this.currentPage = page;
 
     // Hide all page sections
     document.querySelectorAll('.page-section').forEach(s => {
-      s.classList.remove('active');
+      s.classList.remove('active', 'slide-forward', 'slide-backward', 'slide-fade');
     });
 
-    // Show target page
+    // Show target page with smooth hardware-accelerated transition
     const target = document.getElementById(`page-${page}`);
     if (target) {
+      if (!this._initialNav && transitionClass) {
+        target.classList.add(transitionClass);
+        target.addEventListener('animationend', () => {
+          target.classList.remove('slide-forward', 'slide-backward', 'slide-fade');
+        }, { once: true });
+      }
       target.classList.add('active');
     }
 
@@ -117,12 +303,18 @@ const Router = {
       }
     }
 
-    // Update page title in header
+    // Toggle active class on body for dining subpages (Meal Chart, Bazar, Summary, Friday's Meal)
+    const isDiningSubpage = ['mealchart', 'bazar', 'summary', 'fridaymeal'].includes(page);
+    document.body.classList.toggle('dining-subpage-active', isDiningSubpage);
+    document.body.classList.toggle('user-bills-active', page === 'user-bills');
+
+    // Update page title and subtitle in header
     const titles = {
       dashboard: 'Dashboard',
       users: 'Members',
       meals: 'Meal Management',
       finance: 'Finance',
+      ledger: 'Ledger',
       overview: 'Dining Overview',
       settings: 'Settings',
       profile: 'Profile',
@@ -135,35 +327,72 @@ const Router = {
       fridaymeal: "Friday Meal's",
       'export-slip': 'Export Member Statistics',
       more: 'More Menu',
-      aicontrol: 'AI Control Panel',
-      aiassistant: 'Messliner AI'
+      aiassistant: 'Messliner AI',
+      'user-bills': 'Bills',
+      help: 'Help & Knowledge Base',
+      mealhistory: 'Toggle History',
+      bazarroster: 'Bazar Duty',
+      tasks: 'Mess Tasks',
+      notices: 'Notice Board'
     };
-    if (page === 'dashboard') {
+
+    const subtitles = {
+      mealhistory: 'Meal toggle log',
+      bazarroster: 'Roster schedule',
+      tasks: 'My duties',
+      notices: 'Announcements'
+    };
+
+    const searchBar = document.querySelector('.header-search-bar');
+    const titleContainer = document.getElementById('headerTitleContainer');
+    const subtitle = document.getElementById('headerSubtitle');
+    const greetingEl = document.getElementById('headerGreeting');
+
+    if (isDiningSubpage) {
+      if (searchBar) searchBar.style.setProperty('display', 'none', 'important');
+      if (titleContainer) titleContainer.style.setProperty('display', 'flex', 'important');
+      if (greetingEl) greetingEl.style.display = 'none';
+      Utils.setText('headerTitle', titles[page] || 'Meal Chart');
+      if (subtitle) {
+        subtitle.textContent = '';
+        subtitle.style.setProperty('display', 'none', 'important');
+      }
+    } else if (page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices') {
+      if (searchBar) searchBar.style.setProperty('display', 'none', 'important');
+      if (titleContainer) titleContainer.style.setProperty('display', 'flex', 'important');
+      if (greetingEl) greetingEl.style.display = 'none';
+      Utils.setText('headerTitle', titles[page] || 'Toggle History');
+      if (subtitle) {
+        subtitle.textContent = subtitles[page] || '';
+        subtitle.style.setProperty('display', 'block', 'important');
+      }
+    } else if (page === 'dashboard') {
+      if (searchBar) searchBar.style.removeProperty('display');
+      if (titleContainer) titleContainer.style.display = 'none';
       if (typeof Messliner !== 'undefined' && Messliner.updateHomeHeaderGreeting) {
         Messliner.updateHomeHeaderGreeting();
       }
-      const subtitle = document.getElementById('headerSubtitle');
       if (subtitle) {
         subtitle.textContent = '';
         subtitle.style.display = 'none';
       }
     } else if (page === 'aiassistant') {
-      const greetingEl = document.getElementById('headerGreeting');
+      if (searchBar) searchBar.style.removeProperty('display');
+      if (titleContainer) titleContainer.style.display = 'none';
       if (greetingEl) greetingEl.style.display = 'none';
       const headerTitle = document.getElementById('headerTitle');
       if (headerTitle) {
         headerTitle.textContent = 'Messliner AI';
       }
-      const subtitle = document.getElementById('headerSubtitle');
       if (subtitle) {
         subtitle.textContent = '';
         subtitle.style.display = 'none';
       }
     } else {
-      const greetingEl = document.getElementById('headerGreeting');
+      if (searchBar) searchBar.style.removeProperty('display');
+      if (titleContainer) titleContainer.style.display = 'none';
       if (greetingEl) greetingEl.style.display = 'none';
       Utils.setText('headerTitle', titles[page] || 'Dashboard');
-      const subtitle = document.getElementById('headerSubtitle');
       if (subtitle) {
         subtitle.textContent = '';
         subtitle.style.display = 'none';
@@ -171,21 +400,19 @@ const Router = {
     }
     // Update the green icon pill in the header
     if (typeof setHeaderIcon === 'function') setHeaderIcon(page);
+    const pageIcon = document.getElementById('headerPageIcon');
+    if (pageIcon && (page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices' || page === 'dashboard')) {
+      pageIcon.style.setProperty('display', 'none', 'important');
+    }
 
     // Toggle header back button and mobile menu button visibility
     const backBtn = document.getElementById('headerBackBtn');
     if (backBtn) {
-      const showBack = (page === 'mealchart' || page === 'bazar' || page === 'summary' || page === 'history' || page === 'notifications' || page === 'export-slip' || page === 'fridaymeal');
+      const showBack = (this.navigatedFromDesktopPopover || this.navigatedFromMobileNotifScreen || this.navigatedFromNotifications || page === 'mealchart' || page === 'bazar' || page === 'summary' || page === 'history' || page === 'notifications' || page === 'export-slip' || page === 'fridaymeal' || page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices' || page === 'finance' || page === 'ledger');
       backBtn.style.display = showBack ? 'inline-flex' : 'none';
 
       // Set onclick dynamically to handle navigation flow
-      if (page === 'notifications') {
-        backBtn.onclick = () => window.history.back();
-      } else if (page === 'export-slip') {
-        backBtn.onclick = () => Messliner.router.navigate('overview');
-      } else {
-        backBtn.onclick = () => Messliner.router.navigate('overview');
-      }
+      backBtn.onclick = () => this.handleBack();
 
       const menuBtn = document.querySelector('.mobile-menu-btn');
       if (menuBtn) {
@@ -197,10 +424,18 @@ const Router = {
       }
     }
 
+    // Toggle user-bills in-page back button if navigated from notifications
+    const userBillsBack = document.getElementById('userBillsBackBtn');
+    if (userBillsBack) {
+      userBillsBack.style.display = (this.navigatedFromDesktopPopover || this.navigatedFromMobileNotifScreen || this.navigatedFromNotifications) ? 'inline-flex' : 'none';
+    }
+
     // Determine which nav page should be highlighted
     let activeNavPage = page;
-    if (page === 'mealchart' || page === 'bazar' || page === 'summary' || page === 'history' || page === 'export-slip' || page === 'fridaymeal') {
+    if (page === 'mealchart' || page === 'bazar' || page === 'summary' || page === 'export-slip' || page === 'fridaymeal') {
       activeNavPage = 'overview';
+    } else if (page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices') {
+      activeNavPage = (this.role === 'admin' ? 'mymeal' : 'dashboard');
     }
 
     // Update sidebar nav active state
@@ -213,36 +448,31 @@ const Router = {
       item.classList.toggle('active', item.dataset.page === activeNavPage);
     });
 
-    // Trigger page-specific init
+    // Smoothly slide bottom nav indicator to the newly active tab
+    this.updateBottomNavIndicator(!!this._initialNav);
+
+    // Trigger page-specific setup and render
     this._onPageEnter(page);
 
-    // Restore scroll position for the new page
-    // Skip scroll restoration for export-slip — initExportPage forces scrollTop=0 itself
+    // Restore scroll position for the new page without layout thrashing
     if (page !== 'export-slip') {
       const savedScroll = this.scrollPositions[page] || 0;
-
-      // Temporarily disable smooth scrolling to scroll instantly
-      const htmlEl = document.documentElement;
-      const prevScrollBehavior = htmlEl.style.scrollBehavior;
-      htmlEl.style.scrollBehavior = 'auto';
-
       if (contentArea) {
         contentArea.scrollTop = savedScroll;
       }
       window.scrollTo(0, savedScroll);
 
-      // Reinforced fallback to handle dynamic rendering or layout reflows
+      // Re-apply after layout settles
       requestAnimationFrame(() => {
-        if (contentArea) {
+        if (this.currentPage === page && contentArea && contentArea.scrollTop !== savedScroll) {
           contentArea.scrollTop = savedScroll;
         }
-        window.scrollTo(0, savedScroll);
-
-        // Restore previous scroll behavior
-        setTimeout(() => {
-          htmlEl.style.scrollBehavior = prevScrollBehavior;
-        }, 50);
       });
+      setTimeout(() => {
+        if (this.currentPage === page && contentArea && contentArea.scrollTop !== savedScroll) {
+          contentArea.scrollTop = savedScroll;
+        }
+      }, 50);
     }
   },
 
@@ -264,6 +494,12 @@ const Router = {
       case 'finance':
         if (Messliner.finance) Messliner.finance.refresh();
         break;
+      case 'ledger':
+        if (Messliner.ledger) Messliner.ledger.refresh();
+        break;
+      case 'user-bills':
+        if (Messliner.userBills) Messliner.userBills.render();
+        break;
       case 'overview':
         if (Messliner.overview) Messliner.overview.refresh();
         break;
@@ -279,14 +515,26 @@ const Router = {
       case 'mealchart':
         // MealChartModule init is called on app start; no refresh needed here
         break;
-      case 'bazar':
-        if (Messliner.bazarHistory) Messliner.bazarHistory.refresh();
+      case 'bazar': {
+        const isBazarAdmin = Messliner.state?.role === 'admin';
+        const userView = document.getElementById('bazarUserViewContainer');
+        const adminView = document.getElementById('bazarAdminViewContainer');
+        if (userView) userView.style.display = isBazarAdmin ? 'none' : 'block';
+        if (adminView) adminView.style.display = isBazarAdmin ? 'block' : 'none';
+
+        if (isBazarAdmin) {
+          if (Messliner.bazar) Messliner.bazar.refresh();
+        } else {
+          if (window.BazarHistoryModule) BazarHistoryModule.refresh();
+          else if (Messliner.bazarHistory) Messliner.bazarHistory.refresh();
+        }
         break;
+      }
       case 'summary':
         if (Messliner.summary) Messliner.summary.refresh();
         break;
       case 'history':
-        if (Messliner.history) Messliner.history.refreshHistoryPage();
+        if (window.HistoryPageModule) HistoryPageModule.init();
         break;
       case 'export-slip':
         if (Messliner.overview) Messliner.overview.initExportPage();
@@ -297,13 +545,159 @@ const Router = {
       case 'more':
         if (Messliner.smsAlert) Messliner.smsAlert.refresh();
         break;
-      case 'aicontrol':
-        if (Messliner.aiControl) Messliner.aiControl.setupListeners();
-        break;
       case 'aiassistant':
         if (Messliner.history) Messliner.history.refresh();
         break;
+      case 'mealhistory':
+        if (Messliner.userDashboard) {
+          if (!Messliner.userDashboard._selectedHistoryMonth) {
+            Messliner.userDashboard._selectedHistoryMonth = Utils.currentMonth();
+          }
+          Messliner.userDashboard.renderMealHistoryModalContent();
+        }
+        break;
+      case 'bazarroster':
+        if (Messliner.userDashboard) {
+          Messliner.userDashboard.renderBazarRosterPage();
+        }
+        break;
     }
+  },
+
+  /**
+   * Update bottom nav sliding indicator capsule position & width
+   * @param {boolean} instant - When true, snap without transition animation
+   */
+  updateBottomNavIndicator(instant = false) {
+    const nav = document.getElementById('bottomNav');
+    if (!nav) return;
+    if (window.getComputedStyle(nav).display === 'none') return;
+
+    const container = nav.querySelector('.bottom-nav-items');
+    if (!container) return;
+
+    let indicator = document.getElementById('bottomNavIndicator');
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.id = 'bottomNavIndicator';
+      indicator.className = 'bottom-nav-indicator';
+      indicator.setAttribute('aria-hidden', 'true');
+      container.prepend(indicator);
+    }
+
+    const activeBtn = container.querySelector('.bottom-nav-item.active');
+    if (!activeBtn || activeBtn.offsetParent === null || activeBtn.offsetWidth === 0) {
+      indicator.style.opacity = '0';
+      return;
+    }
+
+    const applyPos = (noAnim) => {
+      const left = activeBtn.offsetLeft;
+      const top = activeBtn.offsetTop;
+      const width = activeBtn.offsetWidth;
+      const height = activeBtn.offsetHeight;
+
+      if (noAnim) {
+        indicator.style.transition = 'none';
+      }
+
+      indicator.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+      indicator.style.width = `${width}px`;
+      indicator.style.height = `${height}px`;
+      indicator.style.opacity = '1';
+
+      if (!nav.classList.contains('has-slider')) {
+        nav.classList.add('has-slider');
+      }
+
+      if (noAnim) {
+        void indicator.offsetHeight; // force reflow
+        indicator.style.transition = '';
+      }
+    };
+
+    applyPos(instant);
+
+    // Follow-up RAF only on instant / initial layout settling to prevent interrupting smooth glide
+    if (instant) {
+      requestAnimationFrame(() => {
+        const currentActive = container.querySelector('.bottom-nav-item.active');
+        if (currentActive && currentActive.offsetWidth > 0) {
+          applyPos(true);
+        }
+      });
+    }
+  },
+
+  /**
+   * Initialize bottom nav indicator click/pointer triggers and resize observers
+   */
+  initBottomNavIndicator() {
+    const nav = document.getElementById('bottomNav');
+    if (!nav) return;
+    const container = nav.querySelector('.bottom-nav-items');
+    if (!container) return;
+
+    // Fast zero-latency touch response via pointerdown (native mobile app response)
+    container.querySelectorAll('.bottom-nav-item').forEach(btn => {
+      let lastTrigger = 0;
+      const handleTrigger = (e) => {
+        if (e.type === 'pointerdown' && e.button !== 0) return;
+        const now = Date.now();
+        if (now - lastTrigger < 300) return; // Prevent double trigger from pointerdown + synthetic click
+        lastTrigger = now;
+
+        const page = btn.dataset.page;
+        if (!page) return;
+
+        // Optimistically update active state immediately for zero latency
+        container.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.updateBottomNavIndicator(false);
+
+        // Immediate navigation trigger
+        let targetPage = page;
+        if (page === 'meals') {
+          targetPage = this.role === 'admin' ? 'meals' : 'overview';
+        } else if (page === 'finance') {
+          targetPage = this.role === 'admin' ? 'finance' : 'overview';
+        }
+        if (this.currentPage !== targetPage) {
+          this.navigate(targetPage);
+        } else {
+          // If already on this page and user taps again, smoothly scroll to top
+          const contentArea = document.querySelector('.content-area');
+          if (contentArea && contentArea.scrollTop > 0) {
+            contentArea.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }
+      };
+
+      btn.addEventListener('pointerdown', handleTrigger, { passive: true });
+      btn.addEventListener('click', handleTrigger);
+    });
+
+    // Auto-realign on window resize or orientation change
+    window.addEventListener('resize', () => {
+      this.updateBottomNavIndicator(true);
+    });
+
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => {
+        this.updateBottomNavIndicator(true);
+      });
+      ro.observe(container);
+    }
+
+    // Initial positioning
+    this.updateBottomNavIndicator(true);
+  }
+};
+window.Router = Router;
+
+window.updateBottomNavIndicator = function (instant) {
+  if (window.Router && typeof Router.updateBottomNavIndicator === 'function') {
+    Router.updateBottomNavIndicator(instant);
   }
 };
 

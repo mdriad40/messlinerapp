@@ -50,9 +50,10 @@ const SMSAlertModule = {
   switchTab(tab) {
     document.querySelectorAll('.more-tab-btn').forEach(btn => {
       const active = btn.dataset.tab === tab;
-      btn.style.color = active ? '#059669' : '#6B7280';
-      btn.style.borderBottom = active ? '3px solid #059669' : '3px solid transparent';
-      btn.style.fontWeight = active ? '700' : '500';
+      btn.classList.toggle('active', active);
+      btn.style.color = '';
+      btn.style.borderBottom = '';
+      btn.style.fontWeight = '';
     });
     document.querySelectorAll('[id^="moreTabContent_"]').forEach(pane => {
       pane.style.display = 'none';

@@ -12,6 +12,7 @@ const HistoryModule = {
 
     this.selectedYear = new Date().getFullYear();
     this.selectedMonth = new Date().getMonth() + 1;
+    this.selectedActivityType = 'all';
     this.createdDate = new Date(2026, 0, 1);
 
     // Listen to deposits for this user
@@ -184,6 +185,8 @@ const HistoryModule = {
 
     if (diningNameEl) diningNameEl.textContent = (this.diningInfo && this.diningInfo.name) || 'Messliner Mess';
     if (diningJoinIdEl) diningJoinIdEl.textContent = (this.diningInfo && this.diningInfo.messCode) || '-';
+    const secMessCode = document.getElementById('profileSecMessCode');
+    if (secMessCode) secMessCode.textContent = (this.diningInfo && this.diningInfo.messCode) || '-';
     if (totalMembersEl) {
       const count = this.usersMap ? Object.keys(this.usersMap).length : 0;
       totalMembersEl.textContent = `${count} ${count === 1 ? 'member' : 'members'}`;
@@ -193,6 +196,17 @@ const HistoryModule = {
       joinedSinceEl.textContent = joinedTime
         ? `Since ${joinedTime.toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
         : 'Since setup';
+    }
+    const joinedSub = document.getElementById('profileJoinedSub');
+    if (joinedSub) {
+      const joinedTime = user.createdAt ? new Date(user.createdAt) : null;
+      joinedSub.textContent = joinedTime
+        ? `Joined ${joinedTime.toLocaleString('en-US', { month: 'short', year: 'numeric' })}`
+        : 'Joined mess';
+    }
+    const diningBrand = document.getElementById('profileDiningBrand');
+    if (diningBrand) {
+      diningBrand.textContent = (this.diningInfo && this.diningInfo.name) || 'Messliner';
     }
 
     const isMember = currentViewRole !== 'admin';
@@ -225,9 +239,33 @@ const HistoryModule = {
       }
     }
 
+    // Update Notification Preferences Toggles
+    const notifPrefs = (user && user.notificationPreferences) || {};
+    const mealCutoffToggle = document.getElementById('notifToggleMealCutoff');
+    const shoppingAlertToggle = document.getElementById('notifToggleShoppingAlert');
+    const billDueToggle = document.getElementById('notifToggleBillDue');
+    const noticeToggle = document.getElementById('notifToggleNotice');
+
+    if (mealCutoffToggle) {
+      mealCutoffToggle.checked = notifPrefs.mealCutoffReminder !== false;
+      mealCutoffToggle.closest('.profile-toggle-row')?.classList.toggle('is-off', !mealCutoffToggle.checked);
+    }
+    if (shoppingAlertToggle) {
+      shoppingAlertToggle.checked = notifPrefs.shoppingAlert !== false;
+      shoppingAlertToggle.closest('.profile-toggle-row')?.classList.toggle('is-off', !shoppingAlertToggle.checked);
+    }
+    if (billDueToggle) {
+      billDueToggle.checked = notifPrefs.billDueAlerts !== false;
+      billDueToggle.closest('.profile-toggle-row')?.classList.toggle('is-off', !billDueToggle.checked);
+    }
+    if (noticeToggle) {
+      noticeToggle.checked = notifPrefs.notice !== false;
+      noticeToggle.closest('.profile-toggle-row')?.classList.toggle('is-off', !noticeToggle.checked);
+    }
+
     // Profile stats
     this.currentUserData = user;
-    const mealRate = Messliner.state.mealRate || 0;
+    const mealRate = Messliner.state.monthlyMealRate || Messliner.state.mealRate || 0;
     const rateMode = this.settings?.rateMode || 'market';
     const fixedRates = rateMode === 'fixed' ? (this.settings?.fixedRates || null) : null;
     const mealCost = Utils.calcMealCost(mealRate, user.totalMeals, this.mealsBreakdown, fixedRates);
@@ -245,11 +283,91 @@ const HistoryModule = {
         userOtherCost += amt;
       } else if (d.type === 'deduction' || d.type === 'friday_meal') {
         userDeduction += amt;
+      } else {
+        userDeduction += amt;
       }
     });
 
-    const totalCost = mealCost + userOtherCost;
-    const balance = userDeposit - totalCost - userDeduction;
+    // Calculate current month specific stats for the top profile hero card
+    const now = new Date();
+    const curMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    let monthlyMealsCount = 0;
+    let monthlyMealsBreakdown = { breakfast: 0, lunch: 0, dinner: 0 };
+    if (this.cachedMeals && this.cachedMeals[curMonthKey]) {
+      Object.values(this.cachedMeals[curMonthKey]).forEach(dayData => {
+        Object.entries(dayData).forEach(([type, typeData]) => {
+          if (typeof typeData === 'object' && typeData[this.userId] !== undefined) {
+            const count = parseFloat(typeData[this.userId]) || 0;
+            monthlyMealsCount += count;
+            if (monthlyMealsBreakdown[type] !== undefined) {
+              monthlyMealsBreakdown[type] += count;
+            }
+          }
+        });
+      });
+    }
+
+    let monthlyDeposit = 0;
+    let monthlyOtherCost = 0;
+    let monthlyDeduction = 0;
+
+    (this.userDepositsList || []).forEach(d => {
+      const dDate = d.timestamp ? new Date(d.timestamp) : (d.date ? new Date(d.date) : null);
+      const isThisMonth = dDate && dDate.getFullYear() === now.getFullYear() && (dDate.getMonth() + 1) === (now.getMonth() + 1);
+      if (isThisMonth) {
+        const amt = Math.abs(Utils.num(d.amount));
+        if (d.type === 'deposit') {
+          monthlyDeposit += amt;
+        } else if (d.type === 'other_costing') {
+          monthlyOtherCost += amt;
+        } else if (d.type === 'deduction' || d.type === 'friday_meal') {
+          monthlyDeduction += amt;
+        } else {
+          monthlyDeduction += amt;
+        }
+      }
+    });
+
+    const monthlyMealCost = Utils.calcMealCost(mealRate, monthlyMealsCount, monthlyMealsBreakdown, fixedRates);
+    const monthlyTotalCost = monthlyMealCost + monthlyOtherCost;
+    const monthlyBalance = monthlyDeposit - monthlyTotalCost - monthlyDeduction;
+
+    // Populate top hero card stats (Current Month)
+    const userBalanceEl = document.getElementById('profileUserBalance');
+    if (userBalanceEl) {
+      userBalanceEl.textContent = (typeof Utils !== 'undefined' && Utils.currency) ? Utils.currency(monthlyBalance) : `৳${monthlyBalance.toFixed(2)}`;
+      userBalanceEl.style.color = monthlyBalance < 0 ? '#DC2626' : '#15803D';
+    }
+    const userTotalMealsEl = document.getElementById('profileUserTotalMeals');
+    if (userTotalMealsEl) {
+      userTotalMealsEl.textContent = `${monthlyMealsCount}`;
+    }
+
+    // Populate individual meal breakdown counts on single-line stats card
+    const bfCountEl = document.getElementById('profileBreakfastCount');
+    const lunchCountEl = document.getElementById('profileLunchCount');
+    const dinnerCountEl = document.getElementById('profileDinnerCount');
+    if (bfCountEl) bfCountEl.textContent = `${monthlyMealsBreakdown.breakfast || 0}`;
+    if (lunchCountEl) lunchCountEl.textContent = `${monthlyMealsBreakdown.lunch || 0}`;
+    if (dinnerCountEl) dinnerCountEl.textContent = `${monthlyMealsBreakdown.dinner || 0}`;
+
+    // Respect admin trackedMeals settings: hide disabled meals
+    const trackedMeals = (this.settings && this.settings.trackedMeals) || { breakfast: true, lunch: true, dinner: true };
+    const bfCol = document.getElementById('profileBreakfastCol');
+    const bfDiv = document.getElementById('profileBreakfastDivider');
+    if (bfCol) bfCol.style.display = trackedMeals.breakfast !== false ? 'flex' : 'none';
+    if (bfDiv) bfDiv.style.display = trackedMeals.breakfast !== false ? 'block' : 'none';
+
+    const lunchCol = document.getElementById('profileLunchCol');
+    const lunchDiv = document.getElementById('profileLunchDivider');
+    if (lunchCol) lunchCol.style.display = trackedMeals.lunch !== false ? 'flex' : 'none';
+    if (lunchDiv) lunchDiv.style.display = trackedMeals.lunch !== false ? 'block' : 'none';
+
+    const dinnerCol = document.getElementById('profileDinnerCol');
+    const dinnerDiv = document.getElementById('profileDinnerDivider');
+    if (dinnerCol) dinnerCol.style.display = trackedMeals.dinner !== false ? 'flex' : 'none';
+    if (dinnerDiv) dinnerDiv.style.display = trackedMeals.dinner !== false ? 'block' : 'none';
 
     const container = document.getElementById('profileStats');
     if (container) {
@@ -312,15 +430,19 @@ const HistoryModule = {
   },
 
   async updateProfileInfo() {
-    const nameInput = document.getElementById('profileNameInput');
-    const phoneInput = document.getElementById('profilePhoneInput');
-    if (!nameInput || !phoneInput) return;
+    const nameInput = document.getElementById('profileEditNameInput') || document.getElementById('profileNameInput');
+    const phoneInput = document.getElementById('profileEditPhoneInput') || document.getElementById('profilePhoneInput');
+    if (!nameInput) return;
 
     const name = nameInput.value.trim();
-    const phone = phoneInput.value.trim();
+    const phone = phoneInput ? phoneInput.value.trim() : '';
 
     if (!name) {
-      Notifications.toast('warning', 'Validation Error', 'Full name is required.');
+      if (typeof showToast === 'function') {
+        showToast('Full name is required', 'warning');
+      } else if (typeof Notifications !== 'undefined') {
+        Notifications.toast('warning', 'Validation Error', 'Full name is required.');
+      }
       return;
     }
 
@@ -329,11 +451,22 @@ const HistoryModule = {
         name,
         phone
       });
-      Notifications.toast('success', 'Success', 'Profile updated successfully.');
-      await Notifications.log(this.diningId, 'user_updated', `Profile updated by user`, this.userId, this.userId);
+      if (typeof showToast === 'function') {
+        showToast('Profile updated successfully!', 'success');
+      } else if (typeof Notifications !== 'undefined') {
+        Notifications.toast('success', 'Success', 'Profile updated successfully.');
+      }
+      if (typeof closeModal === 'function') {
+        closeModal('editProfileModal');
+      }
+      if (typeof Notifications !== 'undefined') {
+        await Notifications.log(this.diningId, 'user_updated', `Profile updated by user`, this.userId, this.userId);
+      }
     } catch (error) {
       console.error('[HistoryModule] Update profile error:', error);
-      Notifications.toast('error', 'Error', 'Failed to update profile.');
+      if (typeof showToast === 'function') {
+        showToast('Failed to update profile.', 'error');
+      }
     }
   },
 
@@ -610,19 +743,225 @@ const HistoryModule = {
     }
   },
 
+  selectActivityType(type) {
+    this.selectedActivityType = type || 'all';
+    document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('active'));
+
+    const valueEl = document.getElementById('activityTypeValue');
+    const menuEl = document.getElementById('activityTypeMenu');
+    if (valueEl) {
+      if (this.selectedActivityType === 'meals') valueEl.textContent = 'Meals';
+      else if (this.selectedActivityType === 'meal_status') valueEl.textContent = 'Meal Status';
+      else valueEl.textContent = 'All Activity';
+    }
+
+    if (menuEl) {
+      menuEl.querySelectorAll('.custom-dropdown-item').forEach(item => {
+        if (item.getAttribute('data-value') === this.selectedActivityType) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+    }
+
+    this.renderHistoryPage();
+  },
+
+  _getUserName(userId) {
+    if (!userId || userId === 'system' || userId === 'manager') return '';
+    if (window.UsersModule && window.UsersModule.users && window.UsersModule.users[userId]) {
+      return window.UsersModule.users[userId].name || '';
+    }
+    if (this.usersMap && this.usersMap[userId]) {
+      return this.usersMap[userId].name || '';
+    }
+    if (window.Messliner && Messliner.state && Messliner.state.users && Messliner.state.users[userId]) {
+      return Messliner.state.users[userId].name || '';
+    }
+    return '';
+  },
+
+  _getMealAbbr(type) {
+    if (!type) return 'M';
+    const lower = type.toLowerCase();
+    if (lower.includes('break')) return 'B';
+    if (lower.includes('lunch')) return 'L';
+    if (lower.includes('dinn')) return 'D';
+    return type.charAt(0).toUpperCase();
+  },
+
+  _parseMealDetail(detailStr) {
+    if (!detailStr) return { type: 'Meal', count: 1 };
+    const clean = detailStr.replace(/^•\s*/, '').trim();
+
+    // Remove user name prefix if present (e.g. "Md. Riad Hasan: 1 Lunch added")
+    const colonIdx = clean.indexOf(':');
+    const text = (colonIdx !== -1 && !clean.substring(0, colonIdx).match(/\d/)) ? clean.substring(colonIdx + 1).trim() : clean;
+
+    const countMatch = text.match(/(?:Updated|Completed)?\s*(\w+)\s*:\s*([\d.]+)\s*meals/i) ||
+      text.match(/([\d.]+)\s+(\w+)\s+(?:saved|added|completed)/i) ||
+      text.match(/(\w+)\s+count\s+updated\s+to\s+([\d.]+)/i);
+    if (countMatch) {
+      let type = '';
+      let count = 1;
+      if (!isNaN(parseFloat(countMatch[2]))) {
+        type = countMatch[1];
+        count = parseFloat(countMatch[2]);
+      } else if (!isNaN(parseFloat(countMatch[1]))) {
+        count = parseFloat(countMatch[1]);
+        type = countMatch[2];
+      } else {
+        type = countMatch[1];
+      }
+      type = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+      return { type, count };
+    }
+
+    for (const t of ['Breakfast', 'Lunch', 'Dinner']) {
+      if (text.toLowerCase().includes(t.toLowerCase())) {
+        const numMatch = text.match(/([\d.]+)/);
+        const c = numMatch ? parseFloat(numMatch[1]) : 1;
+        return { type: t, count: c };
+      }
+    }
+    return { type: 'Meal', count: 1 };
+  },
+
+  _groupMealLogs(logs) {
+    const finalLogs = [];
+    const batchGroups = {};
+
+    logs.forEach(log => {
+      if (log.action === 'meal_updated' || log.action === 'meals_updated') {
+        const ts = (typeof log.timestamp === 'number') ? log.timestamp : Date.now();
+        const sanitizedLog = { ...log, timestamp: ts };
+
+        if (log.batchId) {
+          if (!batchGroups[log.batchId]) {
+            batchGroups[log.batchId] = [];
+          }
+          batchGroups[log.batchId].push(sanitizedLog);
+        } else {
+          const { type, count } = this._parseMealDetail(sanitizedLog.details || '');
+          const abbr = this._getMealAbbr(type);
+          const uName = this._getUserName(sanitizedLog.targetUserId || sanitizedLog.userId || sanitizedLog.performedBy);
+          let norm = `${count} ${abbr} added`;
+          if (uName) {
+            norm = `${uName}: ${norm}`;
+          }
+          finalLogs.push({
+            action: 'meals_updated_group',
+            details: `• ${norm}`,
+            timestamp: ts,
+            performedBy: sanitizedLog.performedBy
+          });
+        }
+      } else {
+        const ts = (typeof log.timestamp === 'number') ? log.timestamp : Date.now();
+        finalLogs.push({ ...log, timestamp: ts });
+      }
+    });
+
+    Object.values(batchGroups).forEach(items => {
+      items.sort((a, b) => a.timestamp - b.timestamp);
+      const batchTimestamp = items[0].timestamp;
+
+      // Group items in this batch by User ID
+      const userMealMap = new Map();
+
+      items.forEach(it => {
+        const targetId = it.targetUserId || it.userId || '';
+        const uName = this._getUserName(targetId || it.performedBy);
+        const key = targetId || uName || 'unknown';
+
+        const { type, count } = this._parseMealDetail(it.details || '');
+
+        if (!userMealMap.has(key)) {
+          userMealMap.set(key, { uName, meals: new Map() });
+        }
+
+        const userEntry = userMealMap.get(key);
+        userEntry.meals.set(type, (userEntry.meals.get(type) || 0) + count);
+      });
+
+      const userLines = [];
+      const mealOrder = ['Breakfast', 'Lunch', 'Dinner'];
+
+      userMealMap.forEach(({ uName, meals }) => {
+        const mealParts = [];
+        mealOrder.forEach(type => {
+          if (meals.has(type) && meals.get(type) > 0) {
+            const count = meals.get(type);
+            const abbr = this._getMealAbbr(type);
+            mealParts.push(`${count} ${abbr}`);
+          }
+        });
+
+        // Also check any types not in mealOrder
+        meals.forEach((count, type) => {
+          if (!mealOrder.includes(type) && count > 0) {
+            const abbr = this._getMealAbbr(type);
+            mealParts.push(`${count} ${abbr}`);
+          }
+        });
+
+        if (mealParts.length > 0) {
+          const mealText = `${mealParts.join(', ')} added`;
+
+          if (uName) {
+            userLines.push(`• ${uName}: ${mealText}`);
+          } else {
+            userLines.push(`• ${mealText}`);
+          }
+        }
+      });
+
+      finalLogs.push({
+        action: 'meals_updated_group',
+        details: userLines.join('<br>'),
+        timestamp: batchTimestamp,
+        performedBy: items[0].performedBy
+      });
+    });
+
+    finalLogs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    return finalLogs;
+  },
+
   /**
    * Render recent activity timeline on History page
    */
   renderHistoryPage() {
-    const container = document.getElementById('historyActivityTimeline');
+    const container = document.getElementById('historyActivityList') || document.getElementById('historyActivityTimeline');
+    const countEl = document.getElementById('historyActivityCount');
     if (!container) return;
-    // Exclude group updates and individual meal toggles (only process normal meal sheet updates)
+
+    let allowedActions;
+    const filterType = this.selectedActivityType || 'all';
+
+    if (filterType === 'meals') {
+      allowedActions = new Set([
+        'meals_updated',
+        'meal_updated',
+        'meals_updated_group'
+      ]);
+    } else if (filterType === 'meal_status') {
+      allowedActions = new Set([
+        'meal_toggled'
+      ]);
+    } else {
+      allowedActions = new Set([
+        'meals_updated',
+        'meal_updated',
+        'meals_updated_group',
+        'meal_toggled'
+      ]);
+    }
+
     const rawLogs = (this.globalLogs || []).filter(log => {
       const action = log.action || '';
-      if (action === 'meals_updated' || action === 'meal_toggled' ||
-        action === 'meal_completed' || action === 'meals_updated_group') {
-        return false;
-      }
+      if (!allowedActions.has(action)) return false;
 
       // Filter by selected Month and Year
       if (!log.timestamp) return false;
@@ -632,77 +971,19 @@ const HistoryModule = {
       return logYear === this.selectedYear && logMonth === this.selectedMonth;
     });
 
-    // Group logs by batchId
-    const groupedLogs = [];
-    const batches = {}; // batchId -> array of logs
+    let displayLogs = [];
+    if (filterType === 'meal_status') {
+      displayLogs = rawLogs;
+    } else {
+      displayLogs = this._groupMealLogs(rawLogs);
+    }
 
-    rawLogs.forEach(log => {
-      if (log.batchId) {
-        if (!batches[log.batchId]) {
-          batches[log.batchId] = [];
-        }
-        batches[log.batchId].push(log);
-      } else {
-        // Deep copy to prevent mutating cached state
-        groupedLogs.push({ ...log });
-      }
-    });
+    // Re-sort displayLogs by timestamp descending so the timeline is correctly ordered
+    displayLogs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-    // Process batches and convert them to summary log entries
-    Object.entries(batches).forEach(([batchId, batchList]) => {
-      // Sort batchList by timestamp just in case, use the first/latest log as the base
-      batchList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      const baseLog = { ...batchList[0] };
+    if (countEl) countEl.textContent = `${displayLogs.length} Records`;
 
-      // Sum counts by meal type
-      const counts = { Breakfast: 0, Lunch: 0, Dinner: 0 };
-      let verb = 'updated';
-
-      batchList.forEach(item => {
-        const details = item.details || '';
-        // details pattern: "Updated Breakfast: 2 meals" or "Completed Lunch: 3 meals" or "2 Lunch saved"
-        const match = details.match(/(?:Updated|Completed)?\s*(\w+)\s*:\s*([\d.]+)\s*meals/i) ||
-          details.match(/([\d.]+)\s+(\w+)\s+(saved|added|completed)/i);
-
-        if (match) {
-          let type = '';
-          let count = 0;
-          if (match[2] && !isNaN(parseFloat(match[2]))) {
-            type = match[1];
-            count = parseFloat(match[2]);
-          } else {
-            type = match[2];
-            count = parseFloat(match[1]);
-            verb = match[3] || verb;
-          }
-
-          // Capitalize type
-          const capType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
-          if (counts[capType] !== undefined) {
-            counts[capType] += count;
-          }
-        }
-      });
-
-      // Build summary description, e.g. "13 Lunch & 12 Dinner saved"
-      const summaryParts = [];
-      Object.entries(counts).forEach(([type, count]) => {
-        if (count > 0) {
-          summaryParts.push(`${count} ${type}`);
-        }
-      });
-
-      if (summaryParts.length > 0) {
-        baseLog.details = `${summaryParts.join(' & ')} ${verb}`;
-      }
-
-      groupedLogs.push(baseLog);
-    });
-
-    // Re-sort groupedLogs by timestamp descending so the timeline is correctly ordered
-    groupedLogs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-    if (groupedLogs.length === 0) {
+    if (displayLogs.length === 0) {
       container.innerHTML = `
         <div class="empty-state" style="padding:var(--space-8) var(--space-4);">
           <div class="empty-state-icon">
@@ -711,132 +992,48 @@ const HistoryModule = {
               <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
-          <p style="margin-top:var(--space-2);font-size:var(--font-sm);color:var(--text-secondary);">No history logs found yet.</p>
+          <p style="margin-top:var(--space-2);font-size:var(--font-sm);color:var(--text-secondary);">No meal history logs found for <strong>${this.monthNames[this.selectedMonth - 1]} ${this.selectedYear}</strong>.</p>
         </div>
       `;
       return;
     }
 
-    let html = groupedLogs.map(log => {
-      let title = 'Activity Log';
-      let dotClass = '';
-      let borderColor = 'var(--gray-300)';
-      let iconBg = 'var(--gray-50)';
-      let iconColor = 'var(--gray-600)';
-      let svgIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+    let html = displayLogs.map(log => {
+      const dotClass = log.action === 'meal_toggled'
+        ? (log.details?.toUpperCase().includes('OFF') ? 'danger' : 'accent')
+        : 'warning';
 
-      const action = log.action || '';
-
-      if (action === 'user_added' || action === 'member_joined') {
-        title = 'Member Joined';
-        dotClass = 'accent';
-        borderColor = 'var(--accent-500)';
-        iconBg = 'var(--accent-50)';
-        iconColor = 'var(--accent-600)';
-        svgIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>`;
-      } else if (action === 'bazar_added') {
-        title = 'Bazar Expense Added';
-        dotClass = 'warning';
-        borderColor = '#F97316';
-        iconBg = 'rgba(249, 115, 22, 0.06)';
-        iconColor = '#F97316';
-        svgIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`;
-      } else if (action === 'other_costing_added') {
-        title = 'Other Costing Applied';
-        dotClass = 'danger';
-        borderColor = 'var(--danger-500)';
-        iconBg = 'var(--danger-50)';
-        iconColor = 'var(--danger-600)';
-        svgIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`;
-      } else if (action === 'deposit_added') {
-        title = 'Deposit Received';
-        dotClass = 'accent';
-        borderColor = 'var(--primary-500)';
-        iconBg = 'var(--primary-50)';
-        iconColor = 'var(--primary-600)';
-        svgIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>`;
-      } else if (action === 'deduction_added') {
-        title = 'Deduction Applied';
-        dotClass = 'danger';
-        borderColor = 'var(--danger-500)';
-        iconBg = 'var(--danger-50)';
-        iconColor = 'var(--danger-600)';
-        svgIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`;
-      } else if (action === 'friday_bazar_deducted') {
-        title = 'Friday Meal Deduction';
-        dotClass = 'danger';
-        borderColor = 'var(--danger-500)';
-        iconBg = 'var(--danger-50)';
-        iconColor = 'var(--danger-600)';
-        svgIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`;
-      } else if (action === 'meal_toggled') {
-        title = 'Meal Status Updated';
-        dotClass = 'accent';
-        borderColor = 'var(--primary-400)';
-        iconBg = 'var(--primary-50)';
-        iconColor = 'var(--primary-600)';
-        svgIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M22 4L12 14.01l-3-3"/></svg>`;
-      } else if (action === 'meals_updated') {
-        title = 'Meal Sheet Updated';
-        dotClass = 'warning';
-        borderColor = 'var(--warning-500)';
-        iconBg = 'var(--warning-50)';
-        iconColor = 'var(--warning-600)';
-        svgIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>`;
-      } else if (action === 'user_deleted') {
-        title = 'Member Deleted';
-        dotClass = 'danger';
-        borderColor = 'var(--danger-600)';
-        iconBg = 'var(--danger-50)';
-        iconColor = 'var(--danger-600)';
-        svgIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>`;
-      } else if (action === 'settings_updated') {
-        title = 'Settings Updated';
-        dotClass = '';
-        borderColor = 'var(--primary-400)';
-        iconBg = 'var(--primary-50)';
-        iconColor = 'var(--primary-600)';
-        svgIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`;
+      let title;
+      if (log.action === 'meal_toggled') {
+        title = 'Meal Status';
+      } else {
+        title = 'Meals';
       }
 
-      let actor = 'System';
-      if (log.performedBy === 'manager') {
-        actor = 'Manager';
-      } else if (log.performedBy === this.userId) {
-        actor = 'You';
-      } else if (log.performedBy && log.performedBy !== 'system') {
-        if (this.usersMap && this.usersMap[log.performedBy]) {
-          actor = this.usersMap[log.performedBy].name || 'Manager';
+      let desc = log.details || '';
+      const uName = this._getUserName(log.targetUserId || log.userId || log.performedBy);
+      if (uName && desc && !desc.includes(uName)) {
+        if (desc.startsWith('•')) {
+          desc = `• ${uName}: ${desc.slice(1).trim()}`;
         } else {
-          actor = 'Manager';
+          desc = `${uName}: ${desc}`;
         }
       }
 
       return `
         <div class="timeline-item">
           <div class="timeline-dot ${dotClass}"></div>
-          <div class="timeline-content" style="border-left: 4px solid ${borderColor}; box-shadow: var(--shadow-sm); display: flex; gap: var(--space-4); align-items: flex-start;">
-            <div style="background: ${iconBg}; color: ${iconColor}; width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
-              ${svgIcon}
-            </div>
-            <div style="flex: 1; min-width: 0;">
-              <div class="flex items-center justify-between" style="gap: var(--space-2); margin-bottom: 2px;">
-                <span class="timeline-title" style="font-size: var(--font-base); font-weight: var(--weight-bold);">${title}</span>
-                <span class="timeline-date" style="margin-bottom: 0; white-space: nowrap;">${Utils.timeAgo(log.timestamp)}</span>
-              </div>
-              <div class="timeline-desc" style="margin-top: var(--space-1.5); font-size: var(--font-sm); line-height: 1.4;">${Utils.formatActivityDetails(log.details)}</div>
-              <div style="font-size: 11px; color: var(--text-tertiary); margin-top: var(--space-2); display: flex; align-items: center; gap: 4px;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <span>Performed by: <strong>${actor}</strong></span>
-              </div>
-            </div>
+          <div class="timeline-content">
+            <div class="timeline-date">${Utils.timeAgo(log.timestamp)}</div>
+            <div class="timeline-title">${title}</div>
+            ${desc ? `<div class="timeline-desc">${desc}</div>` : ''}
           </div>
         </div>
       `;
     }).join('');
 
     // Setup timeline collapse/expand controls
-    html += this._setupTimelineCollapse(container, groupedLogs.length);
+    html += this._setupTimelineCollapse(container, displayLogs.length);
     container.innerHTML = html;
   },
 
@@ -876,82 +1073,98 @@ const HistoryModule = {
   ],
 
   populateYearDropdown() {
-    const valueEl = document.getElementById('historyYearValue');
-    const menuEl = document.getElementById('historyYearMenu');
-    if (!valueEl || !menuEl) return;
+    ['history', 'userHistory', 'activity'].forEach(prefix => {
+      const valueEl = document.getElementById(`${prefix}YearValue`);
+      const menuEl = document.getElementById(`${prefix}YearMenu`);
+      if (!valueEl || !menuEl) return;
 
-    const startYear = this.createdDate ? this.createdDate.getFullYear() : 2026;
-    const endYear = new Date().getFullYear();
+      const startYear = this.createdDate ? this.createdDate.getFullYear() : 2026;
+      const endYear = new Date().getFullYear();
 
-    let itemsHTML = '';
-    for (let y = startYear; y <= endYear; y++) {
-      const isSelected = y === this.selectedYear;
-      itemsHTML += `
-        <div class="custom-dropdown-item ${isSelected ? 'selected' : ''}" 
-             data-value="${y}" 
-             onclick="Messliner.history.selectYear(${y})">
-          ${y}
-        </div>
-      `;
-    }
-    menuEl.innerHTML = itemsHTML;
-    valueEl.textContent = this.selectedYear;
+      let itemsHTML = '';
+      for (let y = startYear; y <= endYear; y++) {
+        const isSelected = y === this.selectedYear;
+        itemsHTML += `
+          <div class="custom-dropdown-item ${isSelected ? 'selected' : ''}" 
+               data-value="${y}" 
+               onclick="Messliner.history.selectYear(${y})">
+            ${y}
+          </div>
+        `;
+      }
+      menuEl.innerHTML = itemsHTML;
+      valueEl.textContent = this.selectedYear;
+    });
   },
 
   selectYear(year) {
-    this.selectedYear = year;
-    const dropdown = document.getElementById('historyYearDropdown');
-    if (dropdown) dropdown.classList.remove('active');
+    this.selectedYear = parseInt(year, 10);
+    document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('active'));
     this.populateYearDropdown();
     this.populateMonthDropdown();
     this.listenToLogs();
+
+    if (window.HistoryPageModule) {
+      window.HistoryPageModule.selectedYear = this.selectedYear;
+      window.HistoryPageModule.populateYearDropdown();
+      window.HistoryPageModule.populateMonthDropdown();
+      window.HistoryPageModule.renderBazarForSelectedMonth();
+    }
   },
 
   populateMonthDropdown() {
-    const valueEl = document.getElementById('historyMonthValue');
-    const menuEl = document.getElementById('historyMonthMenu');
-    if (!valueEl || !menuEl) return;
+    ['history', 'userHistory', 'activity'].forEach(prefix => {
+      const valueEl = document.getElementById(`${prefix}MonthValue`);
+      const menuEl = document.getElementById(`${prefix}MonthMenu`);
+      if (!valueEl || !menuEl) return;
 
-    const startYear = this.createdDate ? this.createdDate.getFullYear() : 2026;
-    const currentYear = new Date().getFullYear();
+      const startYear = this.createdDate ? this.createdDate.getFullYear() : 2026;
+      const currentYear = new Date().getFullYear();
 
-    let startMonth = 1;
-    let endMonth = 12;
+      let startMonth = 1;
+      let endMonth = 12;
 
-    if (this.selectedYear === startYear) {
-      startMonth = this.createdDate ? this.createdDate.getMonth() + 1 : 1;
-    }
-    if (this.selectedYear === currentYear) {
-      endMonth = new Date().getMonth() + 1;
-    }
+      if (this.selectedYear === startYear) {
+        startMonth = this.createdDate ? this.createdDate.getMonth() + 1 : 1;
+      }
+      if (this.selectedYear === currentYear) {
+        endMonth = new Date().getMonth() + 1;
+      }
 
-    if (this.selectedMonth < startMonth) {
-      this.selectedMonth = startMonth;
-    } else if (this.selectedMonth > endMonth) {
-      this.selectedMonth = endMonth;
-    }
+      if (this.selectedMonth < startMonth) {
+        this.selectedMonth = startMonth;
+      } else if (this.selectedMonth > endMonth) {
+        this.selectedMonth = endMonth;
+      }
 
-    let itemsHTML = '';
-    for (let m = startMonth; m <= endMonth; m++) {
-      const isSelected = m === this.selectedMonth;
-      itemsHTML += `
-        <div class="custom-dropdown-item ${isSelected ? 'selected' : ''}" 
-             data-value="${m}" 
-             onclick="Messliner.history.selectMonth(${m})">
-          ${this.monthNames[m - 1]}
-        </div>
-      `;
-    }
-    menuEl.innerHTML = itemsHTML;
-    valueEl.textContent = this.monthNames[this.selectedMonth - 1];
+      let itemsHTML = '';
+      for (let m = startMonth; m <= endMonth; m++) {
+        const isSelected = m === this.selectedMonth;
+        itemsHTML += `
+          <div class="custom-dropdown-item ${isSelected ? 'selected' : ''}" 
+               data-value="${m}" 
+               onclick="Messliner.history.selectMonth(${m})">
+            ${this.monthNames[m - 1]}
+          </div>
+        `;
+      }
+      menuEl.innerHTML = itemsHTML;
+      valueEl.textContent = this.monthNames[this.selectedMonth - 1];
+    });
   },
 
   selectMonth(month) {
-    this.selectedMonth = month;
-    const dropdown = document.getElementById('historyMonthDropdown');
-    if (dropdown) dropdown.classList.remove('active');
+    this.selectedMonth = parseInt(month, 10);
+    document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('active'));
     this.populateMonthDropdown();
     this.listenToLogs();
+
+    if (window.HistoryPageModule) {
+      window.HistoryPageModule.selectedMonth = this.selectedMonth;
+      window.HistoryPageModule.populateYearDropdown();
+      window.HistoryPageModule.populateMonthDropdown();
+      window.HistoryPageModule.renderBazarForSelectedMonth();
+    }
   },
 
   _setupTimelineCollapse(container, displayLogsCount) {
@@ -1004,6 +1217,9 @@ const HistoryModule = {
 
   async toggleAiAutoMeal(checked) {
     try {
+      this.diningId = this.diningId || (window.Messliner && Messliner.state && Messliner.state.diningId) || localStorage.getItem('dining_id');
+      this.userId = this.userId || (window.Messliner && Messliner.state && Messliner.state.userId) || localStorage.getItem('user_id');
+      if (!this.diningId || !this.userId) return;
       await db.ref(`dinings/${this.diningId}/users/${this.userId}/autoMealEnabled`).set(checked);
       Notifications.toast('success', 'Auto Meal Updated', `AI Auto Meal has been turned ${checked ? 'ON' : 'OFF'}.`);
     } catch (err) {
@@ -1118,9 +1334,19 @@ const HistoryModule = {
     this.showChatLoading();
 
     try {
+      this.diningId = this.diningId || (window.Messliner && Messliner.state && Messliner.state.diningId) || localStorage.getItem('dining_id');
+      this.userId = this.userId || (window.Messliner && Messliner.state && Messliner.state.userId) || localStorage.getItem('user_id') || 'admin';
+
       // 1. Fetch current status of meals & mess tracked meals settings
-      const statusSnap = await db.ref(`dinings/${this.diningId}/users/${this.userId}/mealStatus`).once('value');
-      const mealStatus = statusSnap.val() || { breakfast: 1, lunch: 1, dinner: 1 };
+      let mealStatus = { breakfast: 1, lunch: 1, dinner: 1 };
+      if (this.diningId && this.userId) {
+        try {
+          const statusSnap = await db.ref(`dinings/${this.diningId}/users/${this.userId}/mealStatus`).once('value');
+          if (statusSnap.exists()) mealStatus = statusSnap.val();
+        } catch (err) {
+          console.warn('[AI] Could not fetch mealStatus:', err);
+        }
+      }
 
       const trackedMeals = (this.settings && this.settings.trackedMeals) || { breakfast: true, lunch: true, dinner: true };
       const activeMealTypes = [];
@@ -1137,21 +1363,21 @@ const HistoryModule = {
       }
 
       const userDeposit = (Messliner.userDashboard && Messliner.userDashboard.monthlyDeposit) || 0;
-      const mealRate = Messliner.state.monthlyMealRate || 0;
+      const mealRate = (Messliner.state && Messliner.state.monthlyMealRate) || 0;
       const monthlyMeals = (Messliner.userDashboard && Messliner.userDashboard.monthlyMeals) || 0;
       const rateMode = (this.settings && this.settings.rateMode) || 'market';
       const fixedRates = rateMode === 'fixed' ? ((this.settings && this.settings.fixedRates) || null) : null;
-      const mealCost = Utils.calcMealCost(mealRate, monthlyMeals, (Messliner.userDashboard && Messliner.userDashboard.monthlyMealsBreakdown) || { breakfast: 0, lunch: 0, dinner: 0 }, fixedRates);
+      const mealCost = typeof Utils !== 'undefined' && Utils.calcMealCost ? Utils.calcMealCost(mealRate, monthlyMeals, (Messliner.userDashboard && Messliner.userDashboard.monthlyMealsBreakdown) || { breakfast: 0, lunch: 0, dinner: 0 }, fixedRates) : 0;
       const otherCosting = (Messliner.userDashboard && Messliner.userDashboard.monthlyOtherCosting) || 0;
       const deduction = (Messliner.userDashboard && Messliner.userDashboard.monthlyDeduction) || 0;
       const totalCost = mealCost + otherCosting;
       const balance = userDeposit - totalCost - deduction;
 
       const profileContext = {
-        userName: this.currentUserData?.name || 'Member',
-        email: this.currentUserData?.email || '',
+        userName: this.currentUserData?.name || (Messliner.state && Messliner.state.userName) || 'Admin',
+        email: this.currentUserData?.email || (Messliner.state && Messliner.state.user && Messliner.state.user.email) || '',
         phone: this.currentUserData?.phone || '',
-        role: this.currentUserData?.role || 'member',
+        role: this.currentUserData?.role || (Messliner.state && Messliner.state.role) || 'admin',
         monthlyDeposit: userDeposit,
         monthlyMealsCount: monthlyMeals,
         mealsBreakdown: (Messliner.userDashboard && Messliner.userDashboard.monthlyMealsBreakdown) || { breakfast: 0, lunch: 0, dinner: 0 },
@@ -1164,14 +1390,21 @@ const HistoryModule = {
       };
 
       // Get recent bazaar transactions for context
-      const bazarSnap = await db.ref(`dinings/${this.diningId}/bazar`).once('value');
-      const bazaarData = bazarSnap.val() || {};
-      const recentExpenses = Object.values(bazaarData).slice(-10).map(b => ({
-        date: b.date || '',
-        shopper: b.shopper || '',
-        amount: b.amount || 0,
-        item: b.item || (b.items && b.items[0]?.name) || 'Bazar Item'
-      }));
+      let recentExpenses = [];
+      if (this.diningId) {
+        try {
+          const bazarSnap = await db.ref(`dinings/${this.diningId}/bazar`).once('value');
+          const bazaarData = bazarSnap.val() || {};
+          recentExpenses = Object.values(bazaarData).slice(-10).map(b => ({
+            date: b.date || '',
+            shopper: b.shopper || '',
+            amount: b.amount || 0,
+            item: b.item || (b.items && b.items[0]?.name) || 'Bazar Item'
+          }));
+        } catch (err) {
+          console.warn('[AI] Could not fetch bazar data:', err);
+        }
+      }
 
       const prompt = `
         User prompt/question: "${msg}"
@@ -1216,7 +1449,15 @@ const HistoryModule = {
         required: ["intent", "responseMessage"]
       };
 
-      const result = await Messliner.aiControl._callGemini(prompt, systemInstruction, schema);
+      const aiHandler = (Messliner && Messliner.aiControl && typeof Messliner.aiControl._callGemini === 'function')
+        ? Messliner.aiControl
+        : (typeof AIControlModule !== 'undefined' ? AIControlModule : null);
+
+      if (!aiHandler) {
+        throw new Error("AI Control Module not loaded.");
+      }
+
+      const result = await aiHandler._callGemini(prompt, systemInstruction, schema);
 
       this.appendBotMessage(result.responseMessage);
 
@@ -1342,7 +1583,14 @@ const HistoryModule = {
       const base64 = e.target.result.split(',')[1];
 
       try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${typeof GEMINI_MODEL !== 'undefined' ? GEMINI_MODEL : 'gemini-3.5-flash'}:generateContent?key=${GEMINI_API_KEY}`;
+        const preferredModel = typeof GEMINI_MODEL !== 'undefined' ? GEMINI_MODEL : 'gemini-3-flash-preview';
+        const apiKey = (typeof GEMINI_API_KEY !== 'undefined' && GEMINI_API_KEY) ? GEMINI_API_KEY : (window.GEMINI_API_KEY || localStorage.getItem('gemini_api_key') || '');
+        const candidateModels = [
+          preferredModel,
+          'gemini-3-flash-preview',
+          'gemini-3.5-flash',
+          'gemini-3.5-flash-lite'
+        ].filter((m, idx, arr) => arr.indexOf(m) === idx);
 
         const requestBody = {
           contents: [
@@ -1378,18 +1626,46 @@ const HistoryModule = {
           }
         };
 
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(requestBody)
-        });
+        let parsed = null;
+        let lastErr = null;
 
-        if (!response.ok) throw new Error("Gemini failed to read routine.");
+        for (const model of candidateModels) {
+          try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(requestBody)
+            });
 
-        const data = await response.json();
-        const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
+            if (!response.ok) {
+              const errText = await response.text();
+              if (response.status === 503 || response.status === 404 || response.status === 429) {
+                lastErr = new Error(`Gemini failed to read routine: ${response.status} - ${errText}`);
+                continue;
+              }
+              throw new Error(`Gemini failed to read routine: ${response.status} - ${errText}`);
+            }
+
+            const data = await response.json();
+            const candidate = data && data.candidates && data.candidates[0];
+            if (!candidate || !candidate.content || !candidate.content.parts) {
+              throw new Error("No response from Gemini for routine analysis.");
+            }
+            let routineText = candidate.content.parts.filter(p => !p.thought && typeof p.text === 'string').map(p => p.text).join('') || candidate.content.parts[0]?.text || '{}';
+            if (routineText.startsWith('```')) {
+              routineText = routineText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+            }
+            parsed = JSON.parse(routineText);
+            break;
+          } catch (mErr) {
+            lastErr = mErr;
+          }
+        }
+
+        if (!parsed) {
+          throw lastErr || new Error("Failed to parse routine.");
+        }
 
         // Store parsed schedule in temporary property to avoid direct DB write from AI
         this._pendingSchedule = parsed.schedule;
@@ -1492,6 +1768,13 @@ const HistoryModule = {
 
   async confirmMealToggle(mealType, statusVal) {
     try {
+      if ((statusVal === true || (typeof statusVal === 'number' && statusVal > 0)) && Messliner.userDashboard && typeof Messliner.userDashboard.isDueLocked === 'function' && Messliner.userDashboard.isDueLocked()) {
+        const dueLimit = parseFloat(Messliner.userDashboard.settings?.dueLimit) || 0;
+        this.appendBotMessage(`⚠️ **Cannot turn ON meal:** Your outstanding due exceeds the maximum allowed limit (৳${dueLimit}). Meals are locked until due is cleared by making a deposit.`);
+        Notifications.toast('error', 'Due Limit Exceeded', 'Meals are locked due to outstanding due.');
+        return;
+      }
+
       await db.ref(`dinings/${this.diningId}/users/${this.userId}/mealStatus/${mealType}`).set(statusVal);
       await Notifications.log(this.diningId, 'meal_toggled', `${mealType.toUpperCase()} set ${statusVal ? 'ON' : 'OFF'} via chatbot user confirmation`, this.userId, this.userId);
       this.appendBotMessage(`✅ Database Updated! Turned **${mealType.toUpperCase()}** ${statusVal ? 'ON' : 'OFF'}.`);
@@ -1577,7 +1860,572 @@ const HistoryModule = {
     setTimeout(() => {
       window.location.reload();
     }, 600);
+  },
+
+  /**
+   * Toggle user notification preference and persist silently to Firebase
+   */
+  async toggleNotificationPref(key, isChecked) {
+    const diningId = this.diningId || (window.Messliner && Messliner.state && Messliner.state.diningId);
+    const userId = this.userId || (window.Messliner && Messliner.state && Messliner.state.userId);
+    if (!diningId || !userId) return;
+
+    if (!this.currentUserData) this.currentUserData = {};
+    if (!this.currentUserData.notificationPreferences) {
+      this.currentUserData.notificationPreferences = {
+        mealCutoffReminder: true,
+        shoppingAlert: true,
+        billDueAlerts: true,
+        notice: true
+      };
+    }
+    this.currentUserData.notificationPreferences[key] = isChecked;
+
+    const toggleEl = document.querySelector(`input[data-pref="${key}"]`);
+    if (toggleEl) {
+      toggleEl.closest('.profile-toggle-row')?.classList.toggle('is-off', !isChecked);
+    }
+
+    try {
+      await db.ref(`dinings/${diningId}/users/${userId}/notificationPreferences/${key}`).set(isChecked);
+      // Silent persistence, no toast message needed
+    } catch (err) {
+      console.error(`Failed to save notification preference for ${key}:`, err);
+      // Revert switch on error
+      if (toggleEl) {
+        toggleEl.checked = !isChecked;
+        toggleEl.closest('.profile-toggle-row')?.classList.toggle('is-off', isChecked);
+      }
+    }
   }
 };
 
+/* ============================================
+   Messliner — History Page Module
+   ============================================ */
+
+const HistoryPageModule = {
+  diningId: null,
+  currentTab: 'bazar',
+  createdDate: new Date(2026, 0, 1),
+  selectedYear: new Date().getFullYear(),
+  selectedMonth: new Date().getMonth() + 1,
+  bazarData: null,
+  monthNames: [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ],
+
+  async init(diningId) {
+    const targetDiningId = diningId || (window.Messliner && Messliner.state && Messliner.state.diningId);
+    if (this._initialized && this.diningId === targetDiningId) {
+      this.refresh();
+      return;
+    }
+    this.diningId = targetDiningId;
+    this._initialized = true;
+
+    await this.fetchStartDate();
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
+    this.filterTab(this.currentTab || 'bazar');
+    this.setupListeners();
+  },
+
+  async fetchStartDate() {
+    if (!this.diningId) return;
+    try {
+      const startRef = await db.ref(`dinings/${this.diningId}/settings/historyStartDate`).once('value');
+      let startDateStr = startRef.val();
+      if (startDateStr) {
+        this.createdDate = new Date(startDateStr);
+      } else {
+        const infoSnap = await db.ref(`dinings/${this.diningId}/info/createdAt`).once('value');
+        const createdAt = infoSnap.val();
+        if (createdAt) {
+          this.createdDate = new Date(createdAt);
+        } else {
+          this.createdDate = new Date(2026, 0, 1);
+        }
+      }
+    } catch (e) {
+      this.createdDate = new Date(2026, 0, 1);
+    }
+  },
+
+  toggleDropdown(id) {
+    const target = document.getElementById(id);
+    if (!target) return;
+    const isActive = target.classList.contains('active');
+    document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('active'));
+    if (!isActive) {
+      target.classList.add('active');
+    }
+  },
+
+  populateYearDropdown() {
+    const valueEl = document.getElementById('historyYearValue');
+    const menuEl = document.getElementById('historyYearMenu');
+    if (!valueEl || !menuEl) return;
+
+    const startYear = (this.createdDate || new Date(2026, 0, 1)).getFullYear();
+    const endYear = new Date().getFullYear();
+
+    let html = '';
+    for (let y = startYear; y <= endYear; y++) {
+      const sel = y === this.selectedYear ? 'selected' : '';
+      html += `<div class="custom-dropdown-item ${sel}" data-value="${y}"
+                    onclick="HistoryPageModule.selectYear(${y})">${y}</div>`;
+    }
+    menuEl.innerHTML = html;
+    valueEl.textContent = this.selectedYear;
+  },
+
+  selectYear(year) {
+    this.selectedYear = parseInt(year, 10);
+    this._lastBazarHtml = null;
+    const dd = document.getElementById('historyYearDropdown');
+    if (dd) dd.classList.remove('active');
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
+
+    if (window.Messliner && Messliner.history) {
+      Messliner.history.selectedYear = this.selectedYear;
+      Messliner.history.populateYearDropdown();
+      Messliner.history.populateMonthDropdown();
+      Messliner.history.listenToLogs();
+    }
+
+    this.renderBazarForSelectedMonth();
+  },
+
+  populateMonthDropdown() {
+    const valueEl = document.getElementById('historyMonthValue');
+    const menuEl = document.getElementById('historyMonthMenu');
+    if (!valueEl || !menuEl) return;
+
+    const createdDate = this.createdDate || new Date(2026, 0, 1);
+    const startYear = createdDate.getFullYear();
+    const currentYear = new Date().getFullYear();
+
+    let startMonth = 1;
+    let endMonth = 12;
+
+    if (this.selectedYear === startYear) {
+      startMonth = createdDate.getMonth() + 1;
+    }
+    if (this.selectedYear === currentYear) {
+      endMonth = new Date().getMonth() + 1;
+    }
+
+    if (this.selectedMonth < startMonth) this.selectedMonth = startMonth;
+    if (this.selectedMonth > endMonth) this.selectedMonth = endMonth;
+
+    let html = '';
+    for (let m = startMonth; m <= endMonth; m++) {
+      const sel = m === this.selectedMonth ? 'selected' : '';
+      html += `<div class="custom-dropdown-item ${sel}" data-value="${m}"
+                    onclick="HistoryPageModule.selectMonth(${m})">${this.monthNames[m - 1]}</div>`;
+    }
+    menuEl.innerHTML = html;
+    valueEl.textContent = this.monthNames[this.selectedMonth - 1];
+  },
+
+  selectMonth(month) {
+    this.selectedMonth = parseInt(month, 10);
+    this._lastBazarHtml = null;
+    const dd = document.getElementById('historyMonthDropdown');
+    if (dd) dd.classList.remove('active');
+    this.populateMonthDropdown();
+
+    if (window.Messliner && Messliner.history) {
+      Messliner.history.selectedMonth = this.selectedMonth;
+      Messliner.history.populateYearDropdown();
+      Messliner.history.populateMonthDropdown();
+      Messliner.history.listenToLogs();
+    }
+
+    this.renderBazarForSelectedMonth();
+  },
+
+  setupListeners() {
+    if (this._listenersBound) return;
+    this._listenersBound = true;
+
+    // Close dropdowns on document click outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.custom-dropdown')) {
+        document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('active'));
+      }
+    });
+
+    if (!this.diningId && window.Messliner && Messliner.state) {
+      this.diningId = Messliner.state.diningId;
+    }
+    if (!this.diningId) return;
+
+    // Realtime Bazar listener (fires ONCE immediately and on updates)
+    db.ref(`dinings/${this.diningId}/bazar`).on('value', snap => {
+      this.rawBazarData = snap.val() || {};
+      this.bazarData = this.rawBazarData;
+      this.renderBazarForSelectedMonth();
+    });
+
+    // Realtime Logs listener
+    db.ref(`dinings/${this.diningId}/logs`).on('value', () => {
+      if (window.UserDashboard) {
+        UserDashboard.renderRecentActivity(this.diningId);
+      }
+    });
+  },
+
+  refresh() {
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
+
+    if (!this.diningId && window.Messliner && Messliner.state) {
+      this.diningId = Messliner.state.diningId;
+    }
+
+    this.filterTab(this.currentTab || 'bazar');
+
+    if (this.rawBazarData || this.bazarData) {
+      this.renderBazarForSelectedMonth();
+    } else if (this.diningId) {
+      db.ref(`dinings/${this.diningId}/bazar`).once('value').then(snap => {
+        this.rawBazarData = snap.val() || {};
+        this.bazarData = this.rawBazarData;
+        this.renderBazarForSelectedMonth();
+      });
+    }
+
+    if (window.Messliner && Messliner.history) {
+      Messliner.history.listenToLogs();
+    }
+  },
+
+  renderBazarForSelectedMonth() {
+    const container = document.getElementById('historyBazarList');
+    const countEl = document.getElementById('historyBazarCount');
+    if (!container) return;
+
+    if (!this.diningId && window.Messliner && Messliner.state) {
+      this.diningId = Messliner.state.diningId;
+    }
+
+    if (!this.rawBazarData && !this.bazarData && this.diningId) {
+      db.ref(`dinings/${this.diningId}/bazar`).once('value').then(snap => {
+        this.rawBazarData = snap.val() || {};
+        this.bazarData = this.rawBazarData;
+        this.renderBazarForSelectedMonth();
+      });
+      return;
+    }
+
+    const formattedMonth = `${this.selectedYear}-${String(this.selectedMonth).padStart(2, '0')}`;
+    const allBazar = this.rawBazarData || this.bazarData || {};
+    const entries = Array.isArray(allBazar) ? allBazar : Object.values(allBazar);
+
+    // Filter for selected month supporting date string or timestamp
+    const monthEntries = entries.filter(e => {
+      if (!e) return false;
+      if (e.date && typeof e.date === 'string') return e.date.startsWith(formattedMonth);
+      if (e.timestamp && typeof e.timestamp === 'number') {
+        const dt = new Date(e.timestamp);
+        const y = dt.getFullYear();
+        const m = String(dt.getMonth() + 1).padStart(2, '0');
+        return `${y}-${m}` === formattedMonth;
+      }
+      return false;
+    });
+
+    if (countEl) countEl.textContent = `${monthEntries.length} Records`;
+
+    if (monthEntries.length === 0) {
+      const emptyHtml = `
+        <div class="empty-state" style="padding:var(--space-6);">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+          </div>
+          <h3>No Bazar Records</h3>
+          <p>No bazar expenses found for <strong>${this.monthNames[this.selectedMonth - 1]} ${this.selectedYear}</strong>.</p>
+        </div>
+      `;
+      if (this._lastBazarHtml !== emptyHtml) {
+        this._lastBazarHtml = emptyHtml;
+        container.innerHTML = emptyHtml;
+      }
+      return;
+    }
+
+    // Group entries by date (YYYY-MM-DD)
+    const grouped = {};
+    monthEntries.forEach(e => {
+      const d = e.date || (e.timestamp ? new Date(e.timestamp).toISOString().slice(0, 10) : 'Unknown');
+      if (!grouped[d]) grouped[d] = [];
+      grouped[d].push(e);
+    });
+
+    const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+
+    // Build user panel style day cards
+    const html = sortedDates.map(date => {
+      if (window.BazarHistoryModule && window.BazarHistoryModule._buildDayCard) {
+        return window.BazarHistoryModule._buildDayCard(date, grouped[date]);
+      }
+      return this._buildDayCardFallback(date, grouped[date]);
+    }).join('');
+
+    if (this._lastBazarHtml === html && container.children.length > 0 && !container.querySelector('.empty-state-icon')) {
+      return;
+    }
+
+    this._lastBazarHtml = html;
+    container.innerHTML = html;
+  },
+
+  _buildDayCardFallback(date, entries) {
+    const dayTotal = entries.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+    const shoppers = [...new Set(entries.map(e => e.shopperName).filter(s => s && s !== 'N/A'))];
+    const shopperLabel = shoppers.length > 0 ? shoppers.join(', ') : 'N/A';
+    const allItemsText = entries.map(e => (e.items || '').replace(/\r?\n/g, ', ')).filter(Boolean).join(', ');
+    const shortPreview = allItemsText.length > 42 ? allItemsText.slice(0, 42) + '…' : allItemsText;
+
+    const dateObj = new Date(date + 'T00:00:00');
+    const dayNum = String(dateObj.getDate()).padStart(2, '0');
+    const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+    const formattedDate = Utils.formatDate(date);
+
+    const itemRows = entries.map((e, idx) => `
+      <div class="bazar-item-row">
+        <div class="bazar-item-index">${idx + 1}</div>
+        <div class="bazar-item-info">
+          <div class="bazar-item-name">${Utils.formatBazarItems(e.items)}</div>
+          <div class="bazar-item-shopper">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            ${e.shopperName || 'N/A'}
+          </div>
+        </div>
+        <div class="bazar-item-amount">${Utils.currency(parseFloat(e.amount) || 0)}</div>
+      </div>
+    `).join('');
+
+    const cardId = `history-bazar-card-${date.replace(/-/g, '')}`;
+
+    return `
+      <div class="bazar-day-card" id="${cardId}">
+        <div class="bazar-day-card-header" onclick="document.getElementById('${cardId}').classList.toggle('expanded')">
+          <div class="bazar-date-badge">${dayNum}</div>
+          <div class="bazar-card-info">
+            <div class="bazar-card-top-row">
+              <span class="bazar-card-weekday">${dayOfWeek}</span>
+              <span class="bazar-card-fulldate">${formattedDate}</span>
+            </div>
+            <div class="bazar-card-shopper">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              <span>${shopperLabel}</span>
+            </div>
+            <div class="bazar-card-preview">${shortPreview || '—'}</div>
+          </div>
+          <div class="bazar-card-right">
+            <div class="bazar-card-amount">${Utils.currency(dayTotal)}</div>
+            <div class="bazar-card-entries">${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}</div>
+            <div class="bazar-chevron">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="bazar-day-card-body">
+          <div class="bazar-items-list">
+            <div class="bazar-items-header">
+              <span>Items &amp; Shopper</span>
+              <span>Amount</span>
+            </div>
+            ${itemRows}
+            <div class="bazar-items-total-row">
+              <span>Day Total</span>
+              <span>${Utils.currency(dayTotal)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  filterTab(tab, btnEl) {
+    this.currentTab = tab || this.currentTab || 'bazar';
+
+    // Synchronize active state across all history-pill buttons
+    const pills = document.querySelectorAll('.history-filter-pills .history-pill');
+    pills.forEach(b => {
+      const onclickAttr = b.getAttribute('onclick') || '';
+      const isActivityPill = onclickAttr.includes("'activity'") || b.textContent.toLowerCase().includes('recent activity');
+      if ((this.currentTab === 'activity' && isActivityPill) || (this.currentTab === 'bazar' && !isActivityPill)) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+
+    const bazarBlock = document.getElementById('historyBazarBlock');
+    const activityBlock = document.getElementById('historyActivityBlock');
+    const grid = document.querySelector('.history-page-grid');
+
+    if (bazarBlock && activityBlock) {
+      if (this.currentTab === 'activity') {
+        bazarBlock.style.display = 'none';
+        activityBlock.style.display = 'block';
+        if (grid) grid.style.gridTemplateColumns = '1fr';
+        if (window.Messliner && Messliner.history) {
+          Messliner.history.listenToLogs();
+        }
+      } else {
+        bazarBlock.style.display = 'block';
+        activityBlock.style.display = 'none';
+        if (grid) grid.style.gridTemplateColumns = '1fr';
+        this.renderBazarForSelectedMonth();
+      }
+    }
+  },
+
+  /**
+   * Open Mess Rules Full Screen Modal
+   */
+  openMessRulesModal() {
+    if (typeof window.openMessRulesModal === 'function') {
+      window.openMessRulesModal();
+    }
+  }
+};
+
+window.openMessRulesModal = async function() {
+  const modal = document.getElementById('messRulesModal');
+  if (!modal) return;
+  
+  const listContainer = document.getElementById('messRulesListContainer');
+  const diningSubtitle = document.getElementById('messRulesDiningSub');
+  const bodyTitle = document.getElementById('messRulesBodyTitle');
+  const desktopTitle = document.querySelector('#messRulesModal .mess-rules-modal-title');
+  
+  let rawDiningName = (window.Messliner?.history?.diningInfo && window.Messliner.history.diningInfo.name)
+    || (window.Messliner?.state?.dining && window.Messliner.state.dining.name)
+    || (window.Messliner?.state?.diningInfo && window.Messliner.state.diningInfo.name)
+    || document.getElementById('profileDiningName')?.textContent?.trim()
+    || '';
+    
+  if (rawDiningName === 'Loading...' || rawDiningName === '------') {
+    rawDiningName = '';
+  }
+
+  const formatRulesTitle = (name) => {
+    if (!name) return 'Mess Rules';
+    const trimmed = name.trim();
+    if (trimmed.toLowerCase().endsWith('rules')) return trimmed;
+    return `${trimmed} Rules`;
+  };
+
+  const initialTitle = formatRulesTitle(rawDiningName);
+  if (diningSubtitle) diningSubtitle.textContent = rawDiningName || 'Dining Guidelines';
+  if (bodyTitle) bodyTitle.textContent = initialTitle;
+  if (desktopTitle) desktopTitle.textContent = initialTitle;
+  
+  if (listContainer) {
+    listContainer.innerHTML = `
+      <div style="padding: 36px 16px; text-align: center; color: #64748B;">
+        <div style="width: 26px; height: 26px; border: 2.5px solid #E2E8F0; border-top-color: #059669; border-radius: 50%; margin: 0 auto 12px; animation: spin 0.8s linear infinite;"></div>
+        <p style="font-size: 0.84rem; margin: 0; font-weight: 500;">Loading mess rules...</p>
+      </div>
+    `;
+  }
+  
+  modal.classList.add('active');
+  
+  try {
+    const diningId = window.Messliner?.history?.diningId
+      || window.Messliner?.currentDiningId
+      || window.Messliner?.state?.user?.diningId
+      || localStorage.getItem('messliner_dining_id');
+      
+    if (!diningId) throw new Error('Dining ID not found');
+
+    if (!rawDiningName) {
+      try {
+        const infoSnap = await db.ref(`dinings/${diningId}/info/name`).once('value');
+        if (infoSnap.exists() && infoSnap.val()) {
+          rawDiningName = infoSnap.val().trim();
+          const updatedTitle = formatRulesTitle(rawDiningName);
+          if (bodyTitle) bodyTitle.textContent = updatedTitle;
+          if (desktopTitle) desktopTitle.textContent = updatedTitle;
+          if (diningSubtitle) diningSubtitle.textContent = rawDiningName;
+        }
+      } catch (_) {}
+    }
+    
+    const snap = await db.ref(`dinings/${diningId}/rules`).once('value');
+    let rules = snap.val() || [];
+    if (typeof rules === 'object' && !Array.isArray(rules)) {
+      rules = Object.values(rules);
+    }
+    
+    // Check fallback in settings if empty
+    if ((!rules || rules.length === 0) && window.Messliner?.history?.settings?.rules) {
+      const sRules = window.Messliner.history.settings.rules;
+      if (Array.isArray(sRules)) rules = sRules;
+      else if (typeof sRules === 'string') rules = sRules.split('\n').map(r => r.trim()).filter(Boolean);
+    }
+    
+    const escapeRuleHtml = (str) => {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+    
+    if (!rules || rules.length === 0) {
+      // Fallback default rules matching onboarding step
+      rules = [
+        'Turn off meals before the designated daily cutoff times.',
+        'Bazar costs and receipts must be submitted on time.',
+        'Maintain cleanliness in the dining hall and common areas.',
+        'Be respectful to other mess members and the manager.'
+      ];
+    }
+    
+    listContainer.innerHTML = `
+      <div class="join-rules-wrapper">
+        <div class="join-rules-list">
+          ${rules.map(rule => `
+            <div class="rule-item">
+              <div class="rule-dot"></div>
+              <p class="rule-text">${escapeRuleHtml(rule)}</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.warn('Error fetching mess rules:', err);
+    if (listContainer) {
+      listContainer.innerHTML = `
+        <div style="padding: 28px 16px; text-align: center; color: #64748B; font-size: 0.84rem;">
+          Could not load rules at this time. Please check your internet connection or try again.
+        </div>
+      `;
+    }
+  }
+};
+
+window.HistoryPageModule = HistoryPageModule;
 console.log('[Messliner] History module loaded');
+

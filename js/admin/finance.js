@@ -6,12 +6,39 @@ const FinanceModule = {
   deposits: {},
   bazarList: {},
   currentFilter: 'all',
+  selectedYear: new Date().getFullYear(),
+  selectedMonth: new Date().getMonth() + 1,
+  createdDate: null,
 
   /**
    * Initialize finance module with realtime listeners
    */
   init(diningId, initialData) {
     this.diningId = diningId;
+
+    const now = new Date();
+    this.selectedYear = now.getFullYear();
+    this.selectedMonth = now.getMonth() + 1;
+
+    let startDateStr = initialData?.settings?.historyStartDate;
+    if (startDateStr) {
+      this.createdDate = new Date(startDateStr);
+      this.populateDropdowns();
+    } else {
+      db.ref(`dinings/${diningId}/settings/historyStartDate`).once('value').then(snap => {
+        const val = snap.val();
+        if (val) {
+          this.createdDate = new Date(val);
+        } else {
+          return db.ref(`dinings/${diningId}/createdAt`).once('value').then(cSnap => {
+            const cVal = cSnap.val();
+            this.createdDate = cVal ? new Date(cVal) : new Date(2026, 0, 1);
+            this.populateDropdowns();
+          });
+        }
+        this.populateDropdowns();
+      });
+    }
 
     if (initialData?.deposits) {
       this.deposits = initialData.deposits;
@@ -23,6 +50,8 @@ const FinanceModule = {
     } else {
       this.bazarList = {};
     }
+
+    this.populateDropdowns();
 
     if (Router.currentPage === 'finance' && (Object.keys(this.deposits).length > 0 || Object.keys(this.bazarList).length > 0)) {
       this.refresh();
@@ -71,12 +100,341 @@ const FinanceModule = {
   },
 
   /**
+   * Format YYYY-MM-DD to DD-MMM-YYYY (e.g. 08-Oct-2026)
+   */
+  formatDateToDisplay(dateStr) {
+    if (!dateStr) return '-- Select Date --';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const d = new Date(year, month, day);
+        if (!isNaN(d.getTime())) {
+          const dayFormatted = String(d.getDate()).padStart(2, '0');
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          return `${dayFormatted}-${monthNames[d.getMonth()]}-${d.getFullYear()}`;
+        }
+      }
+    } catch (e) {
+      console.warn('Date formatting error:', e);
+    }
+    return dateStr;
+  },
+
+  /**
+   * Trigger native date picker for Bazar modal
+   */
+  triggerBazarDatePicker() {
+    const dateInput = document.getElementById('bazarDateInput');
+    if (dateInput) {
+      if (typeof dateInput.showPicker === 'function') {
+        try {
+          dateInput.showPicker();
+        } catch (e) {
+          dateInput.focus();
+        }
+      } else {
+        dateInput.focus();
+      }
+    }
+  },
+
+  /**
    * Show bazar modal
    */
-  showBazarModal() {
-    document.getElementById('bazarForm').reset();
-    document.getElementById('bazarDateInput').value = Utils.today();
+  showBazarModal(dateStr) {
+    document.getElementById('bazarForm')?.reset();
+    const dd = document.getElementById('bazarShopperDropdown');
+    if (dd) dd.classList.remove('active');
+
+    const targetDate = dateStr || Utils.today();
+    const dateInput = document.getElementById('bazarDateInput');
+    const dateDisplay = document.getElementById('bazarDateFormattedDisplay');
+    if (dateInput) dateInput.value = targetDate;
+    if (dateDisplay) dateDisplay.textContent = this.formatDateToDisplay(targetDate);
+
+    this.populateBazarShopperSelect(targetDate);
+    this.validateBazarForm();
     openModal('bazarModal');
+  },
+
+  /**
+   * Populate Shopper member dropdown (sorted by join time, showing only name) and auto-select assigned duty member
+   */
+  async populateBazarShopperSelect(targetDate) {
+    const menuEl = document.getElementById('bazarShopperMenu');
+    const valueEl = document.getElementById('bazarShopperValue');
+    const userIdInput = document.getElementById('bazarShopperUserId');
+    const shopperInput = document.getElementById('bazarShopperInput');
+    if (!menuEl) return;
+
+    const diningId = this.diningId || Messliner.state?.diningId;
+    const users = (Messliner.users && Messliner.users.users) ||
+      (window.UsersModule && window.UsersModule.users) ||
+      (Messliner.bazar && Messliner.bazar.users) || {};
+
+    const dateStr = targetDate || document.getElementById('bazarDateInput')?.value || Utils.today();
+    const d = new Date(dateStr + 'T00:00:00');
+    const dayOfWeek = isNaN(d.getDay()) ? (new Date()).getDay() : d.getDay();
+    const yearMonth = dateStr.slice(0, 7);
+
+    // Fetch or check settings for managerBazarEnabled
+    let settings = Object.assign(
+      {},
+      Messliner.settings?.settingsData || {},
+      Messliner.state?.settings || {},
+      Messliner.diningData?.settings || {},
+      Messliner.userDashboard?.settings || {}
+    );
+    let managerId = Messliner.state?.managerId || Messliner.state?.adminId || Messliner.diningData?.info?.managerId || Messliner.diningData?.info?.adminId;
+
+    if (diningId && typeof db !== 'undefined') {
+      try {
+        const [sSnap, infoSnap] = await Promise.all([
+          db.ref(`dinings/${diningId}/settings`).once('value'),
+          db.ref(`dinings/${diningId}/info`).once('value')
+        ]);
+        if (sSnap.val()) settings = Object.assign(settings, sSnap.val());
+        if (infoSnap.val()) {
+          const info = infoSnap.val();
+          if (info.managerId) managerId = info.managerId;
+          if (info.adminId) managerId = info.adminId;
+        }
+      } catch (e) {}
+    }
+
+    const isManagerBazarEnabled = !(
+      settings.managerBazarEnabled === false ||
+      settings.managerBazarEnabled === 'false' ||
+      settings.managerBazar === false ||
+      settings.managerBazar === 'false' ||
+      settings.bazarRatio === false ||
+      settings.bazarRatio === 'false' ||
+      settings.bazarDuty === false ||
+      settings.bazarDuty === 'false' ||
+      settings.joinBazarRotation === false ||
+      settings.joinBazarRotation === 'false'
+    );
+
+    // Filter and sort users by join date (earliest join first)
+    const userEntries = Object.entries(users).filter(([id, u]) => {
+      if (!u || typeof u !== 'object') return false;
+      const status = String(u.status || '').toLowerCase();
+      if (status === 'inactive' || status === 'left' || status === 'removed' || status === 'banned' || status === 'blocked') {
+        return false;
+      }
+      if (u.isActive === false) return false;
+
+      const role = String(u.role || '').toLowerCase();
+      const isManager = (
+        role === 'admin' ||
+        role === 'manager' ||
+        u.isAdmin === true ||
+        u.isManager === true ||
+        (managerId && id === managerId) ||
+        (Messliner.state?.role === 'admin' && id === Messliner.state?.userId)
+      );
+      if (isManager && !isManagerBazarEnabled) {
+        return false;
+      }
+      if (u.bazarEnabled === false || u.bazarDuty === false || u.managerBazarEnabled === false || u.excludeFromBazar === true || u.isExcludedFromBazar === true) {
+        return false;
+      }
+      return true;
+    });
+
+    userEntries.sort((a, b) => {
+      const timeA = a[1].createdAt ? new Date(a[1].createdAt).getTime() : (a[1].joinedAt ? new Date(a[1].joinedAt).getTime() : (a[1].timestamp || 0));
+      const timeB = b[1].createdAt ? new Date(b[1].createdAt).getTime() : (b[1].joinedAt ? new Date(b[1].joinedAt).getTime() : (b[1].timestamp || 0));
+      if (timeA !== timeB) return timeA - timeB;
+      return (a[1].name || '').localeCompare(b[1].name || '');
+    });
+
+    // Try synchronous duty resolution first
+    let assignedUserId = '';
+    if (Messliner.bazar && typeof Messliner.bazar.resolveDutyForDate === 'function') {
+      try {
+        const duty = Messliner.bazar.resolveDutyForDate(dateStr, dayOfWeek);
+        if (duty && duty.userId) {
+          assignedUserId = duty.userId;
+        }
+      } catch (e) {
+        console.warn('Error resolving duty for date:', e);
+      }
+    }
+
+    const renderItems = (activeUserId) => {
+      let html = `
+        <div class="custom-dropdown-item ${!activeUserId ? 'selected' : ''}" data-value=""
+             onclick="Messliner.finance.selectBazarShopper('')">-- Select Member --</div>
+      `;
+
+      userEntries.forEach(([id, u]) => {
+        const isSel = (id === activeUserId);
+        const selClass = isSel ? 'selected' : '';
+        const memberName = u.name || 'Member';
+        html += `
+          <div class="custom-dropdown-item ${selClass}" data-value="${id}"
+               onclick="Messliner.finance.selectBazarShopper('${id}')">${memberName}</div>
+        `;
+      });
+
+      menuEl.innerHTML = html;
+
+      if (activeUserId && users[activeUserId]) {
+        const u = users[activeUserId];
+        const memberName = u.name || 'Member';
+        if (valueEl) valueEl.textContent = memberName;
+        if (userIdInput) userIdInput.value = activeUserId;
+        if (shopperInput) shopperInput.value = memberName;
+      } else {
+        if (valueEl) valueEl.textContent = '-- Select Member --';
+        if (userIdInput) userIdInput.value = '';
+        if (shopperInput) shopperInput.value = '';
+      }
+      this.validateBazarForm();
+    };
+
+    renderItems(assignedUserId);
+
+    // If no assigned user found synchronously, or if schedule data might not be loaded in BazarModule for this month, fetch from Firebase
+    if (diningId && typeof db !== 'undefined') {
+      try {
+        const daySnap = await db.ref(`dinings/${diningId}/bazarSchedule/${yearMonth}/${dateStr}`).once('value');
+        const dayDuty = daySnap.val();
+        if (dayDuty && dayDuty.userId && users[dayDuty.userId]) {
+          if (dayDuty.userId !== (userIdInput ? userIdInput.value : '')) {
+            renderItems(dayDuty.userId);
+          }
+          return;
+        }
+
+        // If no day override, check weekly routine
+        if (!assignedUserId) {
+          const weeklySnap = await db.ref(`dinings/${diningId}/bazarSchedule/weeklyRoutine/${dayOfWeek}`).once('value');
+          const weeklyUserId = weeklySnap.val();
+          if (weeklyUserId && users[weeklyUserId]) {
+            if (weeklyUserId !== (userIdInput ? userIdInput.value : '')) {
+              renderItems(weeklyUserId);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Error fetching duty schedule:', err);
+      }
+    }
+  },
+
+  /**
+   * Select a member from the custom dropdown in Bazar modal
+   */
+  selectBazarShopper(userId) {
+    const dd = document.getElementById('bazarShopperDropdown');
+    if (dd) dd.classList.remove('active');
+
+    const users = (Messliner.users && Messliner.users.users) ||
+      (window.UsersModule && window.UsersModule.users) ||
+      (Messliner.bazar && Messliner.bazar.users) || {};
+
+    const valueEl = document.getElementById('bazarShopperValue');
+    const userIdInput = document.getElementById('bazarShopperUserId');
+    const shopperInput = document.getElementById('bazarShopperInput');
+    const menuEl = document.getElementById('bazarShopperMenu');
+
+    if (userId && users[userId]) {
+      const u = users[userId];
+      const memberName = u.name || 'Member';
+      if (valueEl) valueEl.textContent = memberName;
+      if (userIdInput) userIdInput.value = userId;
+      if (shopperInput) shopperInput.value = memberName;
+    } else {
+      if (valueEl) valueEl.textContent = '-- Select Member --';
+      if (userIdInput) userIdInput.value = '';
+      if (shopperInput) shopperInput.value = '';
+    }
+
+    if (menuEl) {
+      menuEl.querySelectorAll('.custom-dropdown-item').forEach(item => {
+        item.classList.toggle('selected', item.getAttribute('data-value') === (userId || ''));
+      });
+    }
+
+    this.validateBazarForm();
+  },
+
+  /**
+   * Triggered when Bazar date input changes
+   */
+  onBazarDateChange(newVal) {
+    const dateInput = document.getElementById('bazarDateInput');
+    const val = newVal || (dateInput ? dateInput.value : '');
+    const dateDisplay = document.getElementById('bazarDateFormattedDisplay');
+    if (dateDisplay) {
+      dateDisplay.textContent = this.formatDateToDisplay(val);
+    }
+    if (val) {
+      this.populateBazarShopperSelect(val);
+    }
+    this.validateBazarForm();
+  },
+
+  /**
+   * Filter keydown events on amount input to only allow numbers and decimal point
+   */
+  filterNumberKey(e) {
+    if (['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key) ||
+      (e.ctrlKey === true || e.metaKey === true)) {
+      return;
+    }
+    if ((e.key < '0' || e.key > '9') && e.key !== '.') {
+      e.preventDefault();
+      return;
+    }
+    if (e.key === '.' && e.target.value.includes('.')) {
+      e.preventDefault();
+    }
+  },
+
+  /**
+   * Sanitize amount input to strictly contain only numbers and at most one decimal point
+   */
+  sanitizeAmountInput(input) {
+    if (!input) return;
+    let val = input.value.replace(/[^0-9.]/g, '');
+    const parts = val.split('.');
+    if (parts.length > 2) {
+      val = parts[0] + '.' + parts.slice(1).join('');
+    }
+    if (input.value !== val) {
+      input.value = val;
+    }
+    this.validateBazarForm();
+  },
+
+  /**
+   * Validate Bazar Form and toggle Add Bazar submit button disabled state
+   */
+  validateBazarForm() {
+    const date = document.getElementById('bazarDateInput')?.value;
+    const shopperUserId = document.getElementById('bazarShopperUserId')?.value;
+    const shopperInput = document.getElementById('bazarShopperInput')?.value;
+    const amountVal = parseFloat(document.getElementById('bazarAmountInput')?.value);
+    const items = document.getElementById('bazarItemsInput')?.value.trim();
+
+    const isValid = Boolean(
+      date &&
+      (shopperUserId || shopperInput) &&
+      !isNaN(amountVal) && amountVal > 0 &&
+      items && items.length > 0
+    );
+
+    const submitBtn = document.getElementById('bazarSubmitBtn');
+    if (submitBtn) {
+      submitBtn.disabled = !isValid;
+    }
+    return isValid;
   },
 
   /**
@@ -348,29 +706,75 @@ const FinanceModule = {
    * Save bazar cost
    */
   async saveBazar() {
-    const date = document.getElementById('bazarDateInput').value;
-    const amount = parseFloat(document.getElementById('bazarAmountInput').value);
-    const items = document.getElementById('bazarItemsInput').value.trim();
-    const shopper = document.getElementById('bazarShopperInput').value.trim();
+    const date = document.getElementById('bazarDateInput')?.value;
+    const amount = parseFloat(document.getElementById('bazarAmountInput')?.value);
+    const items = document.getElementById('bazarItemsInput')?.value.trim() || '';
+    const shopperUserId = document.getElementById('bazarShopperUserId')?.value ||
+      document.getElementById('bazarShopperSelect')?.value || '';
 
-    if (!date || !amount || amount <= 0 || !items) {
-      Notifications.toast('warning', 'Invalid Input', 'Please fill date, amount, and items.');
+    const users = (Messliner.users && Messliner.users.users) ||
+      (window.UsersModule && window.UsersModule.users) ||
+      (Messliner.bazar && Messliner.bazar.users) || {};
+
+    let shopper = '';
+    if (shopperUserId && users[shopperUserId]) {
+      shopper = users[shopperUserId].name || '';
+    } else {
+      shopper = document.getElementById('bazarShopperInput')?.value.trim() || '';
+    }
+
+    if (!date || isNaN(amount) || amount <= 0 || (!shopperUserId && !shopper) || !items) {
+      Notifications.toast('warning', 'Invalid Input', 'Please select date, shopper, enter valid amount and items.');
+      return;
+    }
+
+    const diningId = this.diningId || Messliner.state?.diningId;
+    if (!diningId) {
+      Notifications.toast('error', 'Error', 'Dining group not found.');
       return;
     }
 
     try {
-      await db.ref(`dinings/${this.diningId}/bazar`).push().set({
+      const entryItems = items || 'Bazar Expense';
+
+      // 1. Save bazar expense record
+      const record = {
         amount,
-        items,
+        items: entryItems,
         shopperName: shopper || 'N/A',
+        userId: shopperUserId || null,
         date,
         timestamp: firebase.database.ServerValue.TIMESTAMP
-      });
+      };
 
-      await Notifications.create(this.diningId, 'Bazar Expense Added', `${Utils.currency(amount)} spent on bazar. Items: ${items}`, 'all', 'bazar');
-      await Notifications.log(this.diningId, 'bazar_added', `Bazar ৳${amount}: ${items}`, Messliner.state.userId);
-      Notifications.toast('success', 'Bazar Saved', `${Utils.currency(amount)} bazar cost recorded.`);
+      await db.ref(`dinings/${diningId}/bazar`).push().set(record);
+
+      // 2. Automatically assign member to duty schedule for this specific day
+      if (shopperUserId && users[shopperUserId]) {
+        const yearMonth = date.slice(0, 7);
+        const dutyData = {
+          userId: shopperUserId,
+          userName: shopper,
+          note: 'Bazar Shopper',
+          assignedBy: Messliner.state?.userId || 'admin',
+          updatedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+        await db.ref(`dinings/${diningId}/bazarSchedule/${yearMonth}/${date}`).set(dutyData);
+      }
+
+      await Notifications.create(diningId, "Today's Bazar Added", `Today's bazar has been recorded (${Utils.currency(amount)}).`, 'all', 'bazar');
+      await Notifications.log(diningId, 'bazar_added', `Bazar ৳${amount}: ${entryItems}`, Messliner.state?.userId);
       closeModal('bazarModal');
+
+      if (window.BazarModule && typeof BazarModule.render === 'function') {
+        BazarModule.render();
+      }
+      if (window.BazarHistoryModule && typeof BazarHistoryModule.renderMonthData === 'function') {
+        BazarHistoryModule.renderMonthData();
+      }
+      if (window.HistoryModule && typeof HistoryModule.loadBazarHistory === 'function') {
+        HistoryModule.loadBazarHistory();
+      }
 
     } catch (error) {
       console.error('Save bazar error:', error);
@@ -470,55 +874,132 @@ const FinanceModule = {
   },
 
   /**
-   * Render transaction history timeline
+   * Get merged & sorted list of all transactions (deposits, deductions, bazar, other costing)
    */
-  renderTransactions() {
-    const container = document.getElementById('transactionHistory');
-    if (!container) return;
-
-    // Merge deposits and bazar into one list
+  _getMergedTransactions() {
     let transactions = [];
 
-    Object.entries(this.deposits).forEach(([id, d]) => {
-      transactions.push({ id, ...d, category: d.type });
-    });
+    // Group other costings (Amber/Warning)
+    const otherCostGroups = this._groupOtherCostings(this.deposits || {});
+    // Group bill deductions from ledger (Red/Danger)
+    const billGroups = this._groupBillDeductions(this.deposits || {});
 
-    Object.entries(this.bazarList).forEach(([id, b]) => {
+    // Helper to sort member items by mess join date / createdAt ascending
+    const sortGroupItems = (items) => {
+      return [...items].sort((a, b) => {
+        const uA = (Messliner.users?.users && Messliner.users.users[a.userId]) || {};
+        const uB = (Messliner.users?.users && Messliner.users.users[b.userId]) || {};
+        const joinA = (uA.createdAt ? new Date(uA.createdAt).getTime() : 0) || (uA.timestamp ? new Date(uA.timestamp).getTime() : 0) || (a.timestamp || 0);
+        const joinB = (uB.createdAt ? new Date(uB.createdAt).getTime() : 0) || (uB.timestamp ? new Date(uB.timestamp).getTime() : 0) || (b.timestamp || 0);
+        if (joinA !== joinB) {
+          return joinA - joinB;
+        }
+        return (a.timestamp || 0) - (b.timestamp || 0);
+      });
+    };
+
+    // 1. Other Costing groups
+    otherCostGroups.forEach(group => {
+      const totalAmount = group.items.reduce((sum, item) => sum + Math.abs(Utils.num(item.amount)), 0);
+      const sortedItems = sortGroupItems(group.items);
+
+      const memberNames = sortedItems.map(item => {
+        const u = (Messliner.users?.users && Messliner.users.users[item.userId]);
+        return (u && u.name) || item.userName || 'Member';
+      });
+      const uniqueNames = [...new Set(memberNames)];
+
       transactions.push({
-        id,
-        ...b,
-        type: 'bazar',
-        category: 'bazar',
-        note: b.items,
-        userName: b.shopperName || 'N/A'
+        id: group.groupId || (group.items[0] && group.items[0].key) || ('oc_' + group.timestamp),
+        batchId: group.batchId || group.groupId,
+        type: 'other_costing',
+        category: 'other_costing',
+        isGrouped: true,
+        amount: -totalAmount,
+        note: group.note,
+        date: group.date,
+        timestamp: group.timestamp,
+        items: sortedItems,
+        memberNames: uniqueNames,
+        memberCount: group.items.length,
+        splitAmount: group.items.length > 0 ? (totalAmount / group.items.length) : totalAmount
       });
     });
 
-    // Sort by timestamp descending
-    transactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    // 2. Bill Deduction groups (from Ledger)
+    billGroups.forEach(group => {
+      const totalAmount = group.items.reduce((sum, item) => sum + Math.abs(Utils.num(item.amount)), 0);
+      const sortedItems = sortGroupItems(group.items);
 
-    // Apply filter
-    if (this.currentFilter !== 'all') {
-      transactions = transactions.filter(t => t.category === this.currentFilter);
+      const memberNames = sortedItems.map(item => {
+        const u = (Messliner.users?.users && Messliner.users.users[item.userId]);
+        return (u && u.name) || item.userName || 'Member';
+      });
+      const uniqueNames = [...new Set(memberNames)];
+
+      transactions.push({
+        id: group.groupId || (group.items[0] && group.items[0].key) || ('bill_' + group.timestamp),
+        batchId: group.billId || group.groupId,
+        type: 'deduction',
+        isBillGroup: true,
+        isGrouped: true,
+        category: 'bill',
+        amount: -totalAmount,
+        note: group.note,
+        date: group.date,
+        timestamp: group.timestamp,
+        items: sortedItems,
+        memberNames: uniqueNames,
+        memberCount: group.items.length,
+        splitAmount: group.items.length > 0 ? (totalAmount / group.items.length) : totalAmount
+      });
+    });
+
+    // Track keys that have been grouped so they are not duplicated
+    const groupedKeys = new Set();
+    otherCostGroups.forEach(g => g.items.forEach(i => groupedKeys.add(i.key)));
+    billGroups.forEach(g => g.items.forEach(i => groupedKeys.add(i.key)));
+
+    // 3. Other non-grouped deposits (deposits, single manual deductions, friday_meals, etc.)
+    Object.entries(this.deposits || {}).forEach(([id, d]) => {
+      if (!groupedKeys.has(id) && d.type !== 'other_costing') {
+        transactions.push({ id, ...d, category: d.type });
+      }
+    });
+
+    // Filter by selected year and month
+    if (this.selectedYear && this.selectedMonth) {
+      const targetMonthKey = `${this.selectedYear}-${String(this.selectedMonth).padStart(2, '0')}`;
+      transactions = transactions.filter(t => Utils.isItemInMonth(t, targetMonthKey));
     }
 
-    if (transactions.length === 0) {
-      container.innerHTML = `
+    // Sort by timestamp descending
+    transactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    return transactions;
+  },
+
+  /**
+   * Render list of timeline items HTML
+   */
+  _renderTransactionItemsHTML(transactions, showUndo = true) {
+    if (!transactions || transactions.length === 0) {
+      const monthLabel = (this.monthNames && this.selectedMonth) ? `${this.monthNames[this.selectedMonth - 1]} ${this.selectedYear}` : 'this period';
+      return `
         <div class="empty-state" style="padding:var(--space-6);">
           <div class="empty-state-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
           </div>
           <h3>No Transactions</h3>
-          <p>Financial transactions will appear here.</p>
+          <p>No financial transactions found for ${monthLabel}.</p>
         </div>
       `;
-      return;
     }
 
-    container.innerHTML = transactions.slice(0, 50).map(t => {
+    return transactions.map(t => {
       const isDeposit = t.type === 'deposit';
       const isBazar = t.type === 'bazar';
       const isOtherCosting = t.type === 'other_costing';
+      const isBillGroup = !!t.isBillGroup;
       const isDeduction = t.type === 'deduction';
 
       let dotClass, amountColor, sign, typeLabel;
@@ -527,12 +1008,63 @@ const FinanceModule = {
       } else if (isBazar) {
         dotClass = 'warning'; amountColor = 'var(--warning-600)'; sign = '-'; typeLabel = 'Bazar';
       } else if (isOtherCosting) {
-        dotClass = 'primary'; amountColor = 'var(--primary-600)'; sign = '-'; typeLabel = 'Other Costing';
+        dotClass = 'warning'; amountColor = 'var(--warning-600)'; sign = '-';
+        typeLabel = t.memberCount ? `Other Costing · ${t.memberCount} Members` : 'Other Costing';
+      } else if (isBillGroup) {
+        dotClass = 'danger'; amountColor = 'var(--danger-600)'; sign = '-';
+        typeLabel = t.memberCount ? `Bill · ${t.memberCount} Members` : 'Bill Deduction';
       } else {
         dotClass = 'danger'; amountColor = 'var(--danger-600)'; sign = '-'; typeLabel = 'Deduction';
       }
 
       const amount = Math.abs(Utils.num(t.amount));
+
+      let titleHTML = '';
+      let descHTML = '';
+
+      if (isOtherCosting || isBillGroup) {
+        titleHTML = `<div class="timeline-title">${t.note || (isOtherCosting ? 'Other Costing' : 'Bill')}</div>`;
+        const membersList = t.memberNames || [];
+        const count = t.memberCount || membersList.length || 1;
+        const split = t.splitAmount ? Utils.currency(t.splitAmount) : '';
+        const uniqueId = 'grouped-cost-members-' + Math.random().toString(36).substr(2, 9);
+
+        const chipsHTML = membersList.map(name =>
+          `<span class="other-cost-member-chip">${name}</span>`
+        ).join('');
+
+        descHTML = `
+          <div class="timeline-desc" style="margin-top: 4px;">
+            <div style="font-size: 11.5px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px;">
+              <span style="color: var(--text-tertiary); font-weight: 500;">
+                Split among ${count} member${count > 1 ? 's' : ''}${split ? ` (${split} each)` : ''}:
+              </span>
+              <div style="position: relative; display: flex; flex-direction: column; align-items: flex-start; width: 100%;">
+                <div id="${uniqueId}" class="other-cost-members-list">
+                  ${chipsHTML}
+                </div>
+                <button id="${uniqueId}-btn" class="other-cost-toggle-btn" type="button" style="display: none;" onclick="event.stopPropagation(); const el = document.getElementById('${uniqueId}'); const btn = this; if (el.classList.contains('collapsed')) { el.classList.remove('collapsed'); btn.innerHTML = 'Show Less <span>↑</span>'; } else { el.classList.add('collapsed'); btn.innerHTML = 'Show More <span>↓</span>'; }">
+                  Show More <span>↓</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        titleHTML = `<div class="timeline-title">${(t.userId && Messliner.users?.users && Messliner.users.users[t.userId]?.name) || t.userName || 'Unknown'}</div>`;
+        descHTML = `<div class="timeline-desc">${t.type === 'bazar' ? Utils.formatBazarItems(t.note) : (t.note || t.type)}</div>`;
+      }
+
+      const undoButtonHTML = showUndo ? `
+        <button class="btn btn-sm btn-ghost text-danger" style="padding: 2px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;"
+          onclick="Messliner.finance.revertTransaction('${t.id}', '${t.type}', '${t.batchId || ''}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          Undo
+        </button>
+      ` : '';
 
       return `
         <div class="timeline-item">
@@ -541,8 +1073,8 @@ const FinanceModule = {
             <div class="timeline-date">${Utils.formatDate(t.date)} · ${Utils.timeAgo(t.timestamp)}</div>
             <div class="flex items-center justify-between" style="gap: var(--space-3);">
               <div style="min-width: 0; flex: 1;">
-                <div class="timeline-title">${(t.userId && Messliner.users?.users && Messliner.users.users[t.userId]?.name) || t.userName || 'Unknown'}</div>
-                <div class="timeline-desc">${t.type === 'bazar' ? Utils.formatBazarItems(t.note) : (t.note || t.type)}</div>
+                ${titleHTML}
+                ${descHTML}
               </div>
               <div style="font-weight:var(--weight-bold);color:${amountColor};font-size:var(--font-md);white-space:nowrap; flex-shrink: 0; text-align: right;">
                 ${sign}${Utils.currency(amount)}
@@ -550,14 +1082,7 @@ const FinanceModule = {
             </div>
             <div class="flex items-center justify-between" style="margin-top:var(--space-2); border-top: 1px dashed var(--border-color); padding-top:var(--space-2);">
               <span class="badge badge-${dotClass}">${typeLabel}</span>
-              <button class="btn btn-sm btn-ghost text-danger" style="padding: 2px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;"
-                onclick="Messliner.finance.revertTransaction('${t.id}', '${t.type}', '${t.batchId || ''}')">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                  <path d="M3 3v5h5"/>
-                </svg>
-                Undo
-              </button>
+              ${undoButtonHTML}
             </div>
           </div>
         </div>
@@ -566,11 +1091,170 @@ const FinanceModule = {
   },
 
   /**
+   * Populate Year and Month dropdowns for transaction history
+   */
+  populateDropdowns() {
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
+  },
+
+  populateYearDropdown() {
+    const valueEl = document.getElementById('financeYearValue');
+    const menuEl = document.getElementById('financeYearMenu');
+    if (!valueEl || !menuEl) return;
+
+    const createdDate = this.createdDate || new Date(2026, 0, 1);
+    const startYear = createdDate.getFullYear();
+    const endYear = new Date().getFullYear();
+
+    let html = '';
+    for (let y = startYear; y <= endYear; y++) {
+      const sel = y === this.selectedYear ? 'active selected' : '';
+      html += `<div class="custom-dropdown-item ${sel}" data-value="${y}"
+                    onclick="Messliner.finance.selectYear(${y}, this)">${y}</div>`;
+    }
+    menuEl.innerHTML = html;
+    valueEl.textContent = this.selectedYear;
+  },
+
+  populateMonthDropdown() {
+    const valueEl = document.getElementById('financeMonthValue');
+    const menuEl = document.getElementById('financeMonthMenu');
+    if (!valueEl || !menuEl) return;
+
+    const createdDate = this.createdDate || new Date(2026, 0, 1);
+    const startYear = createdDate.getFullYear();
+    const currentYear = new Date().getFullYear();
+
+    let startMonth = 1;
+    let endMonth = 12;
+
+    if (this.selectedYear === startYear) {
+      startMonth = createdDate.getMonth() + 1;
+    }
+    if (this.selectedYear === currentYear) {
+      endMonth = new Date().getMonth() + 1;
+    }
+
+    if (this.selectedMonth < startMonth) this.selectedMonth = startMonth;
+    if (this.selectedMonth > endMonth) this.selectedMonth = endMonth;
+
+    let html = '';
+    for (let m = startMonth; m <= endMonth; m++) {
+      const sel = m === this.selectedMonth ? 'active selected' : '';
+      html += `<div class="custom-dropdown-item ${sel}" data-value="${m}"
+                    onclick="Messliner.finance.selectMonth(${m}, this)">${this.monthNames[m - 1]}</div>`;
+    }
+    menuEl.innerHTML = html;
+    valueEl.textContent = this.monthNames[this.selectedMonth - 1];
+  },
+
+  selectYear(year, el) {
+    this.selectedYear = parseInt(year, 10);
+    const dd = document.getElementById('financeYearDropdown');
+    if (dd) dd.classList.remove('active');
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
+    this.renderTransactions();
+  },
+
+  selectMonth(month, el) {
+    this.selectedMonth = parseInt(month, 10);
+    const dd = document.getElementById('financeMonthDropdown');
+    if (dd) dd.classList.remove('active');
+    this.populateMonthDropdown();
+    this.renderTransactions();
+  },
+
+  /**
+   * Render transaction history timeline
+   */
+  renderTransactions() {
+    const container = document.getElementById('transactionHistory');
+    if (!container) return;
+
+    let transactions = this._getMergedTransactions();
+
+    // Apply filter
+    if (this.currentFilter && this.currentFilter !== 'all') {
+      const f = this.currentFilter.toLowerCase();
+      transactions = transactions.filter(t => {
+        if (f === 'bill' || f === 'bills') {
+          return t.category === 'bill' || t.isBillGroup === true || (t.type === 'deduction' && (t.billId || (t.note && /^Bill:/i.test(t.note))));
+        }
+        if (f === 'other_cost' || f === 'other_costing' || f === 'other_costs') {
+          return t.category === 'other_costing' || t.category === 'other_cost' || t.type === 'other_costing';
+        }
+        if (f === 'deposit' || f === 'deposits') {
+          return t.category === 'deposit' || t.type === 'deposit';
+        }
+        if (f === 'deduction' || f === 'deductions') {
+          return (t.category === 'deduction' || t.type === 'deduction') && !t.isBillGroup && t.category !== 'bill';
+        }
+        if (f === 'bazar') {
+          return t.category === 'bazar' || t.type === 'bazar';
+        }
+        return t.category === f || t.type === f;
+      });
+    }
+
+    container.innerHTML = this._renderTransactionItemsHTML(transactions, false);
+    this._initCollapsibleMemberLists(container);
+  },
+
+  /**
+   * Automatically detect and collapse member chip lists exceeding 2 lines
+   */
+  _initCollapsibleMemberLists(container) {
+    if (!container) return;
+    const checkAndApply = () => {
+      const lists = container.querySelectorAll('.other-cost-members-list');
+      lists.forEach(el => {
+        const btn = document.getElementById(el.id + '-btn');
+        const isCurrentlyExpanded = btn && btn.textContent.includes('Show Less');
+        if (!isCurrentlyExpanded) {
+          el.classList.remove('collapsed');
+          // If natural wrapped height is more than 2 lines (> 52px)
+          if (el.scrollHeight > 52) {
+            el.classList.add('collapsed');
+            if (btn) btn.style.display = 'inline-flex';
+          } else {
+            el.classList.remove('collapsed');
+            if (btn) btn.style.display = 'none';
+          }
+        }
+      });
+    };
+    requestAnimationFrame(checkAndApply);
+    setTimeout(checkAndApply, 60);
+  },
+
+  /**
    * Filter transactions
    */
   filterTransactions(filter) {
     this.currentFilter = filter;
     this.renderTransactions();
+  },
+
+  /**
+   * Select filter type from custom dropdown
+   */
+  selectFilterType(filter, label, el) {
+    const dropdown = document.getElementById('financeFilterDropdown');
+    if (dropdown) dropdown.classList.remove('active');
+    const valEl = document.getElementById('financeFilterValue');
+    if (valEl) valEl.textContent = label;
+    const menu = document.getElementById('financeFilterMenu');
+    if (menu) {
+      menu.querySelectorAll('.custom-dropdown-item').forEach(item => item.classList.remove('active'));
+    }
+    if (el) el.classList.add('active');
+
+    const nativeSelect = document.getElementById('financeFilter');
+    if (nativeSelect) nativeSelect.value = filter;
+
+    this.filterTransactions(filter);
   },
 
   /**
@@ -641,85 +1325,71 @@ const FinanceModule = {
   },
 
   /**
-   * Render list of Other Costings inside Finance Fix modal
+   * Group bill deductions by billId or timestamp/note/date
+   */
+  _groupBillDeductions(deposits) {
+    const list = Object.entries(deposits || {})
+      .map(([key, val]) => ({ key, ...val }))
+      .filter(item => {
+        if (item.type !== 'deduction') return false;
+        if (item.billId) return true;
+        if (item.note && /^Bill:\s*/i.test(item.note)) return true;
+        return false;
+      });
+
+    // Sort by timestamp descending
+    list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    const groupsMap = {};
+    list.forEach(item => {
+      let gId = item.billId;
+      if (!gId) {
+        for (const existingId in groupsMap) {
+          const g = groupsMap[existingId];
+          if (!g.billId && g.rawNote === item.note && g.date === item.date) {
+            const timeDiff = Math.abs((g.timestamp || 0) - (item.timestamp || 0));
+            if (timeDiff <= 30000) {
+              gId = existingId;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!gId) {
+        gId = `bill_${item.timestamp || Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+      }
+
+      if (!groupsMap[gId]) {
+        const cleanNote = item.note ? item.note.replace(/^Bill:\s*/i, '').trim() : 'Bill';
+        groupsMap[gId] = {
+          groupId: gId,
+          billId: item.billId || null,
+          note: cleanNote || 'Bill',
+          rawNote: item.note || 'Bill',
+          date: item.date || Utils.today(),
+          timestamp: item.timestamp || 0,
+          items: []
+        };
+      }
+      groupsMap[gId].items.push(item);
+    });
+
+    const groups = Object.values(groupsMap);
+    groups.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    return groups;
+  },
+
+  /**
+   * Render list inside Finance Fix modal
    */
   renderFinanceFixList() {
     const container = document.getElementById('financeFixList');
     if (!container) return;
 
-    const groups = this._groupOtherCostings(this.deposits);
-
-    if (groups.length === 0) {
-      container.innerHTML = `
-        <div style="text-align:center;padding:var(--space-8, 32px) var(--space-4, 16px);color:var(--text-muted, #6b7280);">
-          <div style="width:48px;height:48px;border-radius:50%;background:rgba(107,114,128,0.1);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
-            </svg>
-          </div>
-          <h4 style="margin:0 0 4px 0;font-size:16px;color:var(--text-main, #1f2937);">No Other Costing Found</h4>
-          <p style="margin:0;font-size:13px;">There are no Other Costing records added to this mess yet.</p>
-        </div>
-      `;
-      return;
-    }
-
-    // Window global helper to trigger confirm delete
-    window._pendingFixGroups = window._pendingFixGroups || {};
-
-    container.innerHTML = groups.map(g => {
-      window._pendingFixGroups[g.groupId] = g;
-
-      const totalAmount = g.items.reduce((sum, item) => sum + Math.abs(Utils.num(item.amount)), 0);
-      const memberCount = g.items.length;
-      const splitEach = memberCount > 0 ? (totalAmount / memberCount) : 0;
-      const memberNames = g.items.map(item => item.userName || 'Member').join(', ');
-      const formattedDate = Utils.formatDate(g.date);
-      const timeAgo = g.timestamp ? Utils.timeAgo(g.timestamp) : '';
-
-      const safeNote = Utils.escapeHtml ? Utils.escapeHtml(g.note) : g.note;
-
-      return `
-        <div style="background:var(--card-bg, #ffffff);border:1px solid var(--border-color, #e5e7eb);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;">
-            <div>
-              <div style="font-weight:700;font-size:15px;color:var(--text-main, #111827);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <span>${safeNote}</span>
-                <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:12px;background:rgba(245,158,11,0.12);color:#d97706;">
-                  ${memberCount} member${memberCount > 1 ? 's' : ''}
-                </span>
-              </div>
-              <div style="font-size:12px;color:var(--text-muted, #6b7280);margin-top:2px;">
-                ${formattedDate} ${timeAgo ? '· ' + timeAgo : ''}
-              </div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:16px;font-weight:800;color:#ef4444;white-space:nowrap;">
-                -${Utils.currency(totalAmount)}
-              </div>
-              <div style="font-size:11px;color:var(--text-muted, #6b7280);">
-                (${Utils.currency(splitEach)} each)
-              </div>
-            </div>
-          </div>
-
-          <div style="background:var(--bg-hover, #f9fafb);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text-muted, #4b5563);margin-bottom:12px;line-height:1.4;">
-            <strong style="color:var(--text-main, #374151);">Split among:</strong> ${memberNames}
-          </div>
-
-          <div style="display:flex;justify-content:flex-end;">
-            <button class="btn btn-sm btn-danger" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;font-size:13px;"
-              onclick="Messliner.finance.confirmDeleteOtherCosting('${g.groupId}')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-              Delete & Undo
-            </button>
-          </div>
-        </div>
-      `;
-    }).join('');
+    let transactions = this._getMergedTransactions();
+    container.innerHTML = this._renderTransactionItemsHTML(transactions);
+    this._initCollapsibleMemberLists(container);
   },
 
   /**
@@ -837,12 +1507,14 @@ const FinanceModule = {
   },
 
   /**
-   * Revert a transaction (Deposit, Deduction, Bazar, or Other Costing group)
+   * Revert a transaction (Deposit, Deduction, Bazar, Other Costing group, or Bill Deduction group)
    */
   async revertTransaction(id, type, batchId = '') {
     let message = '';
     if (type === 'deposit') {
       message = 'Are you sure you want to undo this deposit? The amount will be deducted from the member\'s balance, and the record will be deleted.';
+    } else if (type === 'deduction' && batchId) {
+      message = 'Are you sure you want to undo this bill deduction? The amount will be refunded to all affected members\' balance, and the record will be deleted.';
     } else if (type === 'deduction') {
       message = 'Are you sure you want to undo this deduction? The amount will be refunded to the member\'s balance, and the record will be deleted.';
     } else if (type === 'bazar') {
@@ -857,7 +1529,71 @@ const FinanceModule = {
 
     const performRevert = async () => {
       try {
-        if (type === 'deposit' || type === 'deduction') {
+        if (type === 'deduction' && batchId) {
+          // Revert grouped bill deduction
+          const snap = await db.ref(`dinings/${this.diningId}/deposits`).once('value');
+          this.deposits = {};
+          snap.forEach(child => {
+            this.deposits[child.key] = child.val();
+          });
+
+          const billGroups = this._groupBillDeductions(this.deposits);
+          const foundGroup = billGroups.find(g => g.groupId === id || g.billId === batchId || g.groupId === batchId || g.items.some(item => item.key === id));
+
+          if (foundGroup && foundGroup.items.length > 0) {
+            const userRefunds = {};
+            foundGroup.items.forEach(item => {
+              const uId = item.userId;
+              const refundAmt = Math.abs(Utils.num(item.amount));
+              userRefunds[uId] = (userRefunds[uId] || 0) + refundAmt;
+            });
+
+            for (const [uId, refundAmt] of Object.entries(userRefunds)) {
+              const userSnap = await db.ref(`dinings/${this.diningId}/users/${uId}/totalDeposit`).once('value');
+              const currentDeposit = Utils.num(userSnap.val());
+              await db.ref(`dinings/${this.diningId}/users/${uId}/totalDeposit`).set(currentDeposit + refundAmt);
+            }
+
+            const deletePromises = foundGroup.items.map(item =>
+              db.ref(`dinings/${this.diningId}/deposits/${item.key}`).remove()
+            );
+            await Promise.all(deletePromises);
+
+            if (foundGroup.billId) {
+              for (const item of foundGroup.items) {
+                await db.ref(`dinings/${this.diningId}/bills/${foundGroup.billId}/members/${item.userId}`).update({
+                  status: 'pending',
+                  collectedAt: null,
+                  depositKey: null
+                });
+              }
+            }
+
+            foundGroup.items.forEach(item => {
+              delete this.deposits[item.key];
+            });
+
+            const totalAmount = foundGroup.items.reduce((sum, item) => sum + Math.abs(Utils.num(item.amount)), 0);
+            const logMsg = `Undid Bill Deduction ৳${totalAmount} (${foundGroup.note}). Refunded ${Object.keys(userRefunds).length} member(s).`;
+            await Notifications.log(this.diningId, 'bill_deduction_reverted', logMsg, Messliner.state.userId);
+
+            Notifications.toast('success', 'Bill Deduction Undone', logMsg);
+          } else {
+            // Fallback individual deduction
+            const snap = await db.ref(`dinings/${this.diningId}/deposits/${id}`).once('value');
+            const transaction = snap.val();
+            if (transaction) {
+              const { userId, amount, userName } = transaction;
+              const userSnap = await db.ref(`dinings/${this.diningId}/users/${userId}/totalDeposit`).once('value');
+              const currentDeposit = Utils.num(userSnap.val());
+              await db.ref(`dinings/${this.diningId}/users/${userId}/totalDeposit`).set(currentDeposit - Utils.num(amount));
+              await db.ref(`dinings/${this.diningId}/deposits/${id}`).remove();
+              delete this.deposits[id];
+              Notifications.toast('success', 'Deduction Undone', `Undid Deduction ৳${Math.abs(amount)} from ${userName || 'User'}`);
+            }
+          }
+        }
+        else if (type === 'deposit' || type === 'deduction') {
           const snap = await db.ref(`dinings/${this.diningId}/deposits/${id}`).once('value');
           const transaction = snap.val();
           if (!transaction) {
@@ -901,13 +1637,11 @@ const FinanceModule = {
           Notifications.toast('success', 'Bazar Cost Deleted', 'Bazar expense record deleted.');
         }
         else if (type === 'other_costing') {
-          let groupId = batchId;
-          if (!groupId) {
-            const groups = this._groupOtherCostings(this.deposits);
-            const foundGroup = groups.find(g => g.items.some(item => item.key === id));
-            if (foundGroup) {
-              groupId = foundGroup.groupId;
-            }
+          let groupId = batchId || id;
+          const groups = this._groupOtherCostings(this.deposits);
+          const foundGroup = groups.find(g => g.groupId === id || g.batchId === batchId || g.groupId === batchId || g.items.some(item => item.key === id));
+          if (foundGroup) {
+            groupId = foundGroup.groupId;
           }
 
           if (groupId) {
@@ -1175,11 +1909,11 @@ const FinanceModule = {
     let mealRate = 0;
     if (rateMode === 'fixed') {
       const trackedMeals = settings.trackedMeals || { breakfast: true, lunch: true, dinner: true };
-      const activeRates = [];
-      if (trackedMeals.breakfast) activeRates.push(fixedRates.breakfast || 0);
-      if (trackedMeals.lunch) activeRates.push(fixedRates.lunch || 0);
-      if (trackedMeals.dinner) activeRates.push(fixedRates.dinner || 0);
-      mealRate = activeRates.length > 0 ? (activeRates.reduce((a, b) => a + b, 0) / activeRates.length) : 0;
+      let fullMealRate = 0;
+      if (trackedMeals.breakfast !== false) fullMealRate += (fixedRates.breakfast || 0);
+      if (trackedMeals.lunch !== false) fullMealRate += (fixedRates.lunch || 0);
+      if (trackedMeals.dinner !== false) fullMealRate += (fixedRates.dinner || 0);
+      mealRate = fullMealRate;
     } else {
       mealRate = Utils.calcMealRate(totalBazar, totalMealsCount);
     }
@@ -1694,8 +2428,17 @@ const FinanceModule = {
    * Refresh finance page
    */
   refresh() {
+    if (!this.selectedYear || !this.selectedMonth) {
+      const now = new Date();
+      this.selectedYear = now.getFullYear();
+      this.selectedMonth = now.getMonth() + 1;
+    }
+    this.populateDropdowns();
     this.renderSummary();
     this.renderTransactions();
+    if (document.getElementById('financeFixModal')?.classList.contains('active')) {
+      this.renderFinanceFixList();
+    }
   },
 
   /**
@@ -1815,7 +2558,7 @@ const FinanceModule = {
 
       let monthBazarTotal = 0;
       Object.values(allBazar).forEach(b => {
-        if (b.date && b.date.startsWith(formattedMonth)) {
+        if (Utils.isItemInMonth(b, formattedMonth)) {
           monthBazarTotal += parseFloat(b.amount) || 0;
         }
       });
@@ -1825,11 +2568,11 @@ const FinanceModule = {
       let mealRate = 0;
       if (rateMode === 'fixed') {
         const trackedMeals = settings.trackedMeals || { breakfast: true, lunch: true, dinner: true };
-        const activeRates = [];
-        if (trackedMeals.breakfast) activeRates.push(fixedRates.breakfast || 0);
-        if (trackedMeals.lunch) activeRates.push(fixedRates.lunch || 0);
-        if (trackedMeals.dinner) activeRates.push(fixedRates.dinner || 0);
-        mealRate = activeRates.length > 0 ? (activeRates.reduce((a, b) => a + b, 0) / activeRates.length) : 0;
+        let fullMealRate = 0;
+        if (trackedMeals.breakfast !== false) fullMealRate += (fixedRates.breakfast || 0);
+        if (trackedMeals.lunch !== false) fullMealRate += (fixedRates.lunch || 0);
+        if (trackedMeals.dinner !== false) fullMealRate += (fixedRates.dinner || 0);
+        mealRate = fullMealRate;
       } else {
         mealRate = totalMessMeals > 0 ? (monthBazarTotal / totalMessMeals) : 0;
       }
@@ -1842,7 +2585,7 @@ const FinanceModule = {
 
       Object.entries(allDeposits).forEach(([id, d]) => {
         if (d.userId !== userId) return;
-        if (!d.date || !d.date.startsWith(formattedMonth)) return;
+        if (!Utils.isItemInMonth(d, formattedMonth)) return;
 
         const rawAmount = parseFloat(d.amount) || 0;
         const absAmount = Math.abs(rawAmount);

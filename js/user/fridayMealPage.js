@@ -40,6 +40,8 @@ const FridayMealPageModule = {
     return `${year}-${String(month).padStart(2, '0')}`;
   },
 
+  createdDate: null,
+
   /* ─── Init ───────────────────── */
   async init(diningId, userId) {
     this.diningId = diningId;
@@ -50,6 +52,34 @@ const FridayMealPageModule = {
     this.currentYear = now.getFullYear();
     this.currentMonth = now.getMonth() + 1;
 
+    try {
+      const startRef = await db.ref(`dinings/${this.diningId}/settings/historyStartDate`).once('value');
+      let startDateStr = startRef.val();
+      if (startDateStr) {
+        this.createdDate = new Date(startDateStr);
+      } else {
+        const infoSnap = await db.ref(`dinings/${this.diningId}/info/createdAt`).once('value');
+        const createdAt = infoSnap.val();
+        this.createdDate = createdAt ? new Date(createdAt) : new Date(2026, 0, 1);
+      }
+    } catch (e) {
+      console.error('[FridayMealPageModule] Fetch start date error:', e);
+      this.createdDate = new Date(2026, 0, 1);
+    }
+
+    const createdDate = this.createdDate || new Date(2026, 0, 1);
+    const startYear = createdDate.getFullYear();
+    const endYear = now.getFullYear();
+    if (this.currentYear < startYear) this.currentYear = startYear;
+    if (this.currentYear > endYear) this.currentYear = endYear;
+
+    let startMonth = 1;
+    let endMonth = 12;
+    if (this.currentYear === startYear) startMonth = createdDate.getMonth() + 1;
+    if (this.currentYear === endYear) endMonth = now.getMonth() + 1;
+    if (this.currentMonth < startMonth) this.currentMonth = startMonth;
+    if (this.currentMonth > endMonth) this.currentMonth = endMonth;
+
     // Default to closest upcoming/most recent Friday
     const fridayDates = this.getFridayDates(this.currentYear, this.currentMonth);
     const todayStr = Utils.today();
@@ -57,7 +87,7 @@ const FridayMealPageModule = {
     for (let i = 0; i < fridayDates.length; i++) {
       if (fridayDates[i] >= todayStr) { defaultIdx = i; break; }
     }
-    this.selectedFridayIndex = defaultIdx;
+    this.selectedFridayIndex = defaultIdx >= 0 ? defaultIdx : 0;
 
     this.activeTab = 'chart';
     this._listenData();
@@ -89,7 +119,20 @@ const FridayMealPageModule = {
     });
   },
 
-  refresh() {
+  async refresh() {
+    try {
+      const startRef = await db.ref(`dinings/${this.diningId}/settings/historyStartDate`).once('value');
+      let startDateStr = startRef.val();
+      if (startDateStr) {
+        this.createdDate = new Date(startDateStr);
+      } else if (!this.createdDate) {
+        const infoSnap = await db.ref(`dinings/${this.diningId}/info/createdAt`).once('value');
+        const createdAt = infoSnap.val();
+        this.createdDate = createdAt ? new Date(createdAt) : new Date(2026, 0, 1);
+      }
+    } catch (e) {
+      if (!this.createdDate) this.createdDate = new Date(2026, 0, 1);
+    }
     this._listenData();
     this.renderFridaySelector();
     this._render();
@@ -110,6 +153,16 @@ const FridayMealPageModule = {
   /* ─── Selectors Page Navigation ───────── */
   selectYearPage(year) {
     this.currentYear = parseInt(year);
+    const createdDate = this.createdDate || new Date(2026, 0, 1);
+    const startYear = createdDate.getFullYear();
+    const currentYear = new Date().getFullYear();
+    let startMonth = 1;
+    let endMonth = 12;
+    if (this.currentYear === startYear) startMonth = createdDate.getMonth() + 1;
+    if (this.currentYear === currentYear) endMonth = new Date().getMonth() + 1;
+    if (this.currentMonth < startMonth) this.currentMonth = startMonth;
+    if (this.currentMonth > endMonth) this.currentMonth = endMonth;
+
     this.selectedFridayIndex = 0;
     this._listenData();
     this.renderFridaySelector();
@@ -135,6 +188,24 @@ const FridayMealPageModule = {
 
   /* ─── Friday Selector ────────── */
   renderFridaySelector() {
+    const createdDate = this.createdDate || new Date(2026, 0, 1);
+    const startYear = createdDate.getFullYear();
+    const endYear = new Date().getFullYear();
+
+    if (this.currentYear < startYear) this.currentYear = startYear;
+    if (this.currentYear > endYear) this.currentYear = endYear;
+
+    let startMonth = 1;
+    let endMonth = 12;
+    if (this.currentYear === startYear) {
+      startMonth = createdDate.getMonth() + 1;
+    }
+    if (this.currentYear === endYear) {
+      endMonth = new Date().getMonth() + 1;
+    }
+    if (this.currentMonth < startMonth) this.currentMonth = startMonth;
+    if (this.currentMonth > endMonth) this.currentMonth = endMonth;
+
     const fridayDates = this.getFridayDates(this.currentYear, this.currentMonth);
 
     // Year dropdown
@@ -142,17 +213,17 @@ const FridayMealPageModule = {
     const yearMenuEl = document.getElementById('fridayPageYearMenu');
     if (yearValEl && yearMenuEl) {
       yearValEl.textContent = this.currentYear;
-      const startYear = new Date().getFullYear() - 2;
-      const years = Array.from({ length: 5 }, (_, i) => startYear + i);
-      yearMenuEl.innerHTML = years.map(y => {
+      let yearHtml = '';
+      for (let y = startYear; y <= endYear; y++) {
         const isSelected = y === this.currentYear;
-        return `
+        yearHtml += `
           <div class="custom-dropdown-item ${isSelected ? 'selected' : ''}"
                onclick="Messliner.fridayMealPage.selectYearPage(${y}); event.stopPropagation()">
             ${y}
           </div>
         `;
-      }).join('');
+      }
+      yearMenuEl.innerHTML = yearHtml;
     }
 
     // Month dropdown
@@ -160,15 +231,17 @@ const FridayMealPageModule = {
     const monthMenuEl = document.getElementById('fridayPageMonthMenu');
     if (monthValEl && monthMenuEl) {
       monthValEl.textContent = this.monthNames[this.currentMonth - 1];
-      monthMenuEl.innerHTML = this.monthNames.map((m, idx) => {
-        const isSelected = (idx + 1) === this.currentMonth;
-        return `
+      let monthHtml = '';
+      for (let m = startMonth; m <= endMonth; m++) {
+        const isSelected = m === this.currentMonth;
+        monthHtml += `
           <div class="custom-dropdown-item ${isSelected ? 'selected' : ''}"
-               onclick="Messliner.fridayMealPage.selectMonthPage(${idx + 1}); event.stopPropagation()">
-            ${m}
+               onclick="Messliner.fridayMealPage.selectMonthPage(${m}); event.stopPropagation()">
+            ${this.monthNames[m - 1]}
           </div>
         `;
-      }).join('');
+      }
+      monthMenuEl.innerHTML = monthHtml;
     }
 
     // Week/Day dropdown
@@ -180,6 +253,10 @@ const FridayMealPageModule = {
       valueEl.textContent = 'No Fridays';
       menuEl.innerHTML = '<div class="custom-dropdown-item" style="color:var(--text-tertiary)">No Fridays this month</div>';
       return;
+    }
+
+    if (this.selectedFridayIndex >= fridayDates.length || this.selectedFridayIndex < 0) {
+      this.selectedFridayIndex = 0;
     }
 
     menuEl.innerHTML = fridayDates.map((dateStr, idx) => {
@@ -318,7 +395,7 @@ const FridayMealPageModule = {
         <tr>
           <td style="text-align:left;">
             <div class="flex items-center gap-2">
-              <div class="avatar avatar-sm" style="background:${avatarBg};">${Utils.initials(user.name)}</div>
+              <div class="avatar avatar-sm">${Utils.initials(user.name)}</div>
               <span class="member-name-text">${user.name}</span>
             </div>
           </td>
@@ -620,7 +697,7 @@ const FridayMealPageModule = {
         <tr>
           <td style="text-align:left;">
             <div class="flex items-center gap-2">
-              <div class="avatar avatar-sm" style="background:${avatarBg};">${Utils.initials(user.name)}</div>
+              <div class="avatar avatar-sm">${Utils.initials(user.name)}</div>
               <span class="member-name-text">${user.name}</span>
             </div>
           </td>

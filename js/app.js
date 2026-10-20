@@ -36,14 +36,19 @@ window.Messliner = window.DineDesk = {
   users: UsersModule,
   meals: MealsModule,
   finance: FinanceModule,
+  ledger: typeof LedgerModule !== 'undefined' ? LedgerModule : null,
+  userBills: typeof UserBillsModule !== 'undefined' ? UserBillsModule : null,
   settings: SettingsModule,
   userDashboard: UserDashboard,
   history: HistoryModule,
+  historyPage: typeof HistoryPageModule !== 'undefined' ? HistoryPageModule : null,
   overview: OverviewModule,
   notifications: Notifications,
   charts: Charts,
   mealChart: MealChartModule,
+  bazar: typeof BazarModule !== 'undefined' ? BazarModule : null,
   bazarHistory: BazarHistoryModule,
+  summary: typeof SummaryModule !== 'undefined' ? SummaryModule : null,
   smsAlert: null,
 
   /**
@@ -105,6 +110,13 @@ window.Messliner = window.DineDesk = {
         return;
       }
 
+      const userUid = user.uid || user.id;
+      if (this._isInitializing || (this._initialized && this.state.userId && this._lastAuthedUid === userUid)) {
+        return;
+      }
+      this._isInitializing = true;
+      this._lastAuthedUid = userUid;
+
       this.state.user = user;
       console.log('[Messliner] Authenticated:', user.email);
 
@@ -114,10 +126,10 @@ window.Messliner = window.DineDesk = {
         const mappingSnap = await db.ref(`userMappings/emailToDining/${emailKey}`).once('value');
         const mapping = mappingSnap.val();
 
-        if (!mapping) {
+        if (!mapping || !mapping.diningId) {
           console.log('[Messliner] No dining mapping found. Showing onboarding...');
           const userProfileSnap = await db.ref(`users/${user.uid}`).once('value');
-          const profile = userProfileSnap.val() || { name: user.displayName || 'User', email: user.email };
+          const profile = userProfileSnap.val() || { name: user.displayName || (user.user_metadata && user.user_metadata.name) || 'User', email: user.email, phone: (user.user_metadata && user.user_metadata.phone) || '' };
           document.getElementById('pageLoader').style.display = 'none';
           document.getElementById('onboardingPage').style.display = 'flex';
           if (window.Onboarding) {
@@ -152,7 +164,9 @@ window.Messliner = window.DineDesk = {
           usersSnap,
           settingsSnap,
           depositsSnap,
-          infoSnap
+          infoSnap,
+          billsSnap,
+          paymentRequestsSnap
         ] = await Promise.all([
           db.ref(`dinings/${diningId}/users/${userId}`).once('value'),
           db.ref(`dinings/${diningId}/bazar`).once('value'),
@@ -160,7 +174,9 @@ window.Messliner = window.DineDesk = {
           db.ref(`dinings/${diningId}/users`).once('value'),
           db.ref(`dinings/${diningId}/settings`).once('value'),
           db.ref(`dinings/${diningId}/deposits`).once('value'),
-          db.ref(`dinings/${diningId}/info`).once('value')
+          db.ref(`dinings/${diningId}/info`).once('value'),
+          db.ref(`dinings/${diningId}/bills`).once('value'),
+          db.ref(`dinings/${diningId}/paymentRequests`).once('value')
         ]);
 
         const userData = userSnap.val();
@@ -191,24 +207,28 @@ window.Messliner = window.DineDesk = {
         const bazars = bazarSnap.val() || {};
         const meals = mealsSnap.val() || {};
 
+        let monthlyBazar = 0;
+        Object.values(bazars).forEach(b => {
+          if (Utils.isItemInMonth(b, currentMonth)) monthlyBazar += Utils.num(b.amount);
+        });
+        this.state.monthlyBazar = monthlyBazar;
+
         if (rateMode === 'fixed') {
           const trackedMeals = settings.trackedMeals || { breakfast: true, lunch: true, dinner: true };
           const fixedRates = settings.fixedRates || { breakfast: 0, lunch: 0, dinner: 0 };
-          const activeRates = [];
-          if (trackedMeals.breakfast) activeRates.push(fixedRates.breakfast || 0);
-          if (trackedMeals.lunch) activeRates.push(fixedRates.lunch || 0);
-          if (trackedMeals.dinner) activeRates.push(fixedRates.dinner || 0);
-          const avgRate = activeRates.length > 0
-            ? activeRates.reduce((a, b) => a + b, 0) / activeRates.length : 0;
-          this.state.mealRate = avgRate;
-          this.state.monthlyMealRate = avgRate;
+          let fullMealRate = 0;
+          if (trackedMeals.breakfast !== false) fullMealRate += (fixedRates.breakfast || 0);
+          if (trackedMeals.lunch !== false) fullMealRate += (fixedRates.lunch || 0);
+          if (trackedMeals.dinner !== false) fullMealRate += (fixedRates.dinner || 0);
+
+          this.state.mealRate = fullMealRate;
+          this.state.monthlyMealRate = fullMealRate;
         } else {
           let totalBazar = 0, totalMeals = 0;
-          let monthlyBazar = 0, monthlyMeals = 0;
+          let monthlyMeals = 0;
 
           Object.values(bazars).forEach(b => {
             totalBazar += Utils.num(b.amount);
-            if (b.date && b.date.startsWith(currentMonth)) monthlyBazar += Utils.num(b.amount);
           });
           Object.values(meals).forEach(monthData => {
             Object.values(monthData).forEach(dayData => {
@@ -217,7 +237,7 @@ window.Messliner = window.DineDesk = {
                   Object.entries(typeData).forEach(([uId, c]) => {
                     const u = allUsers[uId];
                     if (u && u.role === 'admin' && !isManagerMealEnabled) return;
-                    totalMeals += parseInt(c) || 0;
+                    totalMeals += parseFloat(c) || 0;
                   });
                 }
               });
@@ -230,7 +250,7 @@ window.Messliner = window.DineDesk = {
                 Object.entries(typeData).forEach(([uId, c]) => {
                   const u = allUsers[uId];
                   if (u && u.role === 'admin' && !isManagerMealEnabled) return;
-                  monthlyMeals += parseInt(c) || 0;
+                  monthlyMeals += parseFloat(c) || 0;
                 });
               }
             });
@@ -260,7 +280,9 @@ window.Messliner = window.DineDesk = {
           bazar: bazarSnap.val() || {},
           meals: mealsSnap.val() || {},
           settings: settingsSnap.val() || {},
-          info: infoSnap.val() || {}
+          info: infoSnap.val() || {},
+          bills: billsSnap.val() || {},
+          paymentRequests: paymentRequestsSnap.val() || {}
         };
 
         this._setupUI(userData);
@@ -273,6 +295,7 @@ window.Messliner = window.DineDesk = {
         // render shows complete data with no intermediate "Loading..." / skeleton state.
         UserDashboard.userData = userData;
         UserDashboard.settings = settings;
+        UserDashboard.monthlyBazar = monthlyBazar;
 
         // Process per-user monthly deposits from the already-fetched deposits snapshot
         {
@@ -282,11 +305,12 @@ window.Messliner = window.DineDesk = {
           Object.values(allDepsObj).forEach(d => {
             if (d.userId === userId) {
               uDepositsArr.push(d);
-              if (d.date && d.date.startsWith(currentMonth)) {
+              if (Utils.isItemInMonth(d, currentMonth)) {
                 const amt = Math.abs(Utils.num(d.amount));
                 if (d.type === 'deposit') mDeposit += amt;
                 else if (d.type === 'other_costing') mOtherCost += amt;
-                else if (d.type === 'deduction') mDeduction += amt;
+                else if (d.type === 'deduction' || d.type === 'friday_meal') mDeduction += amt;
+                else mDeduction += amt;
               }
             }
           });
@@ -370,9 +394,27 @@ window.Messliner = window.DineDesk = {
           HistoryModule.renderDepositHistory(HistoryModule.userDepositsList);
         }
 
+        // ── Step 4d: Inject prefetched data directly into UserBillsModule ──
+        // This ensures the Ledger page immediately renders the 100% accurate, final balance on the first frame
+        if (window.UserBillsModule) {
+          UserBillsModule.bills = billsSnap.val() || {};
+          UserBillsModule.paymentRequests = paymentRequestsSnap.val() || {};
+          UserBillsModule.userDeposits = depositsSnap.val() || {};
+          UserBillsModule.mealsData = mealsSnap.val() || {};
+          UserBillsModule.paymentMethods = settingsSnap.val()?.paymentMethods || {};
+          UserBillsModule.historyStartDate = settingsSnap.val()?.historyStartDate || null;
+          UserBillsModule.renderOverview();
+          UserBillsModule.renderBills();
+          UserBillsModule.renderHistory();
+        }
+
         // ── Step 5: Show app shell, initialize router, and perform instant initial renders ──
         document.getElementById('appShell').style.display = 'flex';
         Router.init(this.state.role);
+
+        if (typeof HistoryPageModule !== 'undefined') {
+          HistoryPageModule.init(diningId);
+        }
 
         if (this.state.role === 'admin') {
           OverviewModule.refresh(initialData);
@@ -402,6 +444,9 @@ window.Messliner = window.DineDesk = {
         Notifications.toast('error', 'Error', 'Failed to load your dining data.');
         const loaderEl = document.getElementById('pageLoader');
         if (loaderEl) loaderEl.style.display = 'none';
+      } finally {
+        this._isInitializing = false;
+        this._initialized = true;
       }
     });
   },
@@ -413,6 +458,9 @@ window.Messliner = window.DineDesk = {
     const role = this.state.role;
     const isAdmin = role === 'admin';
     this.state.userName = userData.name || 'User';
+
+    document.body.classList.toggle('role-admin', isAdmin);
+    document.body.classList.toggle('role-user', !isAdmin);
 
     // Update dynamic top header greeting
     this.updateHomeHeaderGreeting(userData.name);
@@ -427,10 +475,29 @@ window.Messliner = window.DineDesk = {
     // Sidebar role label
     Utils.setText('sidebarRole', isAdmin ? 'Admin Panel' : 'Member Panel');
 
-    // User info in sidebar
+    // User info in sidebar & header
     Utils.setText('sidebarUserName', userData.name || 'User');
     Utils.setText('sidebarUserRole', isAdmin ? 'Meal Manager' : 'Member');
     Utils.setText('sidebarAvatar', Utils.initials(userData.name));
+
+    Utils.setText('headerUserName', userData.name || 'User');
+    Utils.setText('headerUserRole', userData.email || (isAdmin ? 'Meal Manager' : 'Member'));
+    Utils.setText('headerAvatar', Utils.initials(userData.name));
+
+    // Keyboard shortcut (Cmd+F / Ctrl+F) for top header search bar
+    if (!window._headerSearchShortcutBound) {
+      window._headerSearchShortcutBound = true;
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+          const searchInput = document.getElementById('headerSearchInput');
+          if (searchInput) {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+          }
+        }
+      });
+    }
 
     // Show/hide admin nav
     const adminNav = document.getElementById('adminNav');
@@ -444,6 +511,12 @@ window.Messliner = window.DineDesk = {
     const overviewNavBtn = document.querySelector('.sidebar-nav button[data-page="overview"]');
     if (overviewNavBtn) {
       overviewNavBtn.style.display = isAdmin ? 'none' : 'flex';
+    }
+
+    // Hide Bills nav item for Admin since Admin has Ledger in adminNav
+    const billsNavBtn = document.getElementById('nav-item-bills') || document.querySelector('.sidebar-nav button[data-page="user-bills"]');
+    if (billsNavBtn) {
+      billsNavBtn.style.display = isAdmin ? 'none' : 'flex';
     }
     const bottomOverviewBtn = document.querySelector('.bottom-nav-item[data-page="overview"]');
     if (bottomOverviewBtn) {
@@ -462,9 +535,17 @@ window.Messliner = window.DineDesk = {
     if (bottomFinanceBtn) {
       bottomFinanceBtn.style.display = isAdmin ? 'flex' : 'none';
     }
+    const bottomBillsBtn = document.querySelector('.bottom-nav-item[data-page="user-bills"]');
+    if (bottomBillsBtn) {
+      bottomBillsBtn.style.display = isAdmin ? 'none' : 'flex';
+    }
     const bottomAssistBtn = document.querySelector('.bottom-nav-item[data-page="aiassistant"]');
     if (bottomAssistBtn) {
-      bottomAssistBtn.style.display = isAdmin ? 'none' : 'flex';
+      bottomAssistBtn.style.display = 'none'; // Assist removed as requested
+    }
+
+    if (window.Router && typeof Router.updateBottomNavIndicator === 'function') {
+      Router.updateBottomNavIndicator(true);
     }
 
     // Hide mobile menu button (hamburger menu on the left) for non-admin
@@ -472,6 +553,22 @@ window.Messliner = window.DineDesk = {
     if (mobileMenuBtn) {
       mobileMenuBtn.classList.toggle('hidden', !isAdmin);
     }
+
+    // Hide History nav button & member nav cards for non-admin
+    const historyNavBtn = document.getElementById('nav-item-history');
+    if (historyNavBtn) {
+      historyNavBtn.style.display = isAdmin ? 'flex' : 'none';
+    }
+    const historyMemberCard = document.querySelector('.member-nav-card[onclick*="history"]');
+    if (historyMemberCard) {
+      historyMemberCard.style.display = isAdmin ? 'flex' : 'none';
+    }
+
+    // Role-based Bazar view toggling (Admin -> Management / Routine, User -> Clean History List)
+    const bazarUserView = document.getElementById('bazarUserViewContainer');
+    const bazarAdminView = document.getElementById('bazarAdminViewContainer');
+    if (bazarUserView) bazarUserView.style.display = isAdmin ? 'none' : 'block';
+    if (bazarAdminView) bazarAdminView.style.display = isAdmin ? 'block' : 'none';
   },
 
   /**
@@ -487,13 +584,31 @@ window.Messliner = window.DineDesk = {
     OverviewModule.init(diningId, initialData);
     Notifications.initListener(diningId, userId, this.state.userJoinedAt);
     if (window.MealChartModule) MealChartModule.init(diningId, userId);
-    if (window.BazarHistoryModule) BazarHistoryModule.init(diningId, userId);
-    if (window.SummaryModule) SummaryModule.init(diningId, userId);
+    if (window.BazarHistoryModule) {
+      BazarHistoryModule.init(diningId, userId);
+      Messliner.bazarHistory = BazarHistoryModule;
+    }
+    if (window.SummaryModule) {
+      SummaryModule.init(diningId, userId);
+      Messliner.summary = SummaryModule;
+    }
+    if (window.BazarModule) {
+      BazarModule.init(diningId, userId, initialData);
+      Messliner.bazar = BazarModule;
+    }
+    if (window.UserBillsModule) {
+      UserBillsModule.init(diningId, userId, initialData);
+      Messliner.userBills = UserBillsModule;
+    }
 
     // Admin-only modules
     if (isAdmin) {
       MealsModule.init(diningId);
       FinanceModule.init(diningId, initialData);
+      if (window.LedgerModule) {
+        LedgerModule.init(diningId, initialData);
+        Messliner.ledger = LedgerModule;
+      }
       SettingsModule.init(diningId, initialData);
       UserDashboard.renderAdminQuickActions();
       if (window.FridayMealsModule) {
@@ -575,16 +690,15 @@ window.Messliner = window.DineDesk = {
       if (rateMode === 'fixed') {
         const trackedMeals = settings.trackedMeals || { breakfast: true, lunch: true, dinner: true };
         const fixedRates = settings.fixedRates || { breakfast: 0, lunch: 0, dinner: 0 };
-        const activeRates = [];
-        if (trackedMeals.breakfast) activeRates.push(fixedRates.breakfast || 0);
-        if (trackedMeals.lunch) activeRates.push(fixedRates.lunch || 0);
-        if (trackedMeals.dinner) activeRates.push(fixedRates.dinner || 0);
+        let fullMealRate = 0;
+        if (trackedMeals.breakfast !== false) fullMealRate += (fixedRates.breakfast || 0);
+        if (trackedMeals.lunch !== false) fullMealRate += (fixedRates.lunch || 0);
+        if (trackedMeals.dinner !== false) fullMealRate += (fixedRates.dinner || 0);
 
-        const avgRate = activeRates.length > 0 ? (activeRates.reduce((a, b) => a + b, 0) / activeRates.length) : 0;
-        this.state.mealRate = avgRate;
+        this.state.mealRate = fullMealRate;
         this.state.totalMeals = totalMeals;
         this.state.totalBazar = totalBazar;
-        this.state.monthlyMealRate = avgRate;
+        this.state.monthlyMealRate = fullMealRate;
       } else {
         this.state.mealRate = Utils.calcMealRate(totalBazar, totalMeals);
         this.state.totalMeals = totalMeals;
@@ -595,7 +709,7 @@ window.Messliner = window.DineDesk = {
         let _monthlyBazar = 0;
         let _monthlyMeals = 0;
         Object.values(bazars).forEach(b => {
-          if (b.date && b.date.startsWith(_currentMonth)) _monthlyBazar += Utils.num(b.amount);
+          if (Utils.isItemInMonth(b, _currentMonth)) _monthlyBazar += Utils.num(b.amount);
         });
         const _monthData = meals[_currentMonth] || {};
         Object.values(_monthData).forEach(dayData => {
@@ -604,7 +718,7 @@ window.Messliner = window.DineDesk = {
               Object.entries(typeData).forEach(([uId, c]) => {
                 const user = users[uId];
                 if (user && user.role === 'admin' && !isManagerMealEnabled) return;
-                _monthlyMeals += parseInt(c) || 0;
+                _monthlyMeals += parseFloat(c) || 0;
               });
             }
           });
@@ -662,7 +776,7 @@ window.Messliner = window.DineDesk = {
                 if (user && user.role === 'admin' && !isManagerMealEnabled) {
                   return; // Skip manager meals
                 }
-                totalMeals += parseInt(c) || 0;
+                totalMeals += parseFloat(c) || 0;
               });
             }
           });
@@ -678,7 +792,7 @@ window.Messliner = window.DineDesk = {
       let _mBazar = 0;
       let _mMeals = 0;
       Object.values(bazarSnap.val() || {}).forEach(b => {
-        if (b.date && b.date.startsWith(_cm)) _mBazar += Utils.num(b.amount);
+        if (Utils.isItemInMonth(b, _cm)) _mBazar += Utils.num(b.amount);
       });
       const _md = (mealsSnap.val() || {})[_cm] || {};
       Object.values(_md).forEach(dayData => {
@@ -687,7 +801,7 @@ window.Messliner = window.DineDesk = {
             Object.entries(typeData).forEach(([uId, c]) => {
               const user = users[uId];
               if (user && user.role === 'admin' && !isManagerMealEnabled) return;
-              _mMeals += parseInt(c) || 0;
+              _mMeals += parseFloat(c) || 0;
             });
           }
         });
@@ -713,6 +827,7 @@ window.Messliner = window.DineDesk = {
         if (d.type === 'deposit') total += Utils.num(d.amount);
       });
       Messliner.state.totalDeposit = total;
+      if (Router.currentPage === 'dashboard') UserDashboard.renderStats();
     } catch (e) {
       console.error('Deposit recalc error:', e);
     }
@@ -772,4 +887,15 @@ document.addEventListener('click', (e) => {
   }
 }, true);
 
+// Global Cursor-Tracking Spotlight Effect for Stat Cards
+document.addEventListener('mousemove', (e) => {
+  const card = e.target.closest('.stat-card');
+  if (card) {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    card.style.setProperty('--mouse-x', `${x}px`);
+    card.style.setProperty('--mouse-y', `${y}px`);
+  }
+});
 console.log('[Messliner] App module loaded');

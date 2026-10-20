@@ -7,9 +7,9 @@ const Auth = {
   currentRecoveryEmail: '',
   currentSignupEmail: '',
   resendTimer: null,
-  resendSecondsLeft: 60,
+  resendSecondsLeft: 120,
   signupResendTimer: null,
-  signupResendSecondsLeft: 60,
+  signupResendSecondsLeft: 120,
 
   /**
    * Initialize auth on the login page
@@ -301,11 +301,11 @@ const Auth = {
   },
 
   /**
-   * Resend timer for OTP (60s countdown)
+   * Resend timer for OTP (120s countdown)
    */
   startResendTimer() {
     if (this.resendTimer) clearInterval(this.resendTimer);
-    this.resendSecondsLeft = 60;
+    this.resendSecondsLeft = 120;
 
     const resendBtn = document.getElementById('resendOtpBtn');
     const timerWrap = document.getElementById('resendTimerWrap');
@@ -360,6 +360,8 @@ const Auth = {
 
     btn.classList.add('loading');
     btn.disabled = true;
+    const btnText = btn.querySelector('.btn-text');
+    if (btnText) btnText.textContent = 'Signing in...';
     errorDiv.classList.remove('visible');
 
     try {
@@ -401,6 +403,7 @@ const Auth = {
     } finally {
       btn.classList.remove('loading');
       btn.disabled = false;
+      if (btnText) btnText.textContent = 'Sign in';
     }
   },
 
@@ -695,11 +698,11 @@ const Auth = {
   },
 
   /**
-   * Resend timer for Signup OTP (60s countdown)
+   * Resend timer for Signup OTP (120s countdown)
    */
   startSignupResendTimer() {
     if (this.signupResendTimer) clearInterval(this.signupResendTimer);
-    this.signupResendSecondsLeft = 60;
+    this.signupResendSecondsLeft = 120;
 
     const resendBtn = document.getElementById('resendSignupOtpBtn');
     const timerWrap = document.getElementById('resendSignupTimerWrap');
@@ -770,7 +773,7 @@ const Auth = {
       await auth.verifyOTP(email, otpCode, 'signup');
 
       if (typeof Notifications !== 'undefined') {
-        Notifications.toast('success', 'Email Verified', 'Verification successful! Redirecting to home page...');
+        Notifications.toast('success', 'Email Verified', 'Verification successful! Redirecting to setup...');
       }
 
       Auth.isRegistering = false;

@@ -41,11 +41,22 @@ const AIControlModule = {
    * Helper function to call the Gemini API
    */
   async _callGemini(prompt, systemInstruction, responseSchema = null) {
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE") {
+    const apiKey = (typeof GEMINI_API_KEY !== 'undefined' && GEMINI_API_KEY && GEMINI_API_KEY !== "YOUR_GEMINI_API_KEY_HERE")
+      ? GEMINI_API_KEY
+      : (window.GEMINI_API_KEY || localStorage.getItem('gemini_api_key'));
+
+    if (!apiKey) {
       throw new Error("Please configure a valid Gemini API key in firebase-config.js.");
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${typeof GEMINI_MODEL !== 'undefined' ? GEMINI_MODEL : 'gemini-3.5-flash'}:generateContent?key=${GEMINI_API_KEY}`;
+    const preferredModel = (typeof GEMINI_MODEL !== 'undefined' && GEMINI_MODEL) ? GEMINI_MODEL : 'gemini-3-flash-preview';
+    const candidateModels = [
+      preferredModel,
+      'gemini-3-flash-preview',
+      'gemini-3.5-flash-lite',
+      'gemini-3.5-flash',
+      'gemini-3.8-flash'
+    ].filter((m, idx, arr) => arr.indexOf(m) === idx);
 
     const requestBody = {
       contents: [
@@ -69,23 +80,57 @@ const AIControlModule = {
       requestBody.generationConfig.responseSchema = responseSchema;
     }
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(requestBody)
-    });
+    let lastError = null;
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini API Error: ${response.status} - ${errText}`);
+    for (const model of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          // If 503 (high demand) or 404 or 429, retry next candidate model
+          if (response.status === 503 || response.status === 404 || response.status === 429) {
+            console.warn(`[Gemini] Model ${model} returned ${response.status}. Trying next fallback model...`);
+            lastError = new Error(`Gemini API Error: ${response.status} - ${errText}`);
+            continue;
+          }
+          throw new Error(`Gemini API Error: ${response.status} - ${errText}`);
+        }
+
+        const data = await response.json();
+        const candidate = data && data.candidates && data.candidates[0];
+        if (!candidate || !candidate.content || !candidate.content.parts) {
+          throw new Error("No content received from Gemini.");
+        }
+
+        const textParts = candidate.content.parts
+          .filter(p => !p.thought && typeof p.text === 'string')
+          .map(p => p.text);
+        let resultText = (textParts.length > 0 ? textParts.join('\n') : (candidate.content.parts[0]?.text || '')).trim();
+
+        if (responseSchema) {
+          let cleanJson = resultText;
+          if (cleanJson.startsWith('```')) {
+            cleanJson = cleanJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+          }
+          return JSON.parse(cleanJson);
+        }
+
+        return resultText;
+      } catch (err) {
+        lastError = err;
+        console.warn(`[Gemini] Exception on model ${model}:`, err.message);
+      }
     }
 
-    const data = await response.json();
-    const resultText = data.candidates[0].content.parts[0].text;
-    
-    return responseSchema ? JSON.parse(resultText) : resultText;
+    throw lastError || new Error("Failed to get response from Gemini.");
   },
 
   // ─── 1. Weekly Grocery Forecasting ───────────────────────
@@ -480,5 +525,8 @@ const AIControlModule = {
 };
 
 // Hook into app initialization
-Messliner.aiControl = AIControlModule;
+window.AIControlModule = AIControlModule;
+if (typeof Messliner !== 'undefined') {
+  Messliner.aiControl = AIControlModule;
+}
 console.log('[Messliner] AI Control Panel Module registered');

@@ -7,6 +7,7 @@ const OverviewModule = {
   createdDate: null,
   selectedYear: new Date().getFullYear(),
   selectedMonth: new Date().getMonth() + 1,
+  selectedUserId: null,
 
   monthNames: [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -16,11 +17,9 @@ const OverviewModule = {
   /**
    * Initialize overview with realtime data
    */
-  /**
-   * Initialize overview with realtime data
-   */
   async init(diningId, initialData) {
     this.diningId = diningId;
+    this.selectedUserId = null;
 
     const now = new Date();
     this.selectedYear = now.getFullYear();
@@ -49,9 +48,9 @@ const OverviewModule = {
             if (ca) this.createdDate = new Date(ca);
             this.populateYearDropdown();
             this.populateMonthDropdown();
-          }).catch(() => {});
+          }).catch(() => { });
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     this.populateYearDropdown();
@@ -65,6 +64,21 @@ const OverviewModule = {
         meals: initialData.meals || {},
         settings: initialData.settings || {}
       };
+    }
+
+    // Keydown listener for Enter key to login as selected member from dashboard
+    if (!this._keydownListenerAdded) {
+      document.addEventListener('keydown', (e) => {
+        const isOverviewVisible = Router.currentPage === 'overview' ||
+          (Router.currentPage === 'dashboard' && Messliner.state.role === 'admin') ||
+          ((!location.hash || location.hash === '#dashboard' || location.hash === '#') && Messliner.state.role === 'admin');
+        if (isOverviewVisible && e.key === 'Enter') {
+          if (this.selectedUserId) {
+            window.open(`dashboard.html?impersonate=${this.selectedUserId}`, '_blank');
+          }
+        }
+      });
+      this._keydownListenerAdded = true;
     }
 
     const triggerRefresh = () => {
@@ -113,7 +127,8 @@ const OverviewModule = {
   populateYearDropdown() {
     const valueEl = document.getElementById('overviewYearValue');
     const menuEl = document.getElementById('overviewYearMenu');
-    if (!valueEl || !menuEl) return;
+    const valueMobEl = document.getElementById('overviewYearValueMob');
+    const menuMobEl = document.getElementById('overviewYearMenuMob');
 
     const startYear = this.createdDate ? this.createdDate.getFullYear() : 2026;
     const endYear = new Date().getFullYear();
@@ -124,14 +139,39 @@ const OverviewModule = {
       html += `<div class="custom-dropdown-item ${sel}" data-value="${y}"
                     onclick="Messliner.overview.selectYear(${y})">${y}</div>`;
     }
-    menuEl.innerHTML = html;
-    valueEl.textContent = this.selectedYear;
+    if (menuEl) menuEl.innerHTML = html;
+    if (valueEl) valueEl.textContent = this.selectedYear;
+    if (menuMobEl) menuMobEl.innerHTML = html;
+    if (valueMobEl) valueMobEl.textContent = this.selectedYear;
+  },
+
+  toggleMobileDropdown(event, dropdownId) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const target = document.getElementById(dropdownId);
+    if (!target) return;
+    const isCurrentlyActive = target.classList.contains('active');
+
+    // Close all custom dropdowns first
+    document.querySelectorAll('.custom-dropdown.active').forEach(dd => dd.classList.remove('active'));
+
+    // If target was not active, open it
+    if (!isCurrentlyActive) {
+      target.classList.add('active');
+      setTimeout(() => {
+        const selected = target.querySelector('.custom-dropdown-item.selected');
+        if (selected) {
+          selected.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      }, 40);
+    }
   },
 
   selectYear(year) {
     this.selectedYear = year;
-    const dd = document.getElementById('overviewYearDropdown');
-    if (dd) dd.classList.remove('active');
+    document.querySelectorAll('.custom-dropdown.active').forEach(dd => dd.classList.remove('active'));
     this.populateYearDropdown();
     this.populateMonthDropdown();
     this.refresh();
@@ -143,7 +183,8 @@ const OverviewModule = {
   populateMonthDropdown() {
     const valueEl = document.getElementById('overviewMonthValue');
     const menuEl = document.getElementById('overviewMonthMenu');
-    if (!valueEl || !menuEl) return;
+    const valueMobEl = document.getElementById('overviewMonthValueMob');
+    const menuMobEl = document.getElementById('overviewMonthMenuMob');
 
     const startYear = this.createdDate ? this.createdDate.getFullYear() : 2026;
     const currentYear = new Date().getFullYear();
@@ -167,14 +208,15 @@ const OverviewModule = {
       html += `<div class="custom-dropdown-item ${sel}" data-value="${m}"
                     onclick="Messliner.overview.selectMonth(${m})">${this.monthNames[m - 1]}</div>`;
     }
-    menuEl.innerHTML = html;
-    valueEl.textContent = this.monthNames[this.selectedMonth - 1];
+    if (menuEl) menuEl.innerHTML = html;
+    if (valueEl) valueEl.textContent = this.monthNames[this.selectedMonth - 1];
+    if (menuMobEl) menuMobEl.innerHTML = html;
+    if (valueMobEl) valueMobEl.textContent = this.monthNames[this.selectedMonth - 1];
   },
 
   selectMonth(month) {
     this.selectedMonth = month;
-    const dd = document.getElementById('overviewMonthDropdown');
-    if (dd) dd.classList.remove('active');
+    document.querySelectorAll('.custom-dropdown.active').forEach(dd => dd.classList.remove('active'));
     this.populateMonthDropdown();
     this.refresh();
   },
@@ -264,8 +306,9 @@ const OverviewModule = {
         if (isSelectedMonth(d)) {
           filteredDeposits[id] = d;
           if (d.type === 'deposit') totalDeposit += Utils.num(d.amount);
-          else if (d.type === 'deduction' || d.type === 'friday_meal') totalDeductions += Math.abs(Utils.num(d.amount));
           else if (d.type === 'other_costing') totalOtherCosting += Math.abs(Utils.num(d.amount));
+          else if (d.type === 'deduction' || d.type === 'friday_meal') totalDeductions += Math.abs(Utils.num(d.amount));
+          else totalDeductions += Math.abs(Utils.num(d.amount));
         }
       });
       this.deposits = filteredDeposits;
@@ -313,11 +356,11 @@ const OverviewModule = {
       let mealRate = 0;
       if (rateMode === 'fixed') {
         const trackedMeals = settings.trackedMeals || { breakfast: true, lunch: true, dinner: true };
-        const activeRates = [];
-        if (trackedMeals.breakfast) activeRates.push(fixedRates.breakfast || 0);
-        if (trackedMeals.lunch) activeRates.push(fixedRates.lunch || 0);
-        if (trackedMeals.dinner) activeRates.push(fixedRates.dinner || 0);
-        mealRate = activeRates.length > 0 ? (activeRates.reduce((a, b) => a + b, 0) / activeRates.length) : 0;
+        let fullMealRate = 0;
+        if (trackedMeals.breakfast !== false) fullMealRate += (fixedRates.breakfast || 0);
+        if (trackedMeals.lunch !== false) fullMealRate += (fixedRates.lunch || 0);
+        if (trackedMeals.dinner !== false) fullMealRate += (fixedRates.dinner || 0);
+        mealRate = fullMealRate;
       } else {
         mealRate = Utils.calcMealRate(totalBazar, totalMeals);
       }
@@ -373,185 +416,213 @@ const OverviewModule = {
 
     const bazarCost = totalBazar !== undefined ? totalBazar : totalMealCost;
 
+    // Custom Minimal Professional SVG Icons
+    const icons = {
+      deposit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3.5" fill="currentColor" fill-opacity="0.12"/><path d="M2 10h20" stroke-width="1.5"/><path d="M6 15h4" stroke-width="2"/><path d="M16 16.5l2.5-2.5 2.5 2.5m-2.5-2.5v5" stroke-width="2"/></svg>`,
+      meals: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" fill="currentColor"/><path d="M12 4.5v2"/><path d="M3 18a9 9 0 0 1 18 0H3z" fill="currentColor" fill-opacity="0.12"/><line x1="2" y1="18" x2="22" y2="18" stroke-width="2"/><path d="M8 21h8" stroke-width="1.8"/></svg>`,
+      mealRate: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1"/><polyline points="12 7 12 12 15.5 14" stroke-width="2"/><path d="M16.5 6.5l3-3m-3 0h3v3" stroke-width="1.8"/></svg>`,
+      bazar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1.6 10.4A2 2 0 0 1 16.4 21H7.6a2 2 0 0 1-1.98-1.6L4 9z" fill="currentColor" fill-opacity="0.1"/><path d="M8 9V6a4 4 0 0 1 8 0v3" stroke-width="2"/><line x1="9" y1="13" x2="15" y2="13" stroke-width="1.8"/></svg>`,
+      mealCost: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5" fill="currentColor" fill-opacity="0.08"/><circle cx="12" cy="12" r="5.5" stroke-width="1.5"/><path d="M12 9v6m-2-4.5h4" stroke-width="2"/></svg>`,
+      otherCost: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" fill-opacity="0.15"/><path d="M2 12l10 5 10-5"/><path d="M2 17l10 5 10-5"/><path d="M17 14h4m-2-2v4" stroke-width="1.8"/></svg>`,
+      deduction: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3.5" fill="currentColor" fill-opacity="0.1"/><line x1="7.5" y1="12" x2="16.5" y2="12" stroke-width="2.5"/><path d="M17 8.5l2-2" stroke-width="1.8"/></svg>`,
+      totalCost: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.08"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="12" x2="16" y2="12" stroke-width="2"/><line x1="8" y1="16" x2="13" y2="16" stroke-width="2"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/></svg>`,
+      balance: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="3.5" fill="currentColor" fill-opacity="0.1"/><path d="M16 12.5a2 2 0 1 0 4 0 2 2 0 0 0-4 0" fill="currentColor" fill-opacity="0.25"/><path d="M3 10h18" stroke-width="1.5"/><path d="M7 15h3" stroke-width="2"/></svg>`
+    };
+
     container.innerHTML = `
       <!-- Desktop layout: 9 individual stat cards -->
       <div class="overview-desktop-stats">
-        <div class="stat-card">
-          <div class="stat-icon primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        <div class="stat-card theme-deposit">
+          <div class="stat-icon theme-deposit-icon">
+            ${icons.deposit}
           </div>
           <div class="stat-info">
             <div class="stat-label">Total Deposit</div>
-            <div class="stat-value">${Utils.currency(totalDeposit)}</div>
+            <div class="stat-value">${Utils.tk(totalDeposit)}</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon accent">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><path d="M7 2v20"/></svg>
+
+        <div class="stat-card theme-meals">
+          <div class="stat-icon theme-meals-icon">
+            ${icons.meals}
           </div>
           <div class="stat-info">
             <div class="stat-label">Total Meals</div>
             <div class="stat-value">${Utils.formatNumber(totalMeals)}</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+
+        <div class="stat-card theme-meal-rate">
+          <div class="stat-icon theme-meal-rate-icon">
+            ${icons.mealRate}
           </div>
           <div class="stat-info">
             <div class="stat-label">Meal Rate</div>
-            <div class="stat-value">${Utils.currency(mealRate)}</div>
+            <div class="stat-value">${Utils.tk(mealRate)}</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon warning">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+
+        <div class="stat-card theme-bazar">
+          <div class="stat-icon theme-bazar-icon">
+            ${icons.bazar}
           </div>
           <div class="stat-info">
             <div class="stat-label">Total Bazar</div>
-            <div class="stat-value">${Utils.currency(bazarCost)}</div>
+            <div class="stat-value">${Utils.tk(bazarCost)}</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon warning">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M12 11v6m-3-3h6"/></svg>
+
+        <div class="stat-card theme-meal-cost">
+          <div class="stat-icon theme-meal-cost-icon">
+            ${icons.mealCost}
           </div>
           <div class="stat-info">
             <div class="stat-label">Total Meal Cost</div>
-            <div class="stat-value">${Utils.currency(totalMealCost)}</div>
+            <div class="stat-value">${Utils.tk(totalMealCost)}</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background:var(--warning-100);color:var(--warning-700);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+
+        <div class="stat-card theme-other-cost">
+          <div class="stat-icon theme-other-cost-icon">
+            ${icons.otherCost}
           </div>
           <div class="stat-info">
             <div class="stat-label">Total Other Cost</div>
-            <div class="stat-value">${Utils.currency(totalOtherCosting)}</div>
+            <div class="stat-value">${Utils.tk(totalOtherCosting)}</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon danger">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+
+        <div class="stat-card theme-deduction">
+          <div class="stat-icon theme-deduction-icon">
+            ${icons.deduction}
           </div>
           <div class="stat-info">
             <div class="stat-label">Total Deduction</div>
-            <div class="stat-value">${Utils.currency(totalDeductions)}</div>
+            <div class="stat-value">${Utils.tk(totalDeductions)}</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background:var(--danger-100);color:var(--danger-700);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><path d="M16 8H8m8 4H8m4 4H8"/></svg>
+
+        <div class="stat-card theme-total-cost">
+          <div class="stat-icon theme-total-cost-icon">
+            ${icons.totalCost}
           </div>
           <div class="stat-info">
             <div class="stat-label">Total Cost</div>
-            <div class="stat-value">${Utils.currency(totalCost)}</div>
+            <div class="stat-value">${Utils.tk(totalCost)}</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon ${netBalance >= 0 ? 'accent' : 'danger'}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+
+        <div class="stat-card theme-net-balance ${netBalance >= 0 ? 'net-positive' : 'net-negative'}">
+          <div class="stat-icon theme-net-balance-icon">
+            ${icons.balance}
           </div>
           <div class="stat-info">
             <div class="stat-label">Net Balance</div>
-            <div class="stat-value" style="color:${netBalance >= 0 ? 'var(--accent-600)' : 'var(--danger-600)'}">${Utils.currency(netBalance)}</div>
+            <div class="stat-value ${netBalance >= 0 ? 'val-positive' : 'val-negative'}">${Utils.tk(netBalance)}</div>
           </div>
         </div>
       </div>
 
-      <!-- Mobile layout: 2-column borderless table with green rounded bottom -->
+      <!-- Mobile layout: Dark Forest Green Hero Card matching User Panel Home -->
       <div class="overview-mobile-stats">
-        <div class="overview-table-card">
-          <div class="overview-table-grid">
-            <!-- Row 1 -->
-            <div class="table-cell">
-              <div class="cell-icon-box text-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-              </div>
-              <div class="cell-info">
-                <span class="cell-label">Total Deposit</span>
-                <span class="cell-value">${Utils.currency(totalDeposit)}</span>
-              </div>
-            </div>
-            <div class="table-cell">
-              <div class="cell-icon-box text-accent">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><path d="M7 2v20"/></svg>
-              </div>
-              <div class="cell-info">
-                <span class="cell-label">Total Meals</span>
-                <span class="cell-value">${Utils.formatNumber(totalMeals)}</span>
-              </div>
-            </div>
+        <div class="mymeal-mobile-hero-wrapper" style="margin-bottom: 16px;">
+          <div class="mymeal-ambient-circle circle-1"></div>
+          <div class="mymeal-ambient-circle circle-2"></div>
 
-            <!-- Row 2 -->
-            <div class="table-cell">
-              <div class="cell-icon-box text-warning">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+          <!-- Dining Overview Mobile Topbar -->
+          <div class="overview-mobile-topbar" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 2px 2px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(52, 211, 153, 0.35); display: flex; align-items: center; justify-content: center; color: #34d399; flex-shrink: 0;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="3" ry="3"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
               </div>
-              <div class="cell-info">
-                <span class="cell-label">Bazar Cost</span>
-                <span class="cell-value">${Utils.currency(bazarCost)}</span>
-              </div>
-            </div>
-            <div class="table-cell">
-              <div class="cell-icon-box text-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              </div>
-              <div class="cell-info">
-                <span class="cell-label">Meal Rate</span>
-                <span class="cell-value">${Utils.currency(mealRate)}</span>
+              <div>
+                <span style="font-size: 0.95rem; font-weight: 700; color: #ffffff; letter-spacing: 0.01em;">Dining Overview</span>
               </div>
             </div>
+          </div>
 
-            <!-- Row 3 -->
-            <div class="table-cell">
-              <div class="cell-icon-box text-warning">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M12 11v6m-3-3h6"/></svg>
+          <div class="mymeal-hero-card">
+            <!-- Card Top Header -->
+            <div class="mymeal-hero-top">
+              <div class="mymeal-hero-badge-tag">
+                <span class="mymeal-hero-tag-text">NET BALANCE</span>
               </div>
-              <div class="cell-info">
-                <span class="cell-label">Meal Cost</span>
-                <span class="cell-value">${Utils.currency(totalMealCost)}</span>
-              </div>
-            </div>
-            <div class="table-cell">
-              <div class="cell-icon-box text-orange">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-              </div>
-              <div class="cell-info">
-                <span class="cell-label">Other Cost</span>
-                <span class="cell-value">${Utils.currency(totalOtherCosting)}</span>
-              </div>
-            </div>
-
-            <!-- Row 4 -->
-            <div class="table-cell">
-              <div class="cell-icon-box text-danger">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              </div>
-              <div class="cell-info">
-                <span class="cell-label">Total Deduction</span>
-                <span class="cell-value">${Utils.currency(totalDeductions)}</span>
-              </div>
-            </div>
-            <div class="table-cell">
-              <div class="cell-icon-box text-danger">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><path d="M16 8H8m8 4H8m4 4H8"/></svg>
-              </div>
-              <div class="cell-info">
-                <span class="cell-label">Total Cost</span>
-                <span class="cell-value">${Utils.currency(totalCost)}</span>
-              </div>
-            </div>
-
-            <!-- Row 5 (Full Width Column) -->
-            <div class="table-cell-full">
-              <div class="cell-full-content">
-                <div class="cell-full-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+              <div class="overview-hero-selectors" style="display: flex; align-items: center; gap: 6px;">
+                <div class="custom-dropdown" id="overviewMonthDropdownMob">
+                  <button type="button" class="overview-hero-pill-btn" onclick="Messliner.overview.toggleMobileDropdown(event, 'overviewMonthDropdownMob')">
+                    <span id="overviewMonthValueMob">${this.monthNames[this.selectedMonth - 1]}</span>
+                    <svg width="7" height="6" viewBox="0 0 8 6" fill="currentColor" style="margin-left: 4px; opacity: 0.85; flex-shrink: 0;"><polygon points="0,0 8,0 4,6"/></svg>
+                  </button>
+                  <div class="custom-dropdown-menu" id="overviewMonthMenuMob" style="z-index: 100; min-width: 120px;"></div>
                 </div>
-                <div class="cell-full-info">
-                  <span class="cell-full-label">Net Balance</span>
-                  <span class="cell-full-value">${Utils.currency(netBalance)}</span>
+                <div class="custom-dropdown" id="overviewYearDropdownMob">
+                  <button type="button" class="overview-hero-pill-btn" onclick="Messliner.overview.toggleMobileDropdown(event, 'overviewYearDropdownMob')">
+                    <span id="overviewYearValueMob">${this.selectedYear}</span>
+                    <svg width="7" height="6" viewBox="0 0 8 6" fill="currentColor" style="margin-left: 4px; opacity: 0.85; flex-shrink: 0;"><polygon points="0,0 8,0 4,6"/></svg>
+                  </button>
+                  <div class="custom-dropdown-menu" id="overviewYearMenuMob" style="z-index: 100; min-width: 90px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Main Hero Metric (Net Balance) -->
+            <div class="mymeal-hero-main-stat">
+              <div class="mymeal-hero-val-wrap ${netBalance < 0 ? 'is-negative' : ''}">
+                <span class="mymeal-hero-currency">${netBalance < 0 ? '−' : ''}<span class="tk-symbol"></span></span>
+                <span class="mymeal-hero-big-number">${Math.abs(netBalance).toLocaleString('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+
+            <!-- Unified Stats Shelf (Metrics ending with Total Cost) -->
+            <div class="mymeal-hero-stats-shelf">
+              <div class="mymeal-shelf-row">
+                <div class="mymeal-shelf-col">
+                  <div class="mymeal-shelf-label">Total Deposit</div>
+                  <div class="mymeal-shelf-val">${Utils.tk(totalDeposit)}</div>
+                </div>
+                <div class="mymeal-shelf-divider"></div>
+                <div class="mymeal-shelf-col">
+                  <div class="mymeal-shelf-label">Total Meals</div>
+                  <div class="mymeal-shelf-val">${Utils.formatNumber(totalMeals)}</div>
+                </div>
+                <div class="mymeal-shelf-divider"></div>
+                <div class="mymeal-shelf-col">
+                  <div class="mymeal-shelf-label">Total Bazar</div>
+                  <div class="mymeal-shelf-val">${Utils.tk(bazarCost)}</div>
+                </div>
+              </div>
+              <div class="mymeal-shelf-h-divider"></div>
+              <div class="mymeal-shelf-row">
+                <div class="mymeal-shelf-col">
+                  <div class="mymeal-shelf-label">Meal Rate</div>
+                  <div class="mymeal-shelf-val"><span class="tk-symbol"></span>${(mealRate || 0).toFixed(2)}</div>
+                </div>
+                <div class="mymeal-shelf-divider"></div>
+                <div class="mymeal-shelf-col">
+                  <div class="mymeal-shelf-label">Meal Cost</div>
+                  <div class="mymeal-shelf-val">${Utils.tk(totalMealCost)}</div>
+                </div>
+                <div class="mymeal-shelf-divider"></div>
+                <div class="mymeal-shelf-col">
+                  <div class="mymeal-shelf-label">Other Cost</div>
+                  <div class="mymeal-shelf-val">${Utils.tk(totalOtherCosting)}</div>
+                </div>
+              </div>
+              <div class="mymeal-shelf-h-divider"></div>
+              <div class="mymeal-shelf-row">
+                <div class="mymeal-shelf-col">
+                  <div class="mymeal-shelf-label">Deduction</div>
+                  <div class="mymeal-shelf-val">${Utils.tk(totalDeductions)}</div>
+                </div>
+                <div class="mymeal-shelf-divider"></div>
+                <div class="mymeal-shelf-col">
+                  <div class="mymeal-shelf-label">Total Cost</div>
+                  <div class="mymeal-shelf-val">${Utils.tk(totalCost)}</div>
                 </div>
               </div>
             </div>
@@ -559,6 +630,10 @@ const OverviewModule = {
         </div>
       </div>
     `;
+
+    // Populate mobile dropdowns
+    this.populateMonthDropdown();
+    this.populateYearDropdown();
   },
 
   /**
@@ -596,6 +671,8 @@ const OverviewModule = {
         uOtherCosts[d.userId] = (uOtherCosts[d.userId] || 0) + amt;
       } else if (d.type === 'deduction' || d.type === 'friday_meal') {
         uDeductions[d.userId] = (uDeductions[d.userId] || 0) + amt;
+      } else {
+        uDeductions[d.userId] = (uDeductions[d.userId] || 0) + amt;
       }
     });
 
@@ -609,28 +686,49 @@ const OverviewModule = {
       const deduction = uDeductions[id] || 0;
       const balance = deposit - mealCost - otherCost - deduction;
 
-      const status = balance >= 0
-        ? '<span style="color:var(--accent-600);font-weight:var(--weight-bold);">Paid</span>'
-        : '<span style="color:var(--danger-600);font-weight:var(--weight-bold);">Due</span>';
+      const statusBadge = balance >= 0
+        ? `<span class="member-status-badge status-paid"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Paid</span>`
+        : `<span class="member-status-badge status-due"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Due</span>`;
+
+      const isSelected = id === this.selectedUserId ? 'selected' : '';
 
       return `
-        <tr>
-          <td>
-            <div class="flex items-center gap-2">
-              <div class="avatar avatar-sm" style="background:${UsersModule._avatarColor(u.name)};">${Utils.initials(u.name)}</div>
+        <tr class="member-stat-row ${isSelected}" data-user-id="${id}" onclick="Messliner.overview.selectUser('${id}', this)">
+          <td class="member-info-td">
+            <div class="flex items-center gap-3">
+              <div class="avatar avatar-sm avatar-tia">${Utils.initials(u.name)}</div>
               <div>
-                <div style="font-weight:var(--weight-medium);">${u.name}</div>
+                <div class="member-name-text">${u.name}</div>
               </div>
             </div>
           </td>
-          <td>${userMealsCount}</td>
-          <td>${Utils.currency(deposit)}</td>
-          <td>${Utils.currency(mealCost)}</td>
-          <td style="font-weight:var(--weight-bold);color:${balance >= 0 ? 'var(--accent-600)' : 'var(--danger-600)'};">${Utils.currency(balance)}</td>
-          <td>${status}</td>
+          <td class="numeric-td meals-count-val">${userMealsCount}</td>
+          <td class="numeric-td deposit-val">${Utils.tk(deposit)}</td>
+          <td class="numeric-td meal-cost-val">${Utils.tk(mealCost)}</td>
+          <td class="numeric-td balance-val ${balance >= 0 ? 'bal-positive' : 'bal-negative'}">${Utils.tk(balance)}</td>
+          <td class="status-td">${statusBadge}</td>
         </tr>
       `;
     }).join('');
+  },
+
+  /**
+   * Set selected user in overview and highlight row (toggle select / deselect on single click)
+   */
+  selectUser(id, el) {
+    if (this.selectedUserId === id) {
+      this.selectedUserId = null;
+      document.querySelectorAll('#memberStatsTable .member-stat-row').forEach(r => r.classList.remove('selected'));
+    } else {
+      this.selectedUserId = id;
+      document.querySelectorAll('#memberStatsTable .member-stat-row').forEach(r => r.classList.remove('selected'));
+      if (el) {
+        el.classList.add('selected');
+      } else {
+        const targetRow = document.querySelector(`#memberStatsTable .member-stat-row[data-user-id="${id}"]`);
+        if (targetRow) targetRow.classList.add('selected');
+      }
+    }
   },
 
 
@@ -638,13 +736,22 @@ const OverviewModule = {
    * Render bazar history
    */
   renderBazarHistory(bazars) {
+    if (!bazars && this.bazarData) bazars = this.bazarData;
+    this.bazarData = bazars;
+
+    if (window.HistoryPageModule) {
+      if (!HistoryPageModule.rawBazarData && this.cachedData && this.cachedData.bazar) {
+        HistoryPageModule.rawBazarData = this.cachedData.bazar;
+      }
+      HistoryPageModule.renderBazarForSelectedMonth();
+    }
+
     const container = document.getElementById('bazarHistory');
     if (!container) return;
 
-    const entries = Object.values(bazars).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    const entries = Object.values(bazars || {}).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-    if (entries.length === 0) {
-      container.innerHTML = `
+    const html = entries.length === 0 ? `
         <div class="empty-state" style="padding:var(--space-6);">
           <div class="empty-state-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
@@ -652,11 +759,7 @@ const OverviewModule = {
           <h3>No Bazar Records</h3>
           <p>Bazar expenses will appear here.</p>
         </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = entries.slice(0, 20).map(b => `
+    ` : entries.slice(0, 30).map(b => `
       <div class="timeline-item">
         <div class="timeline-dot warning"></div>
         <div class="timeline-content">
@@ -667,12 +770,14 @@ const OverviewModule = {
               <div class="timeline-desc">By ${b.shopperName || 'N/A'}</div>
             </div>
             <div style="font-weight:var(--weight-bold);color:var(--warning-600);white-space:nowrap; flex-shrink: 0; text-align: right;">
-              ${Utils.currency(b.amount)}
+              ${Utils.tk(b.amount)}
             </div>
           </div>
         </div>
       </div>
     `).join('');
+
+    container.innerHTML = html;
   },
 
 
@@ -737,14 +842,16 @@ const OverviewModule = {
       Object.values(deposits).forEach(d => {
         if (isSelectedMonth(d)) {
           if (d.type === 'deposit') overallDeposit += Utils.num(d.amount);
-          else if (d.type === 'deduction' || d.type === 'friday_meal') overallDeductions += Math.abs(Utils.num(d.amount));
           else if (d.type === 'other_costing') overallOtherCosting += Math.abs(Utils.num(d.amount));
+          else if (d.type === 'deduction' || d.type === 'friday_meal') overallDeductions += Math.abs(Utils.num(d.amount));
+          else overallDeductions += Math.abs(Utils.num(d.amount));
 
           if (d.userId) {
             const amt = Math.abs(Utils.num(d.amount));
             if (d.type === 'deposit') uDeposits[d.userId] = (uDeposits[d.userId] || 0) + amt;
             else if (d.type === 'other_costing') uOtherCosts[d.userId] = (uOtherCosts[d.userId] || 0) + amt;
             else if (d.type === 'deduction' || d.type === 'friday_meal') uDeductions[d.userId] = (uDeductions[d.userId] || 0) + amt;
+            else uDeductions[d.userId] = (uDeductions[d.userId] || 0) + amt;
           }
         }
       });
@@ -785,11 +892,11 @@ const OverviewModule = {
       let mealRate = 0;
       if (rateMode === 'fixed') {
         const trackedMeals = settings.trackedMeals || { breakfast: true, lunch: true, dinner: true };
-        const activeRates = [];
-        if (trackedMeals.breakfast) activeRates.push(fixedRates.breakfast || 0);
-        if (trackedMeals.lunch) activeRates.push(fixedRates.lunch || 0);
-        if (trackedMeals.dinner) activeRates.push(fixedRates.dinner || 0);
-        mealRate = activeRates.length > 0 ? (activeRates.reduce((a, b) => a + b, 0) / activeRates.length) : 0;
+        let fullMealRate = 0;
+        if (trackedMeals.breakfast !== false) fullMealRate += (fixedRates.breakfast || 0);
+        if (trackedMeals.lunch !== false) fullMealRate += (fixedRates.lunch || 0);
+        if (trackedMeals.dinner !== false) fullMealRate += (fixedRates.dinner || 0);
+        mealRate = fullMealRate;
       } else {
         mealRate = Utils.calcMealRate(totalBazar, totalMeals);
       }

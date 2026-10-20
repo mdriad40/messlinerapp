@@ -64,7 +64,7 @@ const SummaryModule = {
       itemsHTML += `
         <div class="custom-dropdown-item ${isSelected ? 'selected' : ''}" 
              data-value="${y}" 
-             onclick="Messliner.summary.selectYear(${y})">
+             onclick="(window.Messliner?.summary || window.SummaryModule).selectYear(${y})">
           ${y}
         </div>
       `;
@@ -117,7 +117,7 @@ const SummaryModule = {
       itemsHTML += `
         <div class="custom-dropdown-item ${isSelected ? 'selected' : ''}" 
              data-value="${m}" 
-             onclick="Messliner.summary.selectMonth(${m})">
+             onclick="(window.Messliner?.summary || window.SummaryModule).selectMonth(${m})">
           ${this.monthNames[m - 1]}
         </div>
       `;
@@ -211,7 +211,7 @@ const SummaryModule = {
               const mealCount = parseFloat(count) || 0;
               userMeals[uId] = (userMeals[uId] || 0) + mealCount;
               totalMeals += mealCount;
-              
+
               if (!userMealsBreakdown[uId]) {
                 userMealsBreakdown[uId] = { breakfast: 0, lunch: 0, dinner: 0 };
               }
@@ -229,11 +229,11 @@ const SummaryModule = {
       let mealRate = 0;
       if (rateMode === 'fixed') {
         const trackedMeals = settings.trackedMeals || { breakfast: true, lunch: true, dinner: true };
-        const activeRates = [];
-        if (trackedMeals.breakfast) activeRates.push(fixedRates.breakfast || 0);
-        if (trackedMeals.lunch) activeRates.push(fixedRates.lunch || 0);
-        if (trackedMeals.dinner) activeRates.push(fixedRates.dinner || 0);
-        mealRate = activeRates.length > 0 ? (activeRates.reduce((a,b) => a+b, 0) / activeRates.length) : 0;
+        let fullMealRate = 0;
+        if (trackedMeals.breakfast !== false) fullMealRate += (fixedRates.breakfast || 0);
+        if (trackedMeals.lunch !== false) fullMealRate += (fixedRates.lunch || 0);
+        if (trackedMeals.dinner !== false) fullMealRate += (fixedRates.dinner || 0);
+        mealRate = fullMealRate;
       } else {
         mealRate = totalMeals > 0 ? (monthBazarTotal / totalMeals) : 0;
       }
@@ -248,7 +248,7 @@ const SummaryModule = {
       const userDeductions = {};
 
       Object.values(allDeposits).forEach(d => {
-        if (!d.userId || !d.date || !d.date.startsWith(formattedMonth)) return;
+        if (!d.userId || !Utils.isItemInMonth(d, formattedMonth)) return;
 
         const amount = Math.abs(parseFloat(d.amount) || 0);
         if (d.type === 'deposit') {
@@ -256,6 +256,8 @@ const SummaryModule = {
         } else if (d.type === 'other_costing') {
           userOtherCosts[d.userId] = (userOtherCosts[d.userId] || 0) + amount;
         } else if (d.type === 'deduction' || d.type === 'friday_meal') {
+          userDeductions[d.userId] = (userDeductions[d.userId] || 0) + amount;
+        } else {
           userDeductions[d.userId] = (userDeductions[d.userId] || 0) + amount;
         }
       });
@@ -283,14 +285,14 @@ const SummaryModule = {
 
       // Render cards
       listEl.innerHTML = userEntries.map(([id, u]) => {
-        const uMeals    = userMeals[id] || 0;
+        const uMeals = userMeals[id] || 0;
         const uMealsBreakdown = userMealsBreakdown[id] || { breakfast: 0, lunch: 0, dinner: 0 };
         const uMealCost = Utils.calcMealCost(mealRate, uMeals, uMealsBreakdown, fixedRates);
-        const uDeposit  = userDeposits[id] || 0;   // this month's deposits only
+        const uDeposit = userDeposits[id] || 0;   // this month's deposits only
         const uOtherCost = userOtherCosts[id] || 0;
         const uDeduction = userDeductions[id] || 0;
         const uTotalCost = uMealCost + uOtherCost;
-        const uBalance   = uDeposit - uTotalCost - uDeduction;   // this month balance
+        const uBalance = uDeposit - uTotalCost - uDeduction;   // this month balance
         const isPositive = uBalance >= 0;
 
         return `
@@ -357,3 +359,6 @@ const SummaryModule = {
 };
 
 window.SummaryModule = SummaryModule;
+if (typeof Messliner !== 'undefined') {
+  Messliner.summary = SummaryModule;
+}

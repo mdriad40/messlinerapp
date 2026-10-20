@@ -8,5 +8,6 @@
 Thumbs.db
 desktop.ini
 
-# Exclude Landing Web Portal from main app repo
-Mess-Liner-web/
+# Build and cache
+.vite/
+node_modules/

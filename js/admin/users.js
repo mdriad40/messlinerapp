@@ -106,20 +106,25 @@ const UsersModule = {
   },
 
   /**
-   * Set selected user and highlight their card
+   * Set selected user and highlight their card (toggle select / deselect on single click)
    */
   selectUser(id, el) {
-    this.selectedUserId = id;
-    document.querySelectorAll('.user-card').forEach(c => c.classList.remove('selected'));
-    if (el) el.classList.add('selected');
+    if (this.selectedUserId === id) {
+      this.selectedUserId = null;
+      document.querySelectorAll('.member-table-row').forEach(r => r.classList.remove('selected'));
+    } else {
+      this.selectedUserId = id;
+      document.querySelectorAll('.member-table-row').forEach(r => r.classList.remove('selected'));
+      if (el) el.classList.add('selected');
+    }
   },
 
   /**
-   * Render users grid
+   * Render users table
    */
   render() {
-    const grid = document.getElementById('usersGrid');
-    if (!grid) return;
+    const container = document.getElementById('usersGrid');
+    if (!container) return;
 
     const userEntries = Object.entries(this.users).sort((a, b) => {
       const timeA = a[1].createdAt ? new Date(a[1].createdAt).getTime() : 0;
@@ -127,11 +132,11 @@ const UsersModule = {
       if (timeA !== timeB) {
         return timeA - timeB;
       }
-      return a[1].name.localeCompare(b[1].name);
+      return (a[1].name || '').localeCompare(b[1].name || '');
     });
 
     if (userEntries.length === 0) {
-      grid.innerHTML = `
+      container.innerHTML = `
         <div class="empty-state">
           <div class="empty-state-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
@@ -144,65 +149,94 @@ const UsersModule = {
       return;
     }
 
-    grid.innerHTML = userEntries.map(([id, user]) => {
+    const rowsHtml = userEntries.map(([id, user]) => {
       const roleBadge = user.role === 'admin'
-        ? '<span class="badge badge-primary" style="margin-left:var(--space-2);">Admin</span>'
+        ? '<span class="badge badge-primary" style="margin-left:6px;font-size:0.7rem;padding:2px 6px;">Admin</span>'
         : '';
       const isSelected = id === this.selectedUserId ? 'selected' : '';
+      const initials = Utils.initials(user.name || 'Member');
+      const isInactive = user.status === 'inactive';
 
       return `
-        <div class="user-card fade-up ${isSelected}" onclick="Messliner.users.selectUser('${id}', this)" style="animation-delay:${Math.random() * 0.15}s;">
-          <div class="avatar" style="background:${this._avatarColor(user.name)};">${Utils.initials(user.name)}</div>
-          <div class="user-card-info">
-            <div class="user-card-name">${user.name || 'Unknown'}${roleBadge}</div>
-            <div class="user-card-meta">Phone: ${user.phone || '—'}</div>
-          </div>
-          ${user.role !== 'admin' ? `
-            <div class="dropdown" style="margin-left:var(--space-2);">
-              <button class="btn btn-ghost btn-icon btn-sm" onclick="this.nextElementSibling.classList.toggle('active');event.stopPropagation();">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        <tr class="member-table-row ${isSelected}" data-user-id="${id}" onclick="Messliner.users.selectUser('${id}', this)">
+          <td class="col-photo">
+            <div class="member-tia-avatar">${initials}</div>
+          </td>
+          <td class="col-name">
+            <div class="member-name-text">${user.name || 'Unknown'}${roleBadge}</div>
+          </td>
+          <td class="col-mobile">
+            <div class="member-meta-text">${user.phone || '—'}</div>
+          </td>
+          <td class="col-email">
+            <div class="member-meta-text">${user.email || user.username || '—'}</div>
+          </td>
+          <td class="col-status">
+            <span class="member-status-badge ${isInactive ? 'status-inactive' : 'status-active'}">${isInactive ? 'Inactive' : 'Active'}</span>
+          </td>
+          <td class="col-operation">
+            <div class="member-operation-btns">
+              <button class="member-icon-btn edit-btn" type="button" title="Edit Member" onclick="Messliner.users.showEditModal('${id}'); event.stopPropagation();">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
               </button>
-              <div class="dropdown-menu">
-                <button class="dropdown-item" onclick="window.open('dashboard.html?impersonate=${id}', '_blank'); event.stopPropagation();">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                  Open Account
+              ${user.role !== 'admin' ? `
+                <button class="member-icon-btn delete-btn" type="button" title="Delete Member" onclick="Messliner.users.confirmDelete('${id}', '${(user.name || '').replace(/'/g, "\\'")}'); event.stopPropagation();">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                  </svg>
                 </button>
-                <button class="dropdown-item" onclick="Messliner.users.showEditModal('${id}'); event.stopPropagation();">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  Edit
-                </button>
-                <button class="dropdown-item danger" onclick="Messliner.users.confirmDelete('${id}', '${(user.name || '').replace(/'/g, "\\'")}'); event.stopPropagation();">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                  Delete
-                </button>
-              </div>
+              ` : ''}
             </div>
-          ` : ''}
-        </div>
+          </td>
+          <td class="col-action">
+            <button class="member-login-btn" type="button" onclick="window.open('dashboard.html?impersonate=${id}', '_blank'); event.stopPropagation();">
+              Login
+            </button>
+          </td>
+        </tr>
       `;
     }).join('');
 
-
-
-    // Close dropdowns on outside click
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.user-card .dropdown-menu').forEach(m => m.classList.remove('active'));
-    });
+    container.innerHTML = `
+      <div class="members-table-wrapper">
+        <table class="members-table">
+          <thead>
+            <tr>
+              <th class="col-photo">Photo</th>
+              <th class="col-name">Member name</th>
+              <th class="col-mobile">Mobile</th>
+              <th class="col-email">Email</th>
+              <th class="col-status">Status</th>
+              <th class="col-operation">Operation</th>
+              <th class="col-action">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
   },
 
   /**
    * Filter users by search query
    */
   filterUsers(query) {
-    const grid = document.getElementById('usersGrid');
-    if (!grid) return;
+    const table = document.querySelector('.members-table');
+    if (!table) return;
 
     const q = query.toLowerCase();
-    const cards = grid.querySelectorAll('.user-card');
-    cards.forEach(card => {
-      const name = card.querySelector('.user-card-name')?.textContent.toLowerCase() || '';
-      const meta = card.querySelector('.user-card-meta')?.textContent.toLowerCase() || '';
-      card.style.display = (name.includes(q) || meta.includes(q)) ? '' : 'none';
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+      const name = row.querySelector('.col-name')?.textContent.toLowerCase() || '';
+      const mobile = row.querySelector('.col-mobile')?.textContent.toLowerCase() || '';
+      const email = row.querySelector('.col-email')?.textContent.toLowerCase() || '';
+      row.style.display = (name.includes(q) || mobile.includes(q) || email.includes(q)) ? '' : 'none';
     });
   },
 
@@ -266,16 +300,70 @@ const UsersModule = {
 
     try {
       if (this.editingUserId) {
-        // Update existing user
+        const existingUser = this.users[this.editingUserId] || {};
+        const oldEmail = (existingUser.email || '').trim().toLowerCase();
+        const newEmail = email.toLowerCase();
+        const oldUsername = (existingUser.username || '').trim().toLowerCase();
+        const newUsername = username.toLowerCase();
+
+        // Check if new email is changed and already mapped to another user
+        if (oldEmail !== newEmail) {
+          const encodedNewEmail = Utils.encodeEmail(newEmail);
+          const emailCheckSnap = await db.ref(`userMappings/emailToDining/${encodedNewEmail}`).once('value');
+          const existingEmailMap = emailCheckSnap.val();
+          if (existingEmailMap && (existingEmailMap.diningId !== this.diningId || existingEmailMap.userId !== this.editingUserId)) {
+            Notifications.toast('error', 'Email In Use', 'This email is already associated with another account.');
+            btn.disabled = false;
+            return;
+          }
+        }
+
+        // Check if new username is changed and already mapped to another user
+        if (oldUsername !== newUsername) {
+          const userCheckSnap = await db.ref(`userMappings/usernameToDining/${newUsername}`).once('value');
+          const existingUserMap = userCheckSnap.val();
+          if (existingUserMap && (existingUserMap.diningId !== this.diningId || existingUserMap.userId !== this.editingUserId)) {
+            Notifications.toast('error', 'Username In Use', 'This username is already taken.');
+            btn.disabled = false;
+            return;
+          }
+        }
+
+        // Update existing user in dining (leaves deposits, meals, balance, mealStatus 100% untouched)
         await db.ref(`dinings/${this.diningId}/users/${this.editingUserId}`).update({
-          name, username, phone, email
+          name,
+          username: newUsername,
+          phone,
+          email: newEmail
         });
 
-        // Update username mapping
-        await db.ref(`userMappings/usernameToDining/${username}`).set({
+        // Update email mappings (remove old mapping if email changed, set new mapping)
+        if (oldEmail && oldEmail !== newEmail) {
+          await db.ref(`userMappings/emailToDining/${Utils.encodeEmail(oldEmail)}`).remove();
+        }
+        await db.ref(`userMappings/emailToDining/${Utils.encodeEmail(newEmail)}`).set({
           diningId: this.diningId,
           userId: this.editingUserId
         });
+
+        // Update username mappings (remove old mapping if username changed, set new mapping)
+        if (oldUsername && oldUsername !== newUsername) {
+          await db.ref(`userMappings/usernameToDining/${oldUsername}`).remove();
+        }
+        await db.ref(`userMappings/usernameToDining/${newUsername}`).set({
+          diningId: this.diningId,
+          userId: this.editingUserId
+        });
+
+        // Update global user profile if authUid exists
+        if (existingUser.authUid) {
+          await db.ref(`users/${existingUser.authUid}`).update({
+            name,
+            username: newUsername,
+            phone,
+            email: newEmail
+          });
+        }
 
         Notifications.toast('success', 'Updated', `${name} has been updated.`);
         await Notifications.log(this.diningId, 'user_updated', `Updated user: ${name}`, Messliner.state.userId, this.editingUserId);
@@ -408,16 +496,20 @@ const UsersModule = {
       badge.textContent = count;
       badge.style.display = count > 0 ? 'inline' : 'none';
     }
-    Utils.setText('usersSubtitle', `${count} member${count !== 1 ? 's' : ''} · Click a card & press Enter to open their account in a new tab`);
+    Utils.setText('usersSubtitle', `${count} active member${count !== 1 ? 's' : ''} · View, manage and configure member profiles & dining privileges`);
   },
   /**
    * Get avatar background color based on name
    */
   _avatarColor(name) {
     const colors = [
-      'var(--primary-100)', 'var(--accent-100)', 'var(--warning-100)',
-      'var(--danger-100)', '#E0E7FF', '#FCE7F3', '#DBEAFE',
-      '#D1FAE5', '#FEF3C7', '#FEE2E2'
+      'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+      'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
+      'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+      'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+      'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+      'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+      'linear-gradient(135deg, #14B8A6 0%, #0D9488 100%)'
     ];
     const index = (name || '').charCodeAt(0) % colors.length;
     return colors[index];

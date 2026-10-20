@@ -6,9 +6,13 @@ const BazarHistoryModule = {
   diningId: null,
   userId: null,
   createdDate: null,
-  selectedYear: 2026,
-  selectedMonth: 7,
+  selectedYear: new Date().getFullYear(),
+  selectedMonth: new Date().getMonth() + 1,
   expandedCard: null, // currently expanded date string e.g. "2026-07-05"
+  rawBazarData: null,
+  _initialized: false,
+  _listeningDiningId: null,
+  _bazarRef: null,
 
   monthNames: [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -19,26 +23,33 @@ const BazarHistoryModule = {
    * Initialize Bazar History module
    */
   async init(diningId, userId) {
-    this.diningId = diningId;
-    this.userId = userId;
+    this.diningId = diningId || (window.Messliner && Messliner.state && Messliner.state.diningId);
+    this.userId = userId || (window.Messliner && Messliner.state && Messliner.state.userId);
 
-    const now = new Date();
-    this.selectedYear = now.getFullYear();
-    this.selectedMonth = now.getMonth() + 1;
+    if (!this._initialized) {
+      const now = new Date();
+      this.selectedYear = now.getFullYear();
+      this.selectedMonth = now.getMonth() + 1;
+      this._initialized = true;
+    }
 
     try {
-      const startRef = await db.ref(`dinings/${this.diningId}/settings/historyStartDate`).once('value');
-      let startDateStr = startRef.val();
-      if (startDateStr) {
-        this.createdDate = new Date(startDateStr);
-      } else {
-        const infoSnap = await db.ref(`dinings/${this.diningId}/info/createdAt`).once('value');
-        const createdAt = infoSnap.val();
-        if (createdAt) {
-          this.createdDate = new Date(createdAt);
+      if (this.diningId) {
+        const startRef = await db.ref(`dinings/${this.diningId}/settings/historyStartDate`).once('value');
+        let startDateStr = startRef.val();
+        if (startDateStr) {
+          this.createdDate = new Date(startDateStr);
         } else {
-          this.createdDate = new Date(2026, 0, 1);
+          const infoSnap = await db.ref(`dinings/${this.diningId}/info/createdAt`).once('value');
+          const createdAt = infoSnap.val();
+          if (createdAt) {
+            this.createdDate = new Date(createdAt);
+          } else {
+            this.createdDate = new Date(2026, 0, 1);
+          }
         }
+      } else {
+        this.createdDate = new Date(2026, 0, 1);
       }
     } catch (e) {
       console.error('[BazarHistoryModule] Fetch start date error:', e);
@@ -47,7 +58,38 @@ const BazarHistoryModule = {
 
     this.populateYearDropdown();
     this.populateMonthDropdown();
-    this.loadMonthData();
+    this.setupRealtimeListener();
+  },
+
+  /**
+   * Setup Realtime Firebase listener for Bazar data
+   */
+  setupRealtimeListener() {
+    if (!this.diningId && window.Messliner && Messliner.state) {
+      this.diningId = Messliner.state.diningId;
+    }
+    if (!this.diningId) return;
+
+    if (this._listeningDiningId === this.diningId && this._bazarRef) {
+      // Already listening to this dining group, render current cached data
+      this.renderMonthData();
+      return;
+    }
+
+    if (this._bazarRef) {
+      this._bazarRef.off();
+    }
+
+    this._listeningDiningId = this.diningId;
+    this._bazarRef = db.ref(`dinings/${this.diningId}/bazar`);
+
+    this._bazarRef.on('value', snap => {
+      this.rawBazarData = snap.val() || {};
+      this._lastRenderedHtml = null;
+      this.renderMonthData();
+    }, err => {
+      console.error('[BazarHistoryModule] Realtime error:', err);
+    });
   },
 
   /**
@@ -58,7 +100,7 @@ const BazarHistoryModule = {
     const menuEl = document.getElementById('bazarHistoryYearMenu');
     if (!valueEl || !menuEl) return;
 
-    const startYear = this.createdDate.getFullYear();
+    const startYear = (this.createdDate || new Date(2026, 0, 1)).getFullYear();
     const endYear = new Date().getFullYear();
 
     let html = '';
@@ -72,12 +114,13 @@ const BazarHistoryModule = {
   },
 
   selectYear(year) {
-    this.selectedYear = year;
+    this.selectedYear = parseInt(year, 10);
+    this._lastRenderedHtml = null;
     const dd = document.getElementById('bazarHistoryYearDropdown');
     if (dd) dd.classList.remove('active');
     this.populateYearDropdown();
     this.populateMonthDropdown();
-    this.loadMonthData();
+    this.renderMonthData();
   },
 
   /**
@@ -88,7 +131,8 @@ const BazarHistoryModule = {
     const menuEl = document.getElementById('bazarHistoryMonthMenu');
     if (!valueEl || !menuEl) return;
 
-    const startYear = this.createdDate.getFullYear();
+    const createdDate = this.createdDate || new Date(2026, 0, 1);
+    const startYear = createdDate.getFullYear();
     const currentYear = new Date().getFullYear();
 
     let startMonth = 1;
@@ -96,7 +140,7 @@ const BazarHistoryModule = {
 
     // If selected year is creation year, restrict starting month
     if (this.selectedYear === startYear) {
-      startMonth = this.createdDate.getMonth() + 1;
+      startMonth = createdDate.getMonth() + 1;
     }
     // If selected year is current year, restrict ending month to current month
     if (this.selectedYear === currentYear) {
@@ -118,93 +162,111 @@ const BazarHistoryModule = {
   },
 
   selectMonth(month) {
-    this.selectedMonth = month;
+    this.selectedMonth = parseInt(month, 10);
+    this._lastRenderedHtml = null;
     const dd = document.getElementById('bazarHistoryMonthDropdown');
     if (dd) dd.classList.remove('active');
     this.populateMonthDropdown();
-    this.loadMonthData();
+    this.renderMonthData();
   },
 
   /**
-   * Fetch all bazar entries and render the selected month
+   * Render the selected month's bazar data from in-memory cache
    */
-  async loadMonthData() {
+  renderMonthData() {
     const listEl = document.getElementById('bazarHistoryList');
     const totalEl = document.getElementById('bazarMonthTotal');
     const summaryEl = document.getElementById('bazarMonthlySummary');
     if (!listEl) return;
 
-    // Show skeleton loader
-    listEl.innerHTML = `
-      <div class="bazar-skeleton">
-        ${[1, 2, 3].map(() => `
-          <div class="bazar-skeleton-card">
-            <div class="bazar-skeleton-line wide"></div>
-            <div class="bazar-skeleton-line narrow"></div>
-          </div>
-        `).join('')}
-      </div>`;
+    if (!this.diningId && window.Messliner && Messliner.state) {
+      this.diningId = Messliner.state.diningId;
+    }
+
+    // Only show skeleton loader if we have zero cached data (initial fetch before snapshot returns)
+    if (this.rawBazarData === null) {
+      listEl.innerHTML = `
+        <div class="bazar-skeleton">
+          ${[1, 2, 3].map(() => `
+            <div class="bazar-skeleton-card">
+              <div class="bazar-skeleton-line wide"></div>
+              <div class="bazar-skeleton-line narrow"></div>
+            </div>
+          `).join('')}
+        </div>`;
+      return;
+    }
 
     const formattedMonth = `${this.selectedYear}-${String(this.selectedMonth).padStart(2, '0')}`;
+    const allBazar = this.rawBazarData || {};
 
-    try {
-      const snap = await db.ref(`dinings/${this.diningId}/bazar`).once('value');
-      const allBazar = snap.val() || {};
+    // Filter entries for selected month and group by date
+    const grouped = {}; // { "2026-07-05": [ {...}, {...} ] }
 
-      // Filter entries for selected month and group by date
-      const grouped = {}; // { "2026-07-05": [ {...}, {...} ] }
-
-      Object.entries(allBazar).forEach(([key, entry]) => {
-        if (!entry.date || !entry.date.startsWith(formattedMonth)) return;
-        if (!grouped[entry.date]) grouped[entry.date] = [];
-        grouped[entry.date].push({ key, ...entry });
-      });
-
-      // Sort dates descending
-      const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
-
-      // Compute monthly total
-      let monthTotal = 0;
-      Object.values(grouped).forEach(entries => {
-        entries.forEach(e => { monthTotal += parseFloat(e.amount) || 0; });
-      });
-
-      // Update summary banner
-      if (summaryEl) summaryEl.style.display = sortedDates.length > 0 ? 'flex' : 'none';
-      if (totalEl) totalEl.textContent = Utils.currency(monthTotal);
-
-      // Update month label in summary
-      const monthLabelEl = document.getElementById('bazarMonthLabel');
-      if (monthLabelEl) monthLabelEl.textContent = `${this.monthNames[this.selectedMonth - 1]} ${this.selectedYear}`;
-
-      // Render
-      if (sortedDates.length === 0) {
-        listEl.innerHTML = `
-          <div class="bazar-empty-state">
-            <div class="bazar-empty-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-                <line x1="3" y1="6" x2="21" y2="6"/>
-                <path d="M16 10a4 4 0 01-8 0"/>
-              </svg>
-            </div>
-            <h3>No Bazar Records</h3>
-            <p>No bazar expenses found for <strong>${this.monthNames[this.selectedMonth - 1]} ${this.selectedYear}</strong>.</p>
-          </div>`;
-        return;
+    Object.entries(allBazar).forEach(([key, entry]) => {
+      if (!entry) return;
+      let entryDate = entry.date;
+      if (!entryDate && entry.timestamp) {
+        entryDate = new Date(entry.timestamp).toISOString().slice(0, 10);
       }
+      if (!entryDate || !entryDate.startsWith(formattedMonth)) return;
+      if (!grouped[entryDate]) grouped[entryDate] = [];
+      grouped[entryDate].push({ key, ...entry, date: entryDate });
+    });
 
-      listEl.innerHTML = sortedDates.map(date => this._buildDayCard(date, grouped[date])).join('');
+    // Sort dates descending
+    const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
-    } catch (e) {
-      console.error('[BazarHistoryModule] Load error:', e);
-      listEl.innerHTML = `
+    // Compute monthly total
+    let monthTotal = 0;
+    Object.values(grouped).forEach(entries => {
+      entries.forEach(e => { monthTotal += parseFloat(e.amount) || 0; });
+    });
+
+    // Update summary banner
+    if (summaryEl) summaryEl.style.display = sortedDates.length > 0 ? 'flex' : 'none';
+    if (totalEl) totalEl.textContent = Utils.currency(monthTotal);
+
+    // Update month label in summary
+    const monthLabelEl = document.getElementById('bazarMonthLabel');
+    if (monthLabelEl) monthLabelEl.textContent = `${this.monthNames[this.selectedMonth - 1]} ${this.selectedYear}`;
+
+    // Render
+    if (sortedDates.length === 0) {
+      const emptyHtml = `
         <div class="bazar-empty-state">
-          <div class="bazar-empty-icon">⚠️</div>
-          <h3>Failed to Load</h3>
-          <p>Could not load bazar data. Please try again.</p>
+          <div class="bazar-empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 01-8 0"/>
+            </svg>
+          </div>
+          <h3>No Bazar Records</h3>
+          <p>No bazar expenses found for <strong>${this.monthNames[this.selectedMonth - 1]} ${this.selectedYear}</strong>.</p>
         </div>`;
+      if (this._lastRenderedHtml !== emptyHtml) {
+        this._lastRenderedHtml = emptyHtml;
+        listEl.innerHTML = emptyHtml;
+      }
+      return;
     }
+
+    const html = sortedDates.map(date => this._buildDayCard(date, grouped[date])).join('');
+
+    if (this._lastRenderedHtml === html && listEl.children.length > 0 && !listEl.querySelector('.bazar-skeleton')) {
+      return;
+    }
+
+    this._lastRenderedHtml = html;
+    listEl.innerHTML = html;
+  },
+
+  /**
+   * Backward-compatible loadMonthData method
+   */
+  async loadMonthData() {
+    this.renderMonthData();
   },
 
   /**
@@ -311,6 +373,7 @@ const BazarHistoryModule = {
     if (!card) return;
 
     const isCurrentlyExpanded = this.expandedCard === date;
+    this._lastRenderedHtml = null;
 
     // Collapse all cards first
     document.querySelectorAll('.bazar-day-card.expanded').forEach(c => {
@@ -331,9 +394,18 @@ const BazarHistoryModule = {
    * Refresh — called by router when navigating to bazar page
    */
   refresh() {
-    if (this.diningId) this.loadMonthData();
+    if (!this.diningId && window.Messliner && Messliner.state) {
+      this.diningId = Messliner.state.diningId;
+    }
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
+    this.setupRealtimeListener();
+    this.renderMonthData();
   }
 };
 
 window.BazarHistoryModule = BazarHistoryModule;
+if (typeof Messliner !== 'undefined') {
+  Messliner.bazarHistory = BazarHistoryModule;
+}
 console.log('[Messliner] BazarHistory module loaded');

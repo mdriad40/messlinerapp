@@ -9,7 +9,9 @@ const FridayMealsModule = {
   selectedYear: null,
   selectedMonth: null,      // 1-12
   fridayMealsData: {},      // { weekKey: { userId: count } }
+  fridayMealsMetaData: {},  // { weekKey: { completed, mealType, mealTypes, completedAt, completedBy, totalMeals } }
   fridayBazarData: {},      // { weekKey: { amount, note, date, deducted } }
+  selectedAutoMealTypes: new Set(['lunch']), // Set containing 'lunch', 'dinner', or both
   selectedFridayUsers: new Set(),
 
   monthNames: [
@@ -75,6 +77,7 @@ const FridayMealsModule = {
 
     // Clean up old listeners
     if (this._fridayMealsRef) this._fridayMealsRef.off();
+    if (this._fridayMealsMetaRef) this._fridayMealsMetaRef.off();
     if (this._fridayBazarRef) this._fridayBazarRef.off();
 
     this._fridayMealsRef = db.ref(`dinings/${this.diningId}/fridayMeals/${mk}`);
@@ -82,8 +85,26 @@ const FridayMealsModule = {
       this.fridayMealsData = snap.val() || {};
       if (typeof Router !== 'undefined' && Router.currentPage === 'meals') {
         this.renderFridaySelector();
+        this.renderFridayAutoCompleteSection();
         this.renderFridayMemberGrid();
         this.renderFridayMealLog();
+      }
+    });
+
+    this._fridayMealsMetaRef = db.ref(`dinings/${this.diningId}/fridayMealsMeta/${mk}`);
+    this._fridayMealsMetaRef.on('value', (snap) => {
+      this.fridayMealsMetaData = snap.val() || {};
+      const wk = this.weekKey(this.selectedFridayIndex);
+      const meta = this.fridayMealsMetaData[wk];
+      if (meta && meta.mealTypes && Array.isArray(meta.mealTypes) && meta.mealTypes.length > 0) {
+        this.selectedAutoMealTypes = new Set(meta.mealTypes);
+      } else if (meta && meta.mealType && meta.mealType !== 'zero') {
+        if (meta.mealType === 'both' || meta.mealType.includes('+')) this.selectedAutoMealTypes = new Set(['lunch', 'dinner']);
+        else if (meta.mealType === 'dinner') this.selectedAutoMealTypes = new Set(['dinner']);
+        else this.selectedAutoMealTypes = new Set(['lunch']);
+      }
+      if (typeof Router !== 'undefined' && Router.currentPage === 'meals') {
+        this.renderFridayAutoCompleteSection();
       }
     });
 
@@ -92,6 +113,7 @@ const FridayMealsModule = {
       this.fridayBazarData = snap.val() || {};
       if (typeof Router !== 'undefined' && Router.currentPage === 'meals') {
         this.renderFridaySelector();
+        this.renderFridayAutoCompleteSection();
         this.renderFridayBazarStatus();
       }
     });
@@ -102,6 +124,7 @@ const FridayMealsModule = {
   ───────────────────────────── */
   refresh() {
     this.renderFridaySelector();
+    this.renderFridayAutoCompleteSection();
     this.renderFridayMemberGrid();
     this.renderFridayMealLog();
     this.renderFridayBazarStatus();
@@ -164,6 +187,7 @@ const FridayMealsModule = {
     this.selectedFridayIndex = 0;
     this._listenFridayData();
     this.renderFridaySelector();
+    this.renderFridayAutoCompleteSection();
     this.renderFridayMemberGrid();
     this.renderFridayMealLog();
     this.renderFridayBazarStatus();
@@ -175,6 +199,7 @@ const FridayMealsModule = {
     this.selectedFridayIndex = 0;
     this._listenFridayData();
     this.renderFridaySelector();
+    this.renderFridayAutoCompleteSection();
     this.renderFridayMemberGrid();
     this.renderFridayMealLog();
     this.renderFridayBazarStatus();
@@ -182,8 +207,18 @@ const FridayMealsModule = {
 
   selectFriday(index) {
     this.selectedFridayIndex = index;
+    const wk = this.weekKey(index);
+    const meta = this.fridayMealsMetaData[wk];
+    if (meta && meta.mealTypes && Array.isArray(meta.mealTypes) && meta.mealTypes.length > 0) {
+      this.selectedAutoMealTypes = new Set(meta.mealTypes);
+    } else if (meta && meta.mealType && meta.mealType !== 'zero') {
+      if (meta.mealType === 'both' || meta.mealType.includes('+')) this.selectedAutoMealTypes = new Set(['lunch', 'dinner']);
+      else if (meta.mealType === 'dinner') this.selectedAutoMealTypes = new Set(['dinner']);
+      else this.selectedAutoMealTypes = new Set(['lunch']);
+    }
     this.selectedFridayUsers.clear();
     this.renderFridaySelector();
+    this.renderFridayAutoCompleteSection();
     this.renderFridayMemberGrid();
     this.renderFridayMealLog();
     this.renderFridayBazarStatus();
@@ -228,7 +263,7 @@ const FridayMealsModule = {
 
       return `
         <div class="friday-meal-chip ${selected ? 'selected' : ''}" onclick="Messliner.fridayMeals.toggleUser('${id}', this)" data-fuserid="${id}">
-          <div class="avatar avatar-sm" style="background:${avatarBg};">${Utils.initials(user.name)}</div>
+          <div class="avatar avatar-sm">${Utils.initials(user.name)}</div>
           <span class="friday-chip-name">${user.name}</span>
           <div class="number-spinner" style="margin-left:auto;" onclick="event.stopPropagation()">
             <button type="button" onclick="Messliner.fridayMeals.decrementUser('${id}')">−</button>
@@ -369,6 +404,7 @@ const FridayMealsModule = {
       this.renderFridayMemberGrid();
       this.renderFridayMealLog();
       this.renderFridaySelector();
+      this.renderFridayAutoCompleteSection();
 
     } catch (err) {
       console.error('[FridayMeals] Save error:', err);
@@ -409,7 +445,7 @@ const FridayMealsModule = {
         <tr>
           <td style="text-align:left;">
             <div class="flex items-center gap-2">
-              <div class="avatar avatar-sm" style="background:${avatarBg};">${Utils.initials(user.name)}</div>
+              <div class="avatar avatar-sm">${Utils.initials(user.name)}</div>
               <span class="member-name-text">${user.name}</span>
             </div>
           </td>
@@ -829,12 +865,12 @@ const FridayMealsModule = {
      Preview & Download combined Friday Meal Slip
   ───────────────────────────── */
   async previewFridaySlip() {
-    const btn = document.getElementById('previewFridaySlipBtn');
+    const btn = document.getElementById('btnFridayAutoPreview') || document.getElementById('previewFridaySlipBtn');
     let btnHtmlBackup = '';
     if (btn) {
       btnHtmlBackup = btn.innerHTML;
       btn.disabled = true;
-      btn.textContent = 'Loading...';
+      btn.innerHTML = '<span>Loading...</span>';
     }
 
     try {
@@ -842,60 +878,47 @@ const FridayMealsModule = {
       const targetDate = fridayDates[this.selectedFridayIndex];
       if (!targetDate) throw new Error('Invalid Friday date');
 
-      const monthKey = targetDate.substring(0, 7);
-      const dayKey = Utils.dayKey(targetDate);
-
-      // Fetch normal day data (breakfast/dinner)
-      let dayData = null;
-      if (this.diningId) {
-        const snap = await db.ref(`dinings/${this.diningId}/meals/${monthKey}/${dayKey}`).once('value');
-        dayData = snap.val();
-
-        // Fallback: check unpadded dayKey (e.g. "3" vs "03")
-        if (!dayData) {
-          const unpaddedDayKey = String(parseInt(dayKey, 10));
-          if (unpaddedDayKey !== dayKey) {
-            const snapAlt = await db.ref(`dinings/${this.diningId}/meals/${monthKey}/${unpaddedDayKey}`).once('value');
-            dayData = snapAlt.val();
-          }
-        }
-      }
-      if (!dayData) dayData = {};
-
       const wk = this.weekKey(this.selectedFridayIndex);
-      const fridayMealsForDay = this.fridayMealsData[wk] || {};
+      const savedFridayMeals = this.fridayMealsData[wk] || {};
+      const hasSavedMeals = Object.values(savedFridayMeals).some(cnt => parseInt(cnt, 10) > 0);
 
       const users = Messliner.users?.users || {};
       const s = Messliner.settings?.getSettings() || {};
       const isManagerMealEnabled = !!s.managerMealEnabled;
-      const trackedMeals = s.trackedMeals || { breakfast: true, lunch: true, dinner: true };
-      const selectedMeals = ['breakfast', 'lunch', 'dinner'].filter(k => trackedMeals[k] !== false);
+
+      const activeTypes = Array.from(this.selectedAutoMealTypes || ['lunch']);
+      const meta = this.fridayMealsMetaData[wk] || {};
+      const displayTypes = (hasSavedMeals && meta.mealTypes && meta.mealTypes.length > 0)
+        ? meta.mealTypes
+        : (activeTypes.length > 0 ? activeTypes : ['lunch']);
 
       const listData = [];
       Object.entries(users).forEach(([userId, user], index) => {
         if (user.role === 'admin' && !isManagerMealEnabled) return;
-        if (!Messliner.meals.isUserActiveForMonth(userId, targetDate)) return;
+        if (Messliner.meals && !Messliner.meals.isUserActiveForMonth(userId, targetDate)) return;
 
-        let breakfastCount = 0;
-        let lunchCount = 0;
-        let dinnerCount = 0;
-
-        const dayBreakfast = dayData.breakfast || {};
-        const dayLunch = fridayMealsForDay;
-        const dayDinner = dayData.dinner || {};
-
-        if (trackedMeals.breakfast !== false) {
-          breakfastCount = Messliner.meals._parseMealVal(dayBreakfast[userId]);
-        }
-        if (trackedMeals.lunch !== false) {
-          lunchCount = Messliner.meals._parseMealVal(dayLunch[userId]);
-        }
-        if (trackedMeals.dinner !== false) {
-          dinnerCount = Messliner.meals._parseMealVal(dayDinner[userId]);
+        let userCount = 0;
+        if (hasSavedMeals) {
+          userCount = parseInt(savedFridayMeals[userId], 10) || 0;
+        } else {
+          userCount = this.getAutoMealCountForUser(user, displayTypes);
         }
 
-        const total = breakfastCount + lunchCount + dinnerCount;
-        if (total > 0) {
+        if (userCount > 0) {
+          let breakfastCount = 0;
+          let lunchCount = 0;
+          let dinnerCount = 0;
+
+          if (displayTypes.includes('lunch') && displayTypes.includes('dinner')) {
+            const ms = user.mealStatus || { lunch: true, dinner: true };
+            lunchCount = (ms.lunch === true || ms.lunch === undefined) ? 1 : (typeof ms.lunch === 'number' ? ms.lunch : 0);
+            dinnerCount = (ms.dinner === true || ms.dinner === undefined) ? 1 : (typeof ms.dinner === 'number' ? ms.dinner : 0);
+          } else if (displayTypes.includes('dinner')) {
+            dinnerCount = userCount;
+          } else {
+            lunchCount = userCount;
+          }
+
           listData.push({
             id: userId,
             name: user.name || 'Unknown Member',
@@ -905,63 +928,21 @@ const FridayMealsModule = {
             breakfast: breakfastCount,
             lunch: lunchCount,
             dinner: dinnerCount,
-            total: total,
+            total: userCount,
             createdAt: user.createdAt || user.timestamp || user.joinedAt || 0,
             joinOrder: index
           });
         }
       });
 
-      // Append extra slip entries (e.g. Mess Khala / Staff / Guests)
-      const extraEntries = Object.entries(Messliner.meals.extraSlipEntries || {});
-      extraEntries.forEach(([entryId, entry]) => {
-        let breakfastCount = 0;
-        let lunchCount = 0;
-        let dinnerCount = 0;
-
-        if (trackedMeals.breakfast !== false) {
-          breakfastCount = parseInt(entry.breakfast, 10) || 0;
-        }
-        if (trackedMeals.lunch !== false) {
-          lunchCount = parseInt(entry.lunch, 10) || 0;
-        }
-        if (trackedMeals.dinner !== false) {
-          dinnerCount = parseInt(entry.dinner, 10) || 0;
-        }
-
-        const total = breakfastCount + lunchCount + dinnerCount;
-        if (total > 0) {
-          listData.push({
-            id: entryId,
-            name: entry.name || 'Extra Entry',
-            role: 'extra',
-            avatarColor: '#10B981',
-            initials: 'EX',
-            breakfast: breakfastCount,
-            lunch: lunchCount,
-            dinner: dinnerCount,
-            total: total,
-            createdAt: 9999999999999,
-            joinOrder: 99999,
-            isExtra: true
-          });
-        }
-      });
-
-      // Sort: members first (manager first), extra entries at the very end
+      // Sort: admin/manager first, then join time
       listData.sort((a, b) => {
-        if (a.isExtra !== b.isExtra) {
-          return a.isExtra ? 1 : -1;
-        }
         const roleA = a.role === 'admin' ? 0 : 1;
         const roleB = b.role === 'admin' ? 0 : 1;
         if (roleA !== roleB) return roleA - roleB;
-
         const timeA = a.createdAt || 0;
         const timeB = b.createdAt || 0;
-        if (timeA && timeB && timeA !== timeB) {
-          return timeA - timeB;
-        }
+        if (timeA && timeB && timeA !== timeB) return timeA - timeB;
         return a.joinOrder - b.joinOrder;
       });
 
@@ -970,15 +951,19 @@ const FridayMealsModule = {
       const totalLunch = listData.reduce((sum, item) => sum + item.lunch, 0);
       const totalDinner = listData.reduce((sum, item) => sum + item.dinner, 0);
 
+      const ordinals = ['1st', '2nd', '3rd', '4th'];
+      const fridayTitle = `${ordinals[this.selectedFridayIndex]} Friday (${targetDate})`;
+
       Messliner.meals._renderSlipModalContent({
         targetDate,
-        selectedMeals,
+        selectedMeals: ['lunch', 'dinner'],
         listData,
         grandTotal,
         totalBreakfast,
         totalLunch,
         totalDinner,
-        emptyMessage: 'No saved Friday meals found.'
+        emptyMessage: 'No Friday meals found to preview.',
+        isSpecialMeal: true
       });
 
     } catch (err) {
@@ -988,6 +973,415 @@ const FridayMealsModule = {
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = btnHtmlBackup;
+      }
+    }
+  },
+
+  /* ─────────────────────────────
+     Helper: Calculate flat auto meal count for a single member based on selected types
+  ───────────────────────────── */
+  getAutoMealCountForUser(user, mealTypes = Array.from(this.selectedAutoMealTypes || ['lunch'])) {
+    if (!user) return 0;
+    const ms = user.mealStatus || { breakfast: true, lunch: true, dinner: true };
+    const s = Messliner.settings?.getSettings() || {};
+    const trackedMeals = s.trackedMeals || { breakfast: true, lunch: true, dinner: true };
+
+    let count = 0;
+    if (mealTypes.includes('lunch') && trackedMeals.lunch !== false) {
+      const val = ms.lunch;
+      count += (val === true || val === undefined) ? 1 : (typeof val === 'number' && val > 0 ? val : 0);
+    }
+    if (mealTypes.includes('dinner') && trackedMeals.dinner !== false) {
+      const val = ms.dinner;
+      count += (val === true || val === undefined) ? 1 : (typeof val === 'number' && val > 0 ? val : 0);
+    }
+    return count;
+  },
+
+  /* ─────────────────────────────
+     Toggle Meal Type for Auto Completion (Lunch / Dinner)
+  ───────────────────────────── */
+  toggleAutoMealType(type) {
+    if (!this.selectedAutoMealTypes) this.selectedAutoMealTypes = new Set(['lunch']);
+    if (this.selectedAutoMealTypes.has(type)) {
+      this.selectedAutoMealTypes.delete(type);
+    } else {
+      this.selectedAutoMealTypes.add(type);
+    }
+    this.renderFridayAutoCompleteSection();
+  },
+
+  /* ─────────────────────────────
+     Render Auto Complete Friday Meals Section
+  ───────────────────────────── */
+  renderFridayAutoCompleteSection() {
+    const block = document.getElementById('fridayAutoCompleteBlock');
+    if (!block) return;
+
+    const fridayDates = this.getFridayDates(this.selectedYear, this.selectedMonth);
+    const targetDate = fridayDates[this.selectedFridayIndex];
+    if (!targetDate) return;
+
+    const ordinals = ['1st', '2nd', '3rd', '4th'];
+    const d = new Date(targetDate + 'T00:00:00');
+    const dateFormatted = `${d.getDate()} ${this.monthNames[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
+    const ordinalLabel = `${ordinals[this.selectedFridayIndex]} Friday`;
+
+    const targetDateEl = document.getElementById('fridayAutoTargetDate');
+    if (targetDateEl) {
+      targetDateEl.textContent = `${dateFormatted} (${ordinalLabel})`;
+    }
+
+    if (!this.selectedAutoMealTypes) this.selectedAutoMealTypes = new Set(['lunch']);
+
+    // Sync pill buttons UI
+    const pills = document.querySelectorAll('#fridayMealTypePills .friday-type-pill');
+    pills.forEach(pill => {
+      const pType = pill.getAttribute('data-type');
+      pill.classList.toggle('active', this.selectedAutoMealTypes.has(pType));
+    });
+
+    // Determine active label
+    const hasLunch = this.selectedAutoMealTypes.has('lunch');
+    const hasDinner = this.selectedAutoMealTypes.has('dinner');
+    let activeTypeLabel = 'None Selected';
+    if (hasLunch && hasDinner) activeTypeLabel = 'Lunch + Dinner';
+    else if (hasLunch) activeTypeLabel = 'Lunch';
+    else if (hasDinner) activeTypeLabel = 'Dinner';
+
+    const users = Messliner.users?.users || {};
+    const s = Messliner.settings?.getSettings() || {};
+    const isManagerMealEnabled = !!s.managerMealEnabled;
+
+    const activeUserEntries = Object.entries(users).filter(([id, u]) => {
+      if (u.role === 'admin' && !isManagerMealEnabled) return false;
+      if (Messliner.meals && !Messliner.meals.isUserActiveForMonth(id, targetDate)) return false;
+      return true;
+    });
+
+    const memberCountEl = document.getElementById('fridayAutoMemberCount');
+    if (memberCountEl) {
+      memberCountEl.textContent = `${activeUserEntries.length} Members`;
+    }
+
+    // Compute candidate total for selected meal types
+    let autoCalculatedTotal = 0;
+    activeUserEntries.forEach(([id, user]) => {
+      autoCalculatedTotal += this.getAutoMealCountForUser(user, Array.from(this.selectedAutoMealTypes));
+    });
+
+    const wk = this.weekKey(this.selectedFridayIndex);
+    const savedCounts = this.fridayMealsData[wk] || {};
+    const meta = this.fridayMealsMetaData[wk] || {};
+
+    let savedTotal = 0;
+    let savedMemberCount = 0;
+    Object.values(savedCounts).forEach(cnt => {
+      const n = parseInt(cnt, 10) || 0;
+      if (n > 0) {
+        savedTotal += n;
+        savedMemberCount++;
+      }
+    });
+
+    const hasSavedMeals = Object.keys(savedCounts).length > 0 && savedTotal > 0;
+    const isZeroCompleted = meta.completed && meta.mealType === 'zero';
+    const isCompleted = hasSavedMeals || isZeroCompleted;
+
+    const savedMealTypeLabel = meta.mealType ? meta.mealType : activeTypeLabel;
+
+    const calcMealsEl = document.getElementById('fridayAutoCalculatedMeals');
+    if (calcMealsEl) {
+      if (isZeroCompleted) {
+        calcMealsEl.textContent = '0 Meals (Completed)';
+      } else if (hasSavedMeals) {
+        calcMealsEl.textContent = `${savedTotal} Meals (Saved: ${savedMealTypeLabel})`;
+      } else {
+        calcMealsEl.textContent = `${autoCalculatedTotal} Meals (${activeTypeLabel})`;
+      }
+    }
+
+    const badgeEl = document.getElementById('fridayAutoCompleteStatusBadge');
+    if (badgeEl) {
+      if (isZeroCompleted) {
+        badgeEl.innerHTML = `
+          <span class="badge" style="background:rgba(107, 114, 128, 0.12); color:#4B5563; border:1px solid rgba(107, 114, 128, 0.35); font-weight:700; padding:4px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Completed (0 Meals)
+          </span>
+        `;
+      } else if (hasSavedMeals) {
+        badgeEl.innerHTML = `
+          <span class="badge" style="background:rgba(16, 185, 129, 0.12); color:#059669; border:1px solid rgba(16, 185, 129, 0.35); font-weight:700; padding:4px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Completed (${savedMealTypeLabel} - ${savedTotal} Meals)
+          </span>
+        `;
+      } else {
+        badgeEl.innerHTML = `
+          <span class="badge" style="background:rgba(245, 158, 11, 0.12); color:#D97706; border:1px solid rgba(245, 158, 11, 0.35); font-weight:700; padding:4px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;">
+            ⚡ Ready to Complete (${activeTypeLabel}: ${autoCalculatedTotal} Meals)
+          </span>
+        `;
+      }
+    }
+
+    const btnText = document.getElementById('btnFridayAutoCompleteText');
+    if (btnText) {
+      const actionLabel = this.selectedAutoMealTypes.size > 0 ? `Friday ${activeTypeLabel}` : 'Friday Meals';
+      if (isCompleted) {
+        btnText.textContent = `Re-Complete ${actionLabel}`;
+      } else {
+        btnText.textContent = `Auto Complete ${actionLabel}`;
+      }
+    }
+  },
+
+  /* ─────────────────────────────
+     Auto Complete Friday Meals for Selected Meal Types
+  ───────────────────────────── */
+  async autoCompleteFridayMeals() {
+    if (!this.selectedAutoMealTypes || this.selectedAutoMealTypes.size === 0) {
+      Notifications.toast('warning', 'No Meal Selected', 'Please select Lunch, Dinner, or both to auto-complete Friday meals.');
+      return;
+    }
+
+    const btn = document.getElementById('btnFridayAutoComplete');
+    let btnHtmlBackup = '';
+    if (btn) {
+      btnHtmlBackup = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `
+        <svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px;">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.5" style="opacity:0.25; fill:none;"></circle>
+          <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" style="opacity:0.75;"></path>
+        </svg>
+        <span>Auto Completing...</span>
+      `;
+    }
+
+    try {
+      const fridayDates = this.getFridayDates(this.selectedYear, this.selectedMonth);
+      const targetDate = fridayDates[this.selectedFridayIndex];
+      if (!targetDate) throw new Error('Invalid Friday date');
+
+      const mk = this.monthKey();
+      const wk = this.weekKey(this.selectedFridayIndex);
+      const users = Messliner.users?.users || {};
+      const s = Messliner.settings?.getSettings() || {};
+      const isManagerMealEnabled = !!s.managerMealEnabled;
+
+      const activeTypes = Array.from(this.selectedAutoMealTypes);
+      const hasLunch = this.selectedAutoMealTypes.has('lunch');
+      const hasDinner = this.selectedAutoMealTypes.has('dinner');
+      let chosenMealLabel = 'Lunch';
+      if (hasLunch && hasDinner) chosenMealLabel = 'Lunch + Dinner';
+      else if (hasLunch) chosenMealLabel = 'Lunch';
+      else if (hasDinner) chosenMealLabel = 'Dinner';
+
+      const updates = {};
+      let totalAutoMeals = 0;
+      let totalMembersWithMeals = 0;
+
+      Object.entries(users).forEach(([userId, user]) => {
+        if (user.role === 'admin' && !isManagerMealEnabled) return;
+        if (Messliner.meals && !Messliner.meals.isUserActiveForMonth(userId, targetDate)) return;
+
+        const count = this.getAutoMealCountForUser(user, activeTypes);
+        updates[`dinings/${this.diningId}/fridayMeals/${mk}/${wk}/${userId}`] = count;
+        if (count > 0) {
+          totalAutoMeals += count;
+          totalMembersWithMeals++;
+        }
+      });
+
+      // Save Friday metadata (isolated strictly to fridayMealsMeta)
+      updates[`dinings/${this.diningId}/fridayMealsMeta/${mk}/${wk}`] = {
+        completed: true,
+        mealType: chosenMealLabel,
+        mealTypes: activeTypes,
+        completedAt: firebase.database.ServerValue.TIMESTAMP,
+        completedBy: Messliner.state.userId || 'admin',
+        totalMeals: totalAutoMeals,
+        memberCount: totalMembersWithMeals,
+        targetDate: targetDate
+      };
+
+      await db.ref().update(updates);
+
+      const ordinals = ['1st', '2nd', '3rd', '4th'];
+      const label = `${ordinals[this.selectedFridayIndex]} Friday (${targetDate})`;
+      Notifications.toast('success', 'Friday Meals Completed',
+        `Completed ${totalAutoMeals} Friday ${chosenMealLabel} meals for ${totalMembersWithMeals} members on ${label}.`);
+      await Notifications.log(this.diningId, 'friday_meal_auto_completed',
+        `Friday ${chosenMealLabel} meals auto-completed for ${label} (${totalAutoMeals} meals)`, Messliner.state.userId);
+
+      if (window.FridayMealPageModule && FridayMealPageModule._updateUserDashboardLabel) {
+        FridayMealPageModule._updateUserDashboardLabel();
+      }
+
+      this.selectedFridayUsers.clear();
+      this.renderFridayMemberGrid();
+      this.renderFridayMealLog();
+      this.renderFridaySelector();
+      this.renderFridayAutoCompleteSection();
+
+    } catch (err) {
+      console.error('[FridayMeals] Auto Complete error:', err);
+      Notifications.toast('error', 'Error', 'Failed to auto complete Friday meals.');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = btnHtmlBackup;
+      }
+    }
+  },
+
+  /* ─────────────────────────────
+     Show Zero Meal Confirmation Modal for Friday
+  ───────────────────────────── */
+  showFridayZeroConfirmModal() {
+    const modal = document.getElementById('zeroMealConfirmModal');
+    if (!modal) {
+      this.executeAutoCompleteFridayZeroMeals();
+      return;
+    }
+
+    const fridayDates = this.getFridayDates(this.selectedYear, this.selectedMonth);
+    const targetDate = fridayDates[this.selectedFridayIndex];
+    const ordinals = ['1st', '2nd', '3rd', '4th', '5th'];
+    const ord = ordinals[this.selectedFridayIndex] || `${this.selectedFridayIndex + 1}th`;
+    const formattedDate = Utils.formatDate ? Utils.formatDate(targetDate) : targetDate;
+
+    const users = Messliner.users?.users || {};
+    const s = Messliner.settings?.getSettings() || {};
+    const isManagerMealEnabled = !!s.managerMealEnabled;
+    const activeMembers = Object.entries(users).filter(([uid, u]) => {
+      if (u.role === 'admin' && !isManagerMealEnabled) return false;
+      return Messliner.meals && Messliner.meals.isUserActiveForMonth(uid, targetDate);
+    });
+
+    const titleEl = document.getElementById('zeroConfirmTitle');
+    const subEl = document.getElementById('zeroConfirmSubtitle');
+    const warnEl = document.getElementById('zeroConfirmWarningText');
+    const dateEl = document.getElementById('zeroConfirmDate');
+    const mealsEl = document.getElementById('zeroConfirmMeals');
+    const membersEl = document.getElementById('zeroConfirmMembers');
+    const confirmBtn = document.getElementById('btnZeroModalConfirmAction');
+
+    if (titleEl) titleEl.textContent = 'Complete 0 Friday Meals?';
+    if (subEl) subEl.textContent = 'Please confirm 0 Friday meal completion for this week';
+    if (warnEl) warnEl.textContent = 'Friday meals will be completed with 0 count for all members. Auto meal will not re-add meals automatically.';
+    if (dateEl) dateEl.textContent = `${ord} Friday`;
+    if (mealsEl) mealsEl.textContent = 'Friday Meals';
+    if (membersEl) membersEl.textContent = `${activeMembers.length} Members`;
+
+    if (confirmBtn) {
+      confirmBtn.onclick = () => Messliner.fridayMeals.executeAutoCompleteFridayZeroMeals();
+      const confirmBtnText = document.getElementById('btnZeroModalConfirmActionText');
+      if (confirmBtnText) confirmBtnText.textContent = 'Complete 0 Meals';
+    }
+
+    if (typeof openModal === 'function') {
+      openModal('zeroMealConfirmModal');
+    } else {
+      modal.classList.add('active');
+    }
+  },
+
+  /**
+   * Trigger from button
+   */
+  autoCompleteFridayZeroMeals() {
+    this.showFridayZeroConfirmModal();
+  },
+
+  /* ─────────────────────────────
+     Execute Auto Complete Friday with 0 Meals
+  ───────────────────────────── */
+  async executeAutoCompleteFridayZeroMeals() {
+    const modalBtn = document.getElementById('btnZeroModalConfirmAction');
+    const mainBtn = document.getElementById('btnFridayAutoZero');
+    let modalBtnBackup = '';
+    let mainBtnBackup = '';
+
+    if (modalBtn) {
+      modalBtnBackup = modalBtn.innerHTML;
+      modalBtn.disabled = true;
+      modalBtn.innerHTML = `<span>Completing 0...</span>`;
+    }
+    if (mainBtn) {
+      mainBtnBackup = mainBtn.innerHTML;
+      mainBtn.disabled = true;
+      mainBtn.textContent = 'Completing 0...';
+    }
+
+    try {
+      const fridayDates = this.getFridayDates(this.selectedYear, this.selectedMonth);
+      const targetDate = fridayDates[this.selectedFridayIndex];
+      if (!targetDate) throw new Error('Invalid Friday date');
+
+      const mk = this.monthKey();
+      const wk = this.weekKey(this.selectedFridayIndex);
+      const users = Messliner.users?.users || {};
+      const s = Messliner.settings?.getSettings() || {};
+      const isManagerMealEnabled = !!s.managerMealEnabled;
+
+      const updates = {};
+      Object.entries(users).forEach(([userId, user]) => {
+        if (user.role === 'admin' && !isManagerMealEnabled) return;
+        if (Messliner.meals && !Messliner.meals.isUserActiveForMonth(userId, targetDate)) return;
+        updates[`dinings/${this.diningId}/fridayMeals/${mk}/${wk}/${userId}`] = 0;
+      });
+
+      // Save metadata for 0 completed
+      updates[`dinings/${this.diningId}/fridayMealsMeta/${mk}/${wk}`] = {
+        completed: true,
+        mealType: 'zero',
+        mealTypes: [],
+        completedAt: firebase.database.ServerValue.TIMESTAMP,
+        completedBy: Messliner.state.userId || 'admin',
+        totalMeals: 0,
+        memberCount: 0,
+        targetDate: targetDate
+      };
+
+      await db.ref().update(updates);
+
+      const ordinals = ['1st', '2nd', '3rd', '4th'];
+      const label = `${ordinals[this.selectedFridayIndex]} Friday (${targetDate})`;
+      Notifications.toast('success', 'Completed (0 Meals)', `Friday meals marked as 0 for ${label}.`);
+      await Notifications.log(this.diningId, 'friday_meal_zero_completed',
+        `Friday meals marked as 0 for ${label}`, Messliner.state.userId);
+
+      // Close modal
+      if (typeof closeModal === 'function') {
+        closeModal('zeroMealConfirmModal');
+      } else if (Messliner.meals && Messliner.meals.closeZeroMealModal) {
+        Messliner.meals.closeZeroMealModal();
+      }
+
+      this.selectedFridayUsers.clear();
+      this.renderFridayMemberGrid();
+      this.renderFridayMealLog();
+      this.renderFridaySelector();
+      this.renderFridayAutoCompleteSection();
+
+    } catch (err) {
+      console.error('[FridayMeals] Zero complete error:', err);
+      Notifications.toast('error', 'Error', 'Failed to complete 0 Friday meals.');
+    } finally {
+      if (modalBtn) {
+        modalBtn.disabled = false;
+        modalBtn.innerHTML = modalBtnBackup;
+      }
+      if (mainBtn) {
+        mainBtn.disabled = false;
+        mainBtn.innerHTML = mainBtnBackup;
       }
     }
   },

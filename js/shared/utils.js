@@ -2,6 +2,22 @@
    Messliner — Utility Functions (utils.js)
    ============================================ */
 
+window.openModal = function (id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.add('active');
+  } else {
+    console.warn('[Messliner] openModal: element not found ->', id);
+  }
+};
+
+window.closeModal = function (id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.remove('active');
+  }
+};
+
 const Utils = {
   /**
    * Format currency with ৳ symbol
@@ -11,6 +27,20 @@ const Utils = {
     const isNeg = num < 0;
     const formatted = Math.abs(num).toLocaleString('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     return (isNeg ? '-৳' : '৳') + formatted;
+  },
+
+  /**
+   * Format currency with the modern stylized taka icon (<span class="tk-symbol"></span>)
+   */
+  tk(amount) {
+    const num = parseFloat(amount) || 0;
+    const isNeg = num < 0;
+    const formatted = Math.abs(num).toLocaleString('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    return (isNeg ? '-<span class="tk-symbol"></span>' : '<span class="tk-symbol"></span>') + formatted;
+  },
+
+  currencyHtml(amount) {
+    return this.tk(amount);
   },
 
   /**
@@ -37,6 +67,37 @@ const Utils = {
   currentMonth() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  },
+
+  /**
+   * Determine if an item (deposit, deduction, bazar, etc.) belongs to a target month (YYYY-MM)
+   * Checks both `date` string and `timestamp` number/object.
+   */
+  isItemInMonth(item, targetMonthKey) {
+    if (!item) return false;
+    const targetMonth = targetMonthKey || Utils.currentMonth(); // e.g. "2026-08"
+    const [targetY, targetM] = targetMonth.split('-').map(n => parseInt(n, 10));
+
+    if (item.date && typeof item.date === 'string') {
+      if (item.date.startsWith(targetMonth)) return true;
+      const parts = item.date.split(/[-/.]/);
+      if (parts.length >= 2) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        if (!isNaN(y) && !isNaN(m) && y === targetY && m === targetM) return true;
+      }
+    }
+
+    const ts = item.timestamp || item.createdAt;
+    if (ts) {
+      let t = ts;
+      if (typeof t === 'object' && t !== null) t = Date.now();
+      if (typeof t === 'number' && !isNaN(t)) {
+        const dt = new Date(t);
+        if (dt.getFullYear() === targetY && (dt.getMonth() + 1) === targetM) return true;
+      }
+    }
+    return false;
   },
 
   /**
@@ -258,13 +319,27 @@ const Utils = {
 
   /**
    * Format bazar items list. If it has newlines, format as a bulleted list.
+   * If the list has more than 3 items, render as collapsible with Show More / Show Less.
    */
   formatBazarItems(itemsStr) {
     if (!itemsStr) return '—';
     const lines = itemsStr.split('\n').map(line => line.trim()).filter(line => line.length > 0);
     if (lines.length > 1) {
+      if (lines.length > 3) {
+        const uniqueId = 'bazar-items-' + Math.random().toString(36).substr(2, 9);
+        return `
+          <div class="bazar-items-collapsible-wrapper">
+            <ul id="${uniqueId}" class="bazar-items-list-styled collapsed">
+              ${lines.map(line => `<li>${line}</li>`).join('')}
+            </ul>
+            <button class="bazar-items-toggle-btn" type="button" onclick="event.stopPropagation(); const el = document.getElementById('${uniqueId}'); const btn = this; if (el.classList.contains('collapsed')) { el.classList.remove('collapsed'); btn.innerHTML = 'Show Less <span>↑</span>'; } else { el.classList.add('collapsed'); btn.innerHTML = 'Show More <span>↓</span>'; }">
+              Show More <span>↓</span>
+            </button>
+          </div>
+        `;
+      }
       return `
-        <ul class="bazar-items-list-styled" style="margin: 6px 0 0 0; padding: 0 0 0 4px; list-style-position: inside; list-style-type: disc; display: flex; flex-direction: column; gap: 4px; font-weight: normal; font-size: inherit; text-align: left; line-height: 1.4;">
+        <ul class="bazar-items-list-styled">
           ${lines.map(line => `<li>${line}</li>`).join('')}
         </ul>
       `;

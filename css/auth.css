@@ -421,14 +421,27 @@
 }
 
 .btn-auth-submit:active {
-  transform: translateY(0);
-  box-shadow: 0 3px 10px rgba(5, 150, 105, 0.28);
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.28);
 }
 
 .btn-auth-submit:disabled {
   opacity: 0.65;
   cursor: not-allowed;
   transform: none;
+}
+
+.btn-auth-submit.loading {
+  opacity: 0.88;
+  cursor: wait !important;
+  pointer-events: none;
+  transform: none;
+}
+
+.btn-auth-submit.loading .btn-loader {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
 }
 
 .spinner-mini {
