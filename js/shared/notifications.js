@@ -66,16 +66,36 @@ const Notifications = {
     this.userId = userId;
     this.userJoinedAt = userJoinedAt;
 
-    const userNotifRef = db.ref(`dinings/${diningId}/users/${userId}/notifications`);
-    const globalNotifRef = db.ref(`dinings/${diningId}/notifications`);
+    // ── FAST PATH: Instant Notification Cache Hydration (< 5ms) ──
+    const cacheKey = `ml_notifs_v1_${diningId}_${userId}`;
+    try {
+      const cachedRaw = localStorage.getItem(cacheKey);
+      if (cachedRaw) {
+        const cached = JSON.parse(cachedRaw);
+        if (Array.isArray(cached) && cached.length > 0) {
+          this.notifications = cached;
+          this.updateBadge();
+          this.render();
+        }
+      }
+    } catch (_) {}
 
-    userNotifRef.on('value', () => {
-      this.fetchAndRender();
-    });
+    // Concurrently trigger fresh notification fetch immediately without waiting
+    this.fetchAndRender();
 
-    globalNotifRef.limitToLast(10).on('child_added', () => {
-      this.fetchAndRender();
-    });
+    if (!this._notifListenersAttached) {
+      this._notifListenersAttached = true;
+      const userNotifRef = db.ref(`dinings/${diningId}/users/${userId}/notifications`);
+      const globalNotifRef = db.ref(`dinings/${diningId}/notifications`);
+
+      userNotifRef.on('value', () => {
+        this.fetchAndRender();
+      });
+
+      globalNotifRef.limitToLast(10).on('child_added', () => {
+        this.fetchAndRender();
+      });
+    }
 
     // Close desktop popover on outside click or Escape
     if (!this._popoverEventsBound) {
@@ -323,6 +343,14 @@ const Notifications = {
       this.notifications = list;
       this.render();
       this.updateBadge();
+
+      // Cache latest notifications for zero-delay hydration on subsequent visits
+      try {
+        if (this.diningId && this.userId) {
+          const cacheKey = `ml_notifs_v1_${this.diningId}_${this.userId}`;
+          localStorage.setItem(cacheKey, JSON.stringify(list.slice(0, 30)));
+        }
+      } catch (_) {}
     } catch (err) {
       console.error('[Notifications] fetch error:', err);
     }

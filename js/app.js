@@ -442,12 +442,16 @@ window.Messliner = window.DineDesk = {
     this.state.totalDeposit = totalDeposit;
 
     // ── Step 4: Setup UI & modules ──
-    this._setupUI(userData);
+    const diningInfo = data.info || {};
+    this.state.diningName = diningInfo.name || this.state.diningName || 'Messliner';
+    this.state.diningCode = diningInfo.code || this.state.diningCode || '';
+    this._setupUI(userData, diningInfo);
     this._initModules(diningId, userId, meals, data);
 
     // ── Step 4b: Inject data directly into UserDashboard ──
     UserDashboard.userData = userData;
     UserDashboard.settings = settings;
+    UserDashboard.diningInfo = diningInfo;
     UserDashboard.monthlyBazar = monthlyBazar;
 
     // Process per-user monthly deposits
@@ -572,7 +576,7 @@ window.Messliner = window.DineDesk = {
   /**
    * Setup UI elements (sidebar, header, etc.)
    */
-  _setupUI(userData) {
+  _setupUI(userData, diningInfo = null) {
     const role = this.state.role;
     const isAdmin = role === 'admin';
     this.state.userName = userData.name || 'User';
@@ -583,12 +587,31 @@ window.Messliner = window.DineDesk = {
     // Update dynamic top header greeting
     this.updateHomeHeaderGreeting(userData.name);
 
-    // Sidebar brand
-    db.ref(`dinings/${this.state.diningId}/info/name`).on('value', (snap) => {
-      const name = snap.val() || 'Messliner';
-      Utils.setText('sidebarDiningName', name);
-      document.title = `Messliner — ${name}`;
-    });
+    // Sidebar brand & Home page Mess Info — instant zero-latency population
+    const name = (diningInfo && diningInfo.name) || this.state.diningName || 'Messliner';
+    const code = (diningInfo && diningInfo.code) || this.state.diningCode || '';
+    this.state.diningName = name;
+    this.state.diningCode = code;
+    Utils.setText('sidebarDiningName', name);
+    document.title = `Messliner — ${name}`;
+
+    const messInfoText = code ? `${name} · ${code}` : name;
+    Utils.setText('mymealMessInfo', messInfoText);
+
+    // Live listener if mess name changes
+    if (!this._diningNameListenerBound) {
+      this._diningNameListenerBound = true;
+      db.ref(`dinings/${this.state.diningId}/info/name`).on('value', (snap) => {
+        const liveName = snap.val();
+        if (liveName) {
+          this.state.diningName = liveName;
+          Utils.setText('sidebarDiningName', liveName);
+          document.title = `Messliner — ${liveName}`;
+          const currentCode = this.state.diningCode || '';
+          Utils.setText('mymealMessInfo', currentCode ? `${liveName} · ${currentCode}` : liveName);
+        }
+      });
+    }
 
     // Sidebar role label
     Utils.setText('sidebarRole', isAdmin ? 'Admin Panel' : 'Member Panel');

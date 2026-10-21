@@ -422,19 +422,23 @@ const UserDashboard = {
     Utils.setText('mymealUserName', userName);
     Utils.setText('mymealUserAvatar', Utils.initials(userName));
 
-    // Mess Info
-    const diningName = document.getElementById('sidebarDiningName')?.textContent || 'Messliner';
-    const diningCode = (this.diningInfo && this.diningInfo.code) || Messliner.state.diningCode || '';
+    // Mess Info — zero delay from diningInfo or state
+    const diningName = (this.diningInfo && this.diningInfo.name) ||
+      Messliner.state?.diningName ||
+      document.getElementById('sidebarDiningName')?.textContent ||
+      'Messliner';
+    const diningCode = (this.diningInfo && this.diningInfo.code) || Messliner.state?.diningCode || '';
     const messInfoText = diningCode ? `${diningName} · ${diningCode}` : diningName;
     Utils.setText('mymealMessInfo', messInfoText);
 
-    // Notification Badge in mymeal topbar
-    const mainNotifBadge = document.getElementById('notifBadge');
+    // Notification Badge in mymeal topbar — immediate render from Notifications module or DOM
+    const unreadCount = (window.Notifications && Array.isArray(Notifications.notifications))
+      ? Notifications.notifications.filter(n => !n.read).length
+      : parseInt(document.getElementById('notifBadge')?.textContent || '0', 10);
     const mymealBadge = document.getElementById('mymealNotifBadge');
     if (mymealBadge) {
-      const count = parseInt(mainNotifBadge?.textContent || '0', 10);
-      if (mainNotifBadge && mainNotifBadge.style.display !== 'none' && !mainNotifBadge.classList.contains('hidden') && count > 0) {
-        mymealBadge.textContent = mainNotifBadge.textContent;
+      if (unreadCount > 0) {
+        mymealBadge.textContent = unreadCount > 9 ? '9+' : String(unreadCount);
         mymealBadge.style.setProperty('display', 'inline-flex', 'important');
         mymealBadge.classList.remove('hidden');
       } else {
