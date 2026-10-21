@@ -142,9 +142,29 @@ window.Messliner = window.DineDesk = {
 
       // ── FRESH DATA FETCH & BACKGROUND REVALIDATION ──
       try {
-        // Step 1: Mapping fetch
-        const mappingSnap = await db.ref(`userMappings/emailToDining/${emailKey}`).once('value');
-        const mapping = mappingSnap.val();
+        const mappingCacheKey = `ml_map_${emailKey}`;
+        let mapping = null;
+        try {
+          const cachedMapRaw = localStorage.getItem(mappingCacheKey);
+          if (cachedMapRaw) mapping = JSON.parse(cachedMapRaw);
+        } catch (_) {}
+
+        // If no cached mapping, fetch it first
+        if (!mapping || !mapping.diningId) {
+          const mappingSnap = await db.ref(`userMappings/emailToDining/${emailKey}`).once('value');
+          mapping = mappingSnap.val();
+          if (mapping && mapping.diningId) {
+            try { localStorage.setItem(mappingCacheKey, JSON.stringify(mapping)); } catch (_) {}
+          }
+        } else {
+          // If cached mapping exists, revalidate in background
+          db.ref(`userMappings/emailToDining/${emailKey}`).once('value').then(snap => {
+            const freshMap = snap.val();
+            if (freshMap && freshMap.diningId) {
+              try { localStorage.setItem(mappingCacheKey, JSON.stringify(freshMap)); } catch (_) {}
+            }
+          }).catch(() => {});
+        }
 
         if (!mapping || !mapping.diningId) {
           console.log('[Messliner] No dining mapping found. Showing onboarding...');
@@ -177,7 +197,7 @@ window.Messliner = window.DineDesk = {
         const diningId = mapping.diningId;
         const userId = activeUserId;
 
-        // Step 2: Parallel fetch of all core collections
+        // ── STAGE 1 (CRITICAL PATH): Fetch Home Page & 4 User Tabs essential data ──
         const [
           userSnap,
           bazarSnap,
@@ -185,9 +205,7 @@ window.Messliner = window.DineDesk = {
           usersSnap,
           settingsSnap,
           depositsSnap,
-          infoSnap,
-          billsSnap,
-          paymentRequestsSnap
+          infoSnap
         ] = await Promise.all([
           db.ref(`dinings/${diningId}/users/${userId}`).once('value'),
           db.ref(`dinings/${diningId}/bazar`).once('value'),
@@ -195,9 +213,7 @@ window.Messliner = window.DineDesk = {
           db.ref(`dinings/${diningId}/users`).once('value'),
           db.ref(`dinings/${diningId}/settings`).once('value'),
           db.ref(`dinings/${diningId}/deposits`).once('value'),
-          db.ref(`dinings/${diningId}/info`).once('value'),
-          db.ref(`dinings/${diningId}/bills`).once('value'),
-          db.ref(`dinings/${diningId}/paymentRequests`).once('value')
+          db.ref(`dinings/${diningId}/info`).once('value')
         ]);
 
         const freshPayload = {
@@ -209,8 +225,8 @@ window.Messliner = window.DineDesk = {
           settings: settingsSnap.val() || {},
           deposits: depositsSnap.val() || {},
           info: infoSnap.val() || {},
-          bills: billsSnap.val() || {},
-          paymentRequests: paymentRequestsSnap.val() || {}
+          bills: {},
+          paymentRequests: {}
         };
 
         if (!freshPayload.userData) {
@@ -220,14 +236,32 @@ window.Messliner = window.DineDesk = {
           return;
         }
 
-        // Render fresh data seamlessly
+        // 🚀 RENDER HOME PAGE & ACTIVATE 4 USER TABS IMMEDIATELY!
         this._renderDashboardPayload(freshPayload, false);
 
-        // Save fresh data to local cache for instant future loads
-        this._saveToCache(cacheKey, freshPayload);
-
-        // Ensure loader is smoothly hidden
+        // 🚀 DISMISS PRELOADER IMMEDIATELY — User sees Home Page right away!
         this._dismissLoaderFast();
+
+        // ── STAGE 2: Non-blocking Background Hydration for Bills & Secondary Modules ──
+        Promise.all([
+          db.ref(`dinings/${diningId}/bills`).once('value'),
+          db.ref(`dinings/${diningId}/paymentRequests`).once('value')
+        ]).then(([billsSnap, prSnap]) => {
+          freshPayload.bills = billsSnap.val() || {};
+          freshPayload.paymentRequests = prSnap.val() || {};
+          if (window.UserBillsModule) {
+            UserBillsModule.bills = freshPayload.bills;
+            UserBillsModule.paymentRequests = freshPayload.paymentRequests;
+            UserBillsModule.renderOverview();
+            UserBillsModule.renderBills();
+            UserBillsModule.renderHistory();
+          }
+          // Save complete payload to cache for subsequent 0.05s loads
+          this._saveToCache(cacheKey, freshPayload);
+        }).catch(err => {
+          console.warn('[Messliner] Stage 2 background load error:', err);
+          this._saveToCache(cacheKey, freshPayload);
+        });
 
         // Setup live listeners once
         if (!this._liveListenersAttached) {
@@ -278,7 +312,7 @@ window.Messliner = window.DineDesk = {
         }
         const pruned = { ...data, meals: prunedMeals };
         localStorage.setItem(key, JSON.stringify(pruned));
-      } catch (_) {}
+      } catch (_) { }
     }
   },
 
