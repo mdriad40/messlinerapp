@@ -102,185 +102,215 @@ window.Messliner = window.DineDesk = {
   async init() {
     console.log('[Messliner] Initializing app...');
 
-    // Auth state listener
+    // Fast synchronous boot check from localStorage / window cache (0ms latency!)
+    let syncUser = null;
+    try {
+      if (window.__ML_BOOT_USER) {
+        syncUser = window.__ML_BOOT_USER;
+      } else {
+        const raw = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.user) {
+            syncUser = parsed.user;
+            syncUser.uid = syncUser.user_metadata?.firebase_uid || syncUser.id;
+          }
+        }
+      }
+    } catch (_) {}
+
+    if (syncUser && syncUser.email) {
+      console.log('[Messliner] Instant Boot from synchronous session:', syncUser.email);
+      this._bootForUser(syncUser);
+    }
+
+    // Auth state listener (handles background token verification or logout)
     auth.onAuthStateChanged(async (user) => {
       if (!user) {
         // Not authenticated — redirect to login
-        window.location.href = 'index.html';
+        window.location.replace('index.html');
         return;
       }
+      this._bootForUser(user);
+    });
+  },
 
-      const userUid = user.uid || user.id;
-      if (this._isInitializing || (this._initialized && this.state.userId && this._lastAuthedUid === userUid)) {
-        return;
-      }
-      this._isInitializing = true;
-      this._lastAuthedUid = userUid;
+  /**
+   * Fast boot and parallel hydration engine
+   */
+  async _bootForUser(user) {
+    const userUid = user.uid || user.id;
+    if (this._isInitializing || (this._initialized && this.state.userId && this._lastAuthedUid === userUid)) {
+      return;
+    }
+    this._isInitializing = true;
+    this._lastAuthedUid = userUid;
 
-      this.state.user = user;
-      console.log('[Messliner] Authenticated:', user.email);
+    this.state.user = user;
+    console.log('[Messliner] Booting for user:', user.email);
 
-      const emailKey = Utils.encodeEmail(user.email);
-      const cacheKey = `ml_cache_v2_${emailKey}`;
+    const emailKey = Utils.encodeEmail(user.email);
+    const cacheKey = `ml_cache_v2_${emailKey}`;
 
-      // ── FAST PATH: Instant Cache Hydration (< 50ms) ──
-      let hasHydratedFromCache = false;
-      try {
-        const cachedRaw = localStorage.getItem(cacheKey);
-        if (cachedRaw) {
-          const cached = JSON.parse(cachedRaw);
-          if (cached && cached.mapping && cached.userData) {
-            console.log('[Messliner] Fast Boot: Instant cache hydration in 0.05s...');
-            hasHydratedFromCache = true;
-            this._renderDashboardPayload(cached, true);
-            this._dismissLoaderFast();
-          }
+    // ── FAST PATH: Instant Cache Hydration (< 50ms) ──
+    let hasHydratedFromCache = false;
+    try {
+      const cachedRaw = localStorage.getItem(cacheKey);
+      if (cachedRaw) {
+        const cached = JSON.parse(cachedRaw);
+        if (cached && cached.mapping && cached.userData) {
+          console.log('[Messliner] Fast Boot: Instant cache hydration in 0.05s...');
+          hasHydratedFromCache = true;
+          this._renderDashboardPayload(cached, true);
+          this._dismissLoaderFast();
         }
-      } catch (e) {
-        console.warn('[Messliner] Cache parse error:', e);
       }
+    } catch (e) {
+      console.warn('[Messliner] Cache parse error:', e);
+    }
 
-      // ── FRESH DATA FETCH & BACKGROUND REVALIDATION ──
-      try {
-        const mappingCacheKey = `ml_map_${emailKey}`;
-        let mapping = null;
+    // ── FRESH DATA FETCH & BACKGROUND REVALIDATION ──
+    try {
+      const mappingCacheKey = `ml_map_${emailKey}`;
+      let mapping = window.__ML_BOOT_MAP || null;
+      if (!mapping) {
         try {
           const cachedMapRaw = localStorage.getItem(mappingCacheKey);
           if (cachedMapRaw) mapping = JSON.parse(cachedMapRaw);
         } catch (_) {}
-
-        // If no cached mapping, fetch it first
-        if (!mapping || !mapping.diningId) {
-          const mappingSnap = await db.ref(`userMappings/emailToDining/${emailKey}`).once('value');
-          mapping = mappingSnap.val();
-          if (mapping && mapping.diningId) {
-            try { localStorage.setItem(mappingCacheKey, JSON.stringify(mapping)); } catch (_) {}
-          }
-        } else {
-          // If cached mapping exists, revalidate in background
-          db.ref(`userMappings/emailToDining/${emailKey}`).once('value').then(snap => {
-            const freshMap = snap.val();
-            if (freshMap && freshMap.diningId) {
-              try { localStorage.setItem(mappingCacheKey, JSON.stringify(freshMap)); } catch (_) {}
-            }
-          }).catch(() => {});
-        }
-
-        if (!mapping || !mapping.diningId) {
-          console.log('[Messliner] No dining mapping found. Showing onboarding...');
-          const userProfileSnap = await db.ref(`users/${user.uid}`).once('value');
-          const profile = userProfileSnap.val() || {
-            name: user.displayName || (user.user_metadata && user.user_metadata.name) || 'User',
-            email: user.email,
-            phone: (user.user_metadata && user.user_metadata.phone) || ''
-          };
-          this._dismissLoaderFast();
-          document.getElementById('onboardingPage').style.display = 'flex';
-          if (window.Onboarding) {
-            Onboarding.init({ uid: user.uid, name: profile.name, email: profile.email, phone: profile.phone || '' });
-          }
-          return;
-        }
-
-        // Support impersonation
-        let activeUserId = mapping.userId;
-        const urlParams = new URLSearchParams(window.location.search);
-        const impersonateUserId = urlParams.get('impersonate');
-        if (impersonateUserId) {
-          const targetSnap = await db.ref(`dinings/${mapping.diningId}/users/${impersonateUserId}`).once('value');
-          if (targetSnap.exists()) {
-            activeUserId = impersonateUserId;
-            console.log('[Messliner] Impersonating member:', impersonateUserId);
-          }
-        }
-
-        const diningId = mapping.diningId;
-        const userId = activeUserId;
-
-        // ── STAGE 1 (CRITICAL PATH): Fetch Home Page & 4 User Tabs essential data ──
-        const [
-          userSnap,
-          bazarSnap,
-          mealsSnap,
-          usersSnap,
-          settingsSnap,
-          depositsSnap,
-          infoSnap
-        ] = await Promise.all([
-          db.ref(`dinings/${diningId}/users/${userId}`).once('value'),
-          db.ref(`dinings/${diningId}/bazar`).once('value'),
-          db.ref(`dinings/${diningId}/meals`).once('value'),
-          db.ref(`dinings/${diningId}/users`).once('value'),
-          db.ref(`dinings/${diningId}/settings`).once('value'),
-          db.ref(`dinings/${diningId}/deposits`).once('value'),
-          db.ref(`dinings/${diningId}/info`).once('value')
-        ]);
-
-        const freshPayload = {
-          mapping: { diningId, userId },
-          userData: userSnap.val(),
-          bazar: bazarSnap.val() || {},
-          meals: mealsSnap.val() || {},
-          users: usersSnap.val() || {},
-          settings: settingsSnap.val() || {},
-          deposits: depositsSnap.val() || {},
-          info: infoSnap.val() || {},
-          bills: {},
-          paymentRequests: {}
-        };
-
-        if (!freshPayload.userData) {
-          console.error('[Messliner] User data not found');
-          Notifications.toast('error', 'Error', 'Your account data was not found.');
-          auth.signOut();
-          return;
-        }
-
-        // 🚀 RENDER HOME PAGE & ACTIVATE 4 USER TABS IMMEDIATELY!
-        this._renderDashboardPayload(freshPayload, false);
-
-        // 🚀 DISMISS PRELOADER IMMEDIATELY — User sees Home Page right away!
-        this._dismissLoaderFast();
-
-        // ── STAGE 2: Non-blocking Background Hydration for Bills & Secondary Modules ──
-        Promise.all([
-          db.ref(`dinings/${diningId}/bills`).once('value'),
-          db.ref(`dinings/${diningId}/paymentRequests`).once('value')
-        ]).then(([billsSnap, prSnap]) => {
-          freshPayload.bills = billsSnap.val() || {};
-          freshPayload.paymentRequests = prSnap.val() || {};
-          if (window.UserBillsModule) {
-            UserBillsModule.bills = freshPayload.bills;
-            UserBillsModule.paymentRequests = freshPayload.paymentRequests;
-            UserBillsModule.renderOverview();
-            UserBillsModule.renderBills();
-            UserBillsModule.renderHistory();
-          }
-          // Save complete payload to cache for subsequent 0.05s loads
-          this._saveToCache(cacheKey, freshPayload);
-        }).catch(err => {
-          console.warn('[Messliner] Stage 2 background load error:', err);
-          this._saveToCache(cacheKey, freshPayload);
-        });
-
-        // Setup live listeners once
-        if (!this._liveListenersAttached) {
-          this._liveListenersAttached = true;
-          this._setupLiveListeners(diningId);
-          this._setupConnectivity();
-        }
-
-      } catch (error) {
-        console.error('[Messliner] Init error:', error);
-        if (!hasHydratedFromCache) {
-          Notifications.toast('error', 'Error', 'Failed to load your dining data.');
-          this._dismissLoaderFast();
-        }
-      } finally {
-        this._isInitializing = false;
-        this._initialized = true;
       }
-    });
+
+      // If no cached mapping, fetch it first
+      if (!mapping || !mapping.diningId) {
+        const mappingSnap = await db.ref(`userMappings/emailToDining/${emailKey}`).once('value');
+        mapping = mappingSnap.val();
+        if (mapping && mapping.diningId) {
+          try { localStorage.setItem(mappingCacheKey, JSON.stringify(mapping)); } catch (_) {}
+        }
+      } else {
+        // If cached mapping exists, revalidate in background
+        db.ref(`userMappings/emailToDining/${emailKey}`).once('value').then(snap => {
+          const freshMap = snap.val();
+          if (freshMap && freshMap.diningId) {
+            try { localStorage.setItem(mappingCacheKey, JSON.stringify(freshMap)); } catch (_) {}
+          }
+        }).catch(() => {});
+      }
+
+      if (!mapping || !mapping.diningId) {
+        console.log('[Messliner] No dining mapping found. Showing onboarding...');
+        const userProfileSnap = await db.ref(`users/${user.uid}`).once('value');
+        const profile = userProfileSnap.val() || {
+          name: user.displayName || (user.user_metadata && user.user_metadata.name) || 'User',
+          email: user.email,
+          phone: (user.user_metadata && user.user_metadata.phone) || ''
+        };
+        this._dismissLoaderFast();
+        document.getElementById('onboardingPage').style.display = 'flex';
+        if (window.Onboarding) {
+          Onboarding.init({ uid: user.uid, name: profile.name, email: profile.email, phone: profile.phone || '' });
+        }
+        return;
+      }
+
+      // Support impersonation
+      let activeUserId = mapping.userId;
+      const urlParams = new URLSearchParams(window.location.search);
+      const impersonateUserId = urlParams.get('impersonate');
+      if (impersonateUserId) {
+        const targetSnap = await db.ref(`dinings/${mapping.diningId}/users/${impersonateUserId}`).once('value');
+        if (targetSnap.exists()) {
+          activeUserId = impersonateUserId;
+          console.log('[Messliner] Impersonating member:', impersonateUserId);
+        }
+      }
+
+      const diningId = mapping.diningId;
+      const userId = activeUserId;
+
+      // ── STAGE 1 (CRITICAL PATH): Fetch Home Page & 4 User Tabs essential data ──
+      const [
+        userSnap,
+        bazarSnap,
+        mealsSnap,
+        usersSnap,
+        settingsSnap,
+        depositsSnap,
+        infoSnap
+      ] = await Promise.all([
+        db.ref(`dinings/${diningId}/users/${userId}`).once('value'),
+        db.ref(`dinings/${diningId}/bazar`).once('value'),
+        db.ref(`dinings/${diningId}/meals`).once('value'),
+        db.ref(`dinings/${diningId}/users`).once('value'),
+        db.ref(`dinings/${diningId}/settings`).once('value'),
+        db.ref(`dinings/${diningId}/deposits`).once('value'),
+        db.ref(`dinings/${diningId}/info`).once('value')
+      ]);
+
+      const freshPayload = {
+        mapping: { diningId, userId },
+        userData: userSnap.val(),
+        bazar: bazarSnap.val() || {},
+        meals: mealsSnap.val() || {},
+        users: usersSnap.val() || {},
+        settings: settingsSnap.val() || {},
+        deposits: depositsSnap.val() || {},
+        info: infoSnap.val() || {},
+        bills: {},
+        paymentRequests: {}
+      };
+
+      if (!freshPayload.userData) {
+        console.error('[Messliner] User data not found');
+        Notifications.toast('error', 'Error', 'Your account data was not found.');
+        auth.signOut();
+        return;
+      }
+
+      // 🚀 RENDER HOME PAGE & ACTIVATE 4 USER TABS IMMEDIATELY!
+      this._renderDashboardPayload(freshPayload, false);
+
+      // 🚀 DISMISS PRELOADER IMMEDIATELY — User sees Home Page right away!
+      this._dismissLoaderFast();
+
+      // ── STAGE 2: Non-blocking Background Hydration for Bills & Secondary Modules ──
+      Promise.all([
+        db.ref(`dinings/${diningId}/bills`).once('value'),
+        db.ref(`dinings/${diningId}/paymentRequests`).once('value')
+      ]).then(([billsSnap, prSnap]) => {
+        freshPayload.bills = billsSnap.val() || {};
+        freshPayload.paymentRequests = prSnap.val() || {};
+        if (window.UserBillsModule) {
+          UserBillsModule.bills = freshPayload.bills;
+          UserBillsModule.paymentRequests = freshPayload.paymentRequests;
+          UserBillsModule.renderOverview();
+          UserBillsModule.renderBills();
+          UserBillsModule.renderHistory();
+        }
+        // Save complete payload to cache for subsequent 0.05s loads
+        this._saveToCache(cacheKey, freshPayload);
+      }).catch(err => {
+        console.warn('[Messliner] Stage 2 background load error:', err);
+        this._saveToCache(cacheKey, freshPayload);
+      });
+
+      // Setup live listeners once
+      if (!this._liveListenersAttached) {
+        this._liveListenersAttached = true;
+        this._setupLiveListeners(diningId);
+        this._setupConnectivity();
+      }
+
+    } catch (error) {
+      console.error('[Messliner] Init error:', error);
+      if (!hasHydratedFromCache) {
+        Notifications.toast('error', 'Error', 'Failed to load your dining data.');
+        this._dismissLoaderFast();
+      }
+    } finally {
+      this._isInitializing = false;
+      this._initialized = true;
+    }
   },
 
   /**
@@ -939,11 +969,17 @@ window.Messliner = window.DineDesk = {
 };
 
 // ======== AUTO-INIT on dashboard.html ========
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('appShell')) {
+      Messliner.init();
+    }
+  });
+} else {
   if (document.getElementById('appShell')) {
     Messliner.init();
   }
-});
+}
 
 // Global Custom Dropdowns Manager (Scrolling to selected option, closing on click-outside, exclusive toggles)
 document.addEventListener('click', (e) => {

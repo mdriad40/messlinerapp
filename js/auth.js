@@ -68,8 +68,8 @@ const Auth = {
 
     // Check if user is already signed in
     auth.onAuthStateChanged(async (user) => {
-      if (Auth.isRegistering) {
-        console.log('[Messliner] Registration in progress. Skipping auth state redirect.');
+      if (Auth.isRegistering || Auth.isLoggingIn) {
+        console.log('[Messliner] Auth transition in progress. Skipping observer redirect.');
         return;
       }
       const loader = document.getElementById('pageLoader');
@@ -83,7 +83,7 @@ const Auth = {
           return;
         }
         // Redirect to dashboard (dashboard.html will decide if they need onboarding)
-        window.location.href = 'dashboard.html';
+        window.location.replace('dashboard.html');
       } else {
         // Not signed in — show auth page
         if (loader) loader.style.display = 'none';
@@ -358,14 +358,18 @@ const Auth = {
       return;
     }
 
+    Auth.isLoggingIn = true;
     btn.classList.add('loading');
     btn.disabled = true;
     const btnText = btn.querySelector('.btn-text');
     if (btnText) btnText.textContent = 'Signing in...';
     errorDiv.classList.remove('visible');
 
+    let isSuccess = false;
+
     try {
       let email = identifier;
+      let knownMapping = null;
 
       // Check if identifier is a username (no @ symbol)
       if (!identifier.includes('@')) {
@@ -384,13 +388,45 @@ const Auth = {
         if (!email) {
           throw new Error('Account not properly configured. Contact your dining manager.');
         }
+        knownMapping = mapping;
       }
 
-      // Sign in with email + password
-      await auth.signInWithEmailAndPassword(email, password);
-      // onAuthStateChanged will handle redirect
+      const emailKey = Utils.encodeEmail(email);
+
+      // Pre-warm mapping: if username was used, we already have knownMapping.
+      // If email was used, initiate mapping fetch in parallel with Supabase authentication.
+      const authPromise = auth.signInWithEmailAndPassword(email, password);
+      const mapPromise = knownMapping
+        ? Promise.resolve(knownMapping)
+        : db.ref(`userMappings/emailToDining/${emailKey}`).once('value').then(s => s.val()).catch(() => null);
+
+      // Concurrently await both Auth and Dining Mapping (zero sequential delay!)
+      const [authResult, mappingResult] = await Promise.all([authPromise, mapPromise]);
+      isSuccess = true;
+
+      const finalMapping = knownMapping || mappingResult;
+      if (finalMapping && finalMapping.diningId) {
+        try {
+          localStorage.setItem(`ml_map_${emailKey}`, JSON.stringify(finalMapping));
+        } catch (_) {}
+      }
+
+      // Pre-seed fast user info for instant boot
+      try {
+        const u = authResult?.user || window._currentSupabaseUser;
+        if (u) {
+          localStorage.setItem('ml_boot_email', email);
+        }
+      } catch (_) {}
+
+      if (btnText) btnText.textContent = 'Opening Dashboard...';
+
+      // Immediate navigation to dashboard with zero delay
+      window.location.replace('dashboard.html');
+      return;
 
     } catch (error) {
+      Auth.isLoggingIn = false;
       let msg = 'Login failed. Please try again.';
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         msg = 'Invalid email/username or password.';
@@ -401,9 +437,12 @@ const Auth = {
       }
       this._showError(errorDiv, errorText, msg);
     } finally {
-      btn.classList.remove('loading');
-      btn.disabled = false;
-      if (btnText) btnText.textContent = 'Sign in';
+      if (!isSuccess) {
+        Auth.isLoggingIn = false;
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        if (btnText) btnText.textContent = 'Sign in';
+      }
     }
   },
 

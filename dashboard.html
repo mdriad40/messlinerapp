@@ -11,6 +11,32 @@
   <meta name="theme-color" content="#064E3B">
   <script src="js/mobile-bridge.js"></script>
 
+  <!-- Instant Dashboard Synchronous Fast-Boot Engine (0ms Latency) -->
+  <script>
+    (function () {
+      try {
+        const sbRaw = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
+        if (!sbRaw) {
+          // If no auth token exists at all, redirect to index.html before browser renders 600KB DOM
+          window.location.replace('index.html');
+          return;
+        }
+        const parsed = JSON.parse(sbRaw);
+        if (parsed && parsed.user) {
+          window.__ML_BOOT_USER = parsed.user;
+          window.__ML_BOOT_USER.uid = parsed.user.user_metadata?.firebase_uid || parsed.user.id;
+          if (parsed.user.email) {
+            const emailKey = parsed.user.email.toLowerCase().replace(/[\.\$#\[\]\/@]/g, '_');
+            const cachedMap = localStorage.getItem('ml_map_' + emailKey);
+            if (cachedMap) {
+              window.__ML_BOOT_MAP = JSON.parse(cachedMap);
+            }
+          }
+        }
+      } catch (_) { }
+    })();
+  </script>
+
   <!-- Bengali & English Typography (SolaimanLipi & Kalpurush matching Bangladesh Railway standard) -->
   <!-- Network Preconnect & DNS-Prefetch for Fast Database & CDN Handshake -->
   <link rel="preconnect" href="https://pgnjvtmofglkjplotrha.supabase.co" crossorigin>
@@ -12115,8 +12141,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 
   <!-- App Scripts -->
   <script src="js/firebase-config.js?v=2.1"></script>
