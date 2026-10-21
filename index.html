@@ -8,6 +8,17 @@
     content="Messliner — Smart Dining Management for Messes. Track meals, manage deposits, split bills and run your mess stress-free.">
   <title>Messliner | Log in</title>
 
+  <!-- Network Preconnect & DNS-Prefetch for Instant Cold Handshake -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://pgnjvtmofglkjplotrha.supabase.co" crossorigin>
+  <link rel="preconnect" href="https://meiner-3a1e5-default-rtdb.firebaseio.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400..800&family=Outfit:wght@400..800&family=Plus+Jakarta+Sans:wght@400..800&display=swap"
+    rel="stylesheet">
+
   <!-- CSS -->
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/base.css">
@@ -19,15 +30,28 @@
   <meta name="theme-color" content="#064E3B">
   <script src="js/mobile-bridge.js"></script>
 
-  <!-- Instant Dashboard Redirect if user is already authenticated -->
+  <!-- Instant Dashboard Redirect if authenticated / 0ms Instant Login Engine -->
   <script>
-    try {
-      const sbToken = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
-      if (sbToken && JSON.parse(sbToken).user) {
-        window.location.replace('dashboard.html');
-      }
-    } catch (_) { }
+    (function () {
+      try {
+        var sbToken = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
+        if (sbToken && JSON.parse(sbToken).user) {
+          window.location.replace('dashboard.html');
+          return;
+        }
+      } catch (_) { }
+      document.documentElement.classList.add('ml-guest-ready');
+    })();
   </script>
+  <style>
+    /* 0ms Instant Login Display for Guest / Cold Visits (Never hang on spinner) */
+    html.ml-guest-ready #pageLoader {
+      display: none !important;
+    }
+    html.ml-guest-ready #authPage {
+      display: flex !important;
+    }
+  </style>
 
   <!-- Favicon -->
   <link rel="icon" href="assets/messLiner-logo.png" type="image/png">
@@ -36,7 +60,7 @@
 <body>
 
   <!-- ======== PAGE LOADER ======== -->
-  <div id="pageLoader" class="page-loader">
+  <div id="pageLoader" class="page-loader" style="display:none;">
     <div class="sidebar-brand-icon"
       style="width:56px;height:56px;display:flex;align-items:center;justify-content:center;">
       <img src="assets/messLiner-logo.png" alt="Messliner Logo" style="width:48px;height:48px;object-fit:contain;">
@@ -46,7 +70,7 @@
   </div>
 
   <!-- ======== AUTH PAGE ======== -->
-  <div id="authPage" class="auth-page-split" style="display:none;">
+  <div id="authPage" class="auth-page-split">
 
     <!-- Left Pane (Green Banner on Desktop, Top Banner on Mobile) -->
     <div class="auth-left-pane">
@@ -618,19 +642,19 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- Supabase JS SDK & Config -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-config.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="js/supabase-config.js"></script>
 
   <!-- Firebase SDK (compat for Realtime Database & Gemini) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
   <!-- App Scripts -->
-  <script src="js/firebase-config.js"></script>
-  <script src="js/shared/utils.js"></script>
-  <script src="js/shared/notifications.js"></script>
-  <script src="js/auth.js"></script>
+  <script defer src="js/firebase-config.js"></script>
+  <script defer src="js/shared/utils.js"></script>
+  <script defer src="js/shared/notifications.js"></script>
+  <script defer src="js/auth.js"></script>
 
   <script>
     /* ============================================================
