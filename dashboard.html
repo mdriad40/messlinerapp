@@ -195,11 +195,29 @@
     *::after {
       -webkit-tap-highlight-color: transparent !important;
       -webkit-touch-callout: none;
+      -webkit-focus-ring-color: transparent !important;
       outline: none;
     }
 
     *:focus:not(:focus-visible) {
       outline: none !important;
+    }
+
+    body {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    input,
+    textarea,
+    [contenteditable="true"],
+    .selectable,
+    .selectable *,
+    pre,
+    code {
+      -webkit-user-select: text !important;
+      user-select: text !important;
     }
 
     /* Desktop Scrollbar — Sleek 6px Thinner Width, Lighter Emerald Theme, Zero Arrows */
@@ -283,6 +301,9 @@
     @media (max-width: 1023px) {
 
       *::-webkit-scrollbar,
+      html::-webkit-scrollbar,
+      body::-webkit-scrollbar,
+      .content-area::-webkit-scrollbar,
       ::-webkit-scrollbar {
         display: none !important;
         width: 0 !important;
@@ -291,8 +312,14 @@
       }
 
       *::-webkit-scrollbar-thumb,
+      html::-webkit-scrollbar-thumb,
+      body::-webkit-scrollbar-thumb,
+      .content-area::-webkit-scrollbar-thumb,
       ::-webkit-scrollbar-thumb,
       *::-webkit-scrollbar-track,
+      html::-webkit-scrollbar-track,
+      body::-webkit-scrollbar-track,
+      .content-area::-webkit-scrollbar-track,
       ::-webkit-scrollbar-track {
         display: none !important;
         background: transparent !important;
