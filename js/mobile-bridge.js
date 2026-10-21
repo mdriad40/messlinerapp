@@ -77,15 +77,26 @@
     } catch (_) { }
   }
 
-  // Emergency safety watchdog:
-  // If after 6.5s the loader is somehow still active (e.g. offline/network freeze), force dismiss.
-  setTimeout(emergencyDismissLoader, 6500);
-
-  // If a fatal script error occurs on login page, dismiss loader safely
-  window.addEventListener('error', function () {
-    if (!isDashboardPage) {
-      setTimeout(emergencyDismissLoader, 1500);
+  // Emergency recurring safety watchdog:
+  // Starts checking immediately; after 2.4s, unconditionally dismisses any lingering preloader!
+  let _watchdogTicks = 0;
+  const _loaderWatchdog = setInterval(function () {
+    _watchdogTicks++;
+    const loader = document.getElementById('pageLoader');
+    if (_watchdogTicks >= 6) { // ~2.4 seconds
+      if (loader && loader.style.display !== 'none') {
+        emergencyDismissLoader();
+      }
+      clearInterval(_loaderWatchdog);
     }
+  }, 400);
+
+  // If any unhandled script error or promise rejection occurs, dismiss loader safely
+  window.addEventListener('error', function () {
+    setTimeout(emergencyDismissLoader, 600);
+  });
+  window.addEventListener('unhandledrejection', function () {
+    setTimeout(emergencyDismissLoader, 600);
   });
 
   // ========================================================

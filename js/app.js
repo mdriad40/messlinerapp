@@ -124,6 +124,11 @@ window.Messliner = window.DineDesk = {
       this._bootForUser(syncUser);
     }
 
+    // Guaranteed Failsafe Watchdog: Under NO circumstance should preloader hang more than 2.5s
+    setTimeout(() => {
+      this._dismissLoaderFast();
+    }, 2500);
+
     // Auth state listener (handles background token verification or logout)
     auth.onAuthStateChanged(async (user) => {
       if (!user) {
@@ -228,6 +233,14 @@ window.Messliner = window.DineDesk = {
       const diningId = mapping.diningId;
       const userId = activeUserId;
 
+      // Safe timeout fetcher (prevents hanging indefinitely on slow mobile networks / WebViews)
+      const safeFetch = (refPath, timeoutMs = 3500) => {
+        return Promise.race([
+          db.ref(refPath).once('value').catch(() => ({ val: () => null })),
+          new Promise(res => setTimeout(() => res({ val: () => null }), timeoutMs))
+        ]);
+      };
+
       // ── STAGE 1 (CRITICAL PATH): Fetch Home Page & 4 User Tabs essential data ──
       const [
         userSnap,
@@ -238,13 +251,13 @@ window.Messliner = window.DineDesk = {
         depositsSnap,
         infoSnap
       ] = await Promise.all([
-        db.ref(`dinings/${diningId}/users/${userId}`).once('value'),
-        db.ref(`dinings/${diningId}/bazar`).once('value'),
-        db.ref(`dinings/${diningId}/meals`).once('value'),
-        db.ref(`dinings/${diningId}/users`).once('value'),
-        db.ref(`dinings/${diningId}/settings`).once('value'),
-        db.ref(`dinings/${diningId}/deposits`).once('value'),
-        db.ref(`dinings/${diningId}/info`).once('value')
+        safeFetch(`dinings/${diningId}/users/${userId}`),
+        safeFetch(`dinings/${diningId}/bazar`),
+        safeFetch(`dinings/${diningId}/meals`),
+        safeFetch(`dinings/${diningId}/users`),
+        safeFetch(`dinings/${diningId}/settings`),
+        safeFetch(`dinings/${diningId}/deposits`),
+        safeFetch(`dinings/${diningId}/info`)
       ]);
 
       const freshPayload = {
@@ -262,6 +275,7 @@ window.Messliner = window.DineDesk = {
 
       if (!freshPayload.userData) {
         console.error('[Messliner] User data not found');
+        this._dismissLoaderFast();
         Notifications.toast('error', 'Error', 'Your account data was not found.');
         auth.signOut();
         return;
@@ -303,9 +317,9 @@ window.Messliner = window.DineDesk = {
 
     } catch (error) {
       console.error('[Messliner] Init error:', error);
+      this._dismissLoaderFast();
       if (!hasHydratedFromCache) {
         Notifications.toast('error', 'Error', 'Failed to load your dining data.');
-        this._dismissLoaderFast();
       }
     } finally {
       this._isInitializing = false;

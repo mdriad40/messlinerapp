@@ -31,11 +31,24 @@
             if (cachedMap) {
               window.__ML_BOOT_MAP = JSON.parse(cachedMap);
             }
+            const cachedData = localStorage.getItem('ml_cache_v2_' + emailKey);
+            if (cachedData) {
+              document.documentElement.classList.add('ml-has-cache');
+            }
           }
         }
       } catch (_) { }
     })();
   </script>
+  <style>
+    /* 0ms Instant Loader Dismiss if cache is available */
+    html.ml-has-cache #pageLoader {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+      display: none !important;
+    }
+  </style>
 
   <!-- Bengali & English Typography (SolaimanLipi & Kalpurush matching Bangladesh Railway standard) -->
   <!-- Network Preconnect & DNS-Prefetch for Fast Database & CDN Handshake -->
