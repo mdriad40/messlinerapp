@@ -991,21 +991,21 @@ body.dark-theme .bottom-nav-item.active span {
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #a7f3d0;
+  color: #34d399;
   flex-shrink: 0;
-  transition: transform 0.3s ease, background 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease;
 }
 
 .meals-hero-banner:hover .meals-hero-icon-box {
   transform: scale(1.05);
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
 }
 
 .meals-hero-text {
