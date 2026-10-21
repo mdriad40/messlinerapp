@@ -73,9 +73,22 @@ const authAdapter = {
         if (retryClient) {
           clearInterval(timer);
           authAdapter.onAuthStateChanged(callback);
-        } else if (retries >= 30) {
+        } else if (retries >= 80) {
           clearInterval(timer);
-          console.warn('[Messliner Auth] Supabase client timed out, defaulting to guest.');
+          console.warn('[Messliner Auth] Supabase client timed out, checking cached session.');
+          try {
+            const raw = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed && parsed.user) {
+                const u = parsed.user;
+                u.uid = u.user_metadata?.firebase_uid || u.id;
+                window._currentSupabaseUser = u;
+                callback(u);
+                return;
+              }
+            }
+          } catch (_) {}
           callback(null);
         }
       }, 50);
@@ -85,7 +98,7 @@ const authAdapter = {
     // Check active session on load with resilient error catch
     client.auth.getSession().then(({ data }) => {
       const session = data?.session || null;
-      const u = session?.user || null;
+      let u = session?.user || null;
       if (u) {
         u.uid = u.user_metadata?.firebase_uid || u.id;
         if (!u.displayName && u.user_metadata?.name) u.displayName = u.user_metadata.name;
@@ -93,20 +106,53 @@ const authAdapter = {
       window._currentSupabaseUser = u;
       callback(u);
     }).catch(err => {
-      console.warn('[Messliner Auth] getSession error (proceeding to login):', err);
+      console.warn('[Messliner Auth] getSession error (proceeding to cached fallback):', err);
+      try {
+        const raw = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.user) {
+            const u = parsed.user;
+            u.uid = u.user_metadata?.firebase_uid || u.id;
+            window._currentSupabaseUser = u;
+            callback(u);
+            return;
+          }
+        }
+      } catch (_) {}
       callback(null);
     });
 
     // Listen to auth state changes safely
     try {
       const { data } = client.auth.onAuthStateChange((_event, session) => {
-        const u = session?.user || null;
+        let u = session?.user || null;
         if (u) {
           u.uid = u.user_metadata?.firebase_uid || u.id;
           if (!u.displayName && u.user_metadata?.name) u.displayName = u.user_metadata.name;
+          window._currentSupabaseUser = u;
+          callback(u);
+        } else if (_event === 'SIGNED_OUT') {
+          window._currentSupabaseUser = null;
+          callback(null);
+        } else {
+          // If event is not an explicit sign out, verify localStorage before declaring null
+          try {
+            const raw = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed && parsed.user) {
+                u = parsed.user;
+                u.uid = u.user_metadata?.firebase_uid || u.id;
+                window._currentSupabaseUser = u;
+                callback(u);
+                return;
+              }
+            }
+          } catch (_) {}
+          window._currentSupabaseUser = null;
+          callback(null);
         }
-        window._currentSupabaseUser = u;
-        callback(u);
       });
       return data?.subscription || { unsubscribe: () => { } };
     } catch (e) {

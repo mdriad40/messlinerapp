@@ -132,7 +132,19 @@ window.Messliner = window.DineDesk = {
     // Auth state listener (handles background token verification or logout)
     auth.onAuthStateChanged(async (user) => {
       if (!user) {
-        // Not authenticated — redirect to login
+        // Guard against transient null events during background token refresh:
+        try {
+          const raw = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.user) {
+              console.log('[Messliner] Ignoring transient auth null — session active in localStorage.');
+              return;
+            }
+          }
+        } catch (_) {}
+
+        // Truly not authenticated — redirect to login
         window.location.replace('index.html');
         return;
       }
@@ -234,7 +246,7 @@ window.Messliner = window.DineDesk = {
       const userId = activeUserId;
 
       // Safe timeout fetcher (prevents hanging indefinitely on slow mobile networks / WebViews)
-      const safeFetch = (refPath, timeoutMs = 3500) => {
+      const safeFetch = (refPath, timeoutMs = 8000) => {
         return Promise.race([
           db.ref(refPath).once('value').catch(() => ({ val: () => null })),
           new Promise(res => setTimeout(() => res({ val: () => null }), timeoutMs))
@@ -274,11 +286,20 @@ window.Messliner = window.DineDesk = {
       };
 
       if (!freshPayload.userData) {
-        console.error('[Messliner] User data not found');
+        console.warn('[Messliner] User profile was not returned in this pass.');
         this._dismissLoaderFast();
-        Notifications.toast('error', 'Error', 'Your account data was not found.');
-        auth.signOut();
-        return;
+        // If we already hydrated from cache, keep using active cached data! Never sign out!
+        if (hasHydratedFromCache || (this.state && this.state.userId)) {
+          console.log('[Messliner] Session remains active with existing cached state.');
+          return;
+        }
+        // Fallback user profile to avoid kicking user out on network hiccup
+        freshPayload.userData = {
+          name: user.displayName || (user.user_metadata && user.user_metadata.name) || 'User',
+          email: user.email,
+          role: 'user',
+          status: 'active'
+        };
       }
 
       // 🚀 RENDER HOME PAGE & ACTIVATE 4 USER TABS IMMEDIATELY!
