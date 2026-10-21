@@ -1,12 +1,17 @@
 /**
- * Messliner Mobile Bridge
- * Real-time status bar color synchronization and native app integration
- * for Flutter Native Wrapper (https://messliner.vercel.app/)
+ * Messliner Mobile Bridge & Native App Resilience Engine
+ * Provides:
+ * 1. Zero Blue Tap Highlight / Native Touch Feedback across all mobile browsers & WebViews
+ * 2. Universal PageLoader Watchdog (Guarantees preloader NEVER gets stuck, even on errors or offline)
+ * 3. Real-Time Dynamic Native Status Bar Color Tracking with Zero Latency
+ * 4. Error Guard for Unhandled Exceptions during App Boot
  */
 (function () {
   'use strict';
 
-  // Instant runtime suppression of blue tap highlight and scrollbars
+  // ========================================================
+  // 1. ELIMINATE BLUE TAP HIGHLIGHT & SCROLLBARS INSTANTLY
+  // ========================================================
   try {
     const styleId = 'ml-native-polish-styles';
     if (!document.getElementById(styleId)) {
@@ -15,7 +20,12 @@
       styleEl.textContent = `
         *, *::before, *::after {
           -webkit-tap-highlight-color: transparent !important;
+          -webkit-touch-callout: none !important;
           outline: none;
+        }
+        :focus, :focus-visible, :active {
+          -webkit-tap-highlight-color: transparent !important;
+          outline: none !important;
         }
         @media (max-width: 1023px) {
           *::-webkit-scrollbar, ::-webkit-scrollbar {
@@ -37,12 +47,55 @@
       `;
       (document.head || document.documentElement).appendChild(styleEl);
     }
-  } catch (e) { }
+  } catch (e) {
+    // Silent fail-safe
+  }
 
+  // ========================================================
+  // 2. UNIVERSAL PRELOADER WATCHDOG (NEVER GETS STUCK)
+  // ========================================================
+  function dismissPageLoader() {
+    try {
+      const loader = document.getElementById('pageLoader');
+      if (loader && loader.style.display !== 'none') {
+        loader.classList.add('fade-out');
+        setTimeout(() => {
+          loader.style.display = 'none';
+        }, 180);
+      }
+
+      // If on login page and authPage is hidden, show it
+      const authPage = document.getElementById('authPage');
+      if (authPage && (authPage.style.display === 'none' || !authPage.style.display)) {
+        authPage.style.display = 'flex';
+      }
+    } catch (_) { }
+  }
+
+  // Hard safety watchdog: Max 2.5s for any page to dismiss the preloader
+  const watchdogTimer = setTimeout(() => {
+    dismissPageLoader();
+  }, 2500);
+
+  // If page finishes loading normally before 2.5s
+  window.addEventListener('load', () => {
+    setTimeout(dismissPageLoader, 300);
+  });
+
+  // Global error safety: if any script errors during boot, do not keep spinner spinning
+  window.addEventListener('error', function () {
+    setTimeout(dismissPageLoader, 500);
+  });
+  window.addEventListener('unhandledrejection', function () {
+    setTimeout(dismissPageLoader, 500);
+  });
+
+  // ========================================================
+  // 3. REAL-TIME NATIVE STATUS BAR COLOR SYNC
+  // ========================================================
   let lastSentColor = null;
   let rafId = null;
 
-  // Helper to convert rgb/rgba to #RRGGBB
   function rgbToHex(rgbStr) {
     if (!rgbStr || rgbStr === 'transparent' || rgbStr === 'rgba(0, 0, 0, 0)') {
       return null;
@@ -62,45 +115,43 @@
     return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
   }
 
-  // Detect topmost non-transparent background color at viewport top
   function detectTopColor() {
-    const sampleX = Math.floor(window.innerWidth / 2);
-    const sampleY = 8; // Sample point just under the top seam
+    try {
+      const sampleX = Math.floor(window.innerWidth / 2);
+      const sampleY = 8;
 
-    let elem = document.elementFromPoint(sampleX, sampleY);
+      let elem = document.elementFromPoint(sampleX, sampleY);
 
-    while (elem && elem !== document.documentElement) {
-      // Check special hero/banner containers with gradients
-      if (elem.classList.contains('mymeal-mobile-hero-wrapper')) {
-        return '#06281B'; // Deep Forest Green Hero Banner
+      while (elem && elem !== document.documentElement) {
+        if (elem.classList.contains('mymeal-mobile-hero-wrapper')) {
+          return '#06281B'; // Deep Forest Green Hero Banner
+        }
+        if (elem.classList.contains('auth-left-pane')) {
+          return '#064E3B'; // Emerald Green Auth Banner
+        }
+        if (elem.classList.contains('top-header')) {
+          return '#FFFFFF'; // Clean White Header
+        }
+
+        const style = window.getComputedStyle(elem);
+        const hex = rgbToHex(style.backgroundColor);
+        if (hex) {
+          return hex;
+        }
+
+        elem = elem.parentElement;
       }
-      if (elem.classList.contains('auth-left-pane')) {
-        return '#064E3B'; // Emerald Green Auth Banner
-      }
-      if (elem.classList.contains('top-header')) {
-        return '#FFFFFF'; // Clean White Header
-      }
 
-      const style = window.getComputedStyle(elem);
-      const hex = rgbToHex(style.backgroundColor);
-      if (hex) {
-        return hex;
+      if (document.body) {
+        const bodyBg = rgbToHex(window.getComputedStyle(document.body).backgroundColor);
+        if (bodyBg) return bodyBg;
       }
 
-      elem = elem.parentElement;
-    }
-
-    // Check body or html background
-    if (document.body) {
-      const bodyBg = rgbToHex(window.getComputedStyle(document.body).backgroundColor);
-      if (bodyBg) return bodyBg;
-    }
-
-    // Check theme-color meta tag
-    const metaTheme = document.querySelector('meta[name="theme-color"]');
-    if (metaTheme && metaTheme.content && metaTheme.content !== 'transparent') {
-      return metaTheme.content.toUpperCase();
-    }
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme && metaTheme.content && metaTheme.content !== 'transparent') {
+        return metaTheme.content.toUpperCase();
+      }
+    } catch (_) { }
 
     return '#064E3B'; // Messliner default brand green
   }
@@ -109,7 +160,6 @@
     if (!hexColor || hexColor === lastSentColor) return;
     lastSentColor = hexColor;
 
-    // Update <meta name="theme-color"> tag dynamically
     let meta = document.querySelector('meta[name="theme-color"]');
     if (!meta) {
       meta = document.createElement('meta');
@@ -118,13 +168,10 @@
     }
     meta.setAttribute('content', hexColor);
 
-    // Send to Flutter Native App via JavaScript Channel
     if (window.StatusBarChannel && typeof window.StatusBarChannel.postMessage === 'function') {
       try {
         window.StatusBarChannel.postMessage(hexColor);
-      } catch (e) {
-        console.warn('[Messliner Bridge] Error sending color to Flutter:', e);
-      }
+      } catch (e) { }
     }
   }
 
@@ -136,7 +183,6 @@
     });
   }
 
-  // Expose global API
   window.syncMesslinerStatusBar = function (forcedColor) {
     if (forcedColor) {
       sendColor(forcedColor);
@@ -154,7 +200,7 @@
     }
   }
 
-  // Hook into History API for SPA Navigation
+  // Intercept History API for SPA Navigation
   const originalPushState = history.pushState;
   if (originalPushState) {
     history.pushState = function () {
@@ -172,8 +218,6 @@
   }
 
   window.addEventListener('popstate', () => setTimeout(sync, 50));
-
-  // Scroll and Resize Listeners
   window.addEventListener('scroll', sync, { passive: true });
   window.addEventListener('resize', sync, { passive: true });
 
@@ -182,24 +226,21 @@
     sync();
   });
 
-  window.addEventListener('load', () => {
-    checkNativeEnvironment();
-    sync();
-  });
-
   // Observe DOM changes (active tab switches in SPA)
-  const observer = new MutationObserver(() => {
-    checkNativeEnvironment();
-    sync();
-  });
-
-  if (document.body) {
-    observer.observe(document.body, { attributes: true, childList: true, subtree: false });
-  } else {
-    document.addEventListener('DOMContentLoaded', () => {
-      observer.observe(document.body, { attributes: true, childList: true, subtree: false });
+  try {
+    const observer = new MutationObserver(() => {
+      checkNativeEnvironment();
+      sync();
     });
-  }
+
+    if (document.body) {
+      observer.observe(document.body, { attributes: true, childList: true, subtree: false });
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        observer.observe(document.body, { attributes: true, childList: true, subtree: false });
+      });
+    }
+  } catch (_) { }
 
   // Initial immediate sync
   sync();

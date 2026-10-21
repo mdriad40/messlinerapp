@@ -65,10 +65,26 @@ const authAdapter = {
 
   onAuthStateChanged(callback) {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) {
+      let retries = 0;
+      const timer = setInterval(() => {
+        retries++;
+        const retryClient = getSupabaseClient();
+        if (retryClient) {
+          clearInterval(timer);
+          authAdapter.onAuthStateChanged(callback);
+        } else if (retries >= 30) {
+          clearInterval(timer);
+          console.warn('[Messliner Auth] Supabase client timed out, defaulting to guest.');
+          callback(null);
+        }
+      }, 50);
+      return { unsubscribe: () => clearInterval(timer) };
+    }
 
-    // Check active session on load
-    client.auth.getSession().then(({ data: { session } }) => {
+    // Check active session on load with resilient error catch
+    client.auth.getSession().then(({ data }) => {
+      const session = data?.session || null;
       const u = session?.user || null;
       if (u) {
         u.uid = u.user_metadata?.firebase_uid || u.id;
@@ -76,20 +92,26 @@ const authAdapter = {
       }
       window._currentSupabaseUser = u;
       callback(u);
+    }).catch(err => {
+      console.warn('[Messliner Auth] getSession error (proceeding to login):', err);
+      callback(null);
     });
 
-    // Listen to auth state changes
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
-      const u = session?.user || null;
-      if (u) {
-        u.uid = u.user_metadata?.firebase_uid || u.id;
-        if (!u.displayName && u.user_metadata?.name) u.displayName = u.user_metadata.name;
-      }
-      window._currentSupabaseUser = u;
-      callback(u);
-    });
-
-    return subscription;
+    // Listen to auth state changes safely
+    try {
+      const { data } = client.auth.onAuthStateChange((_event, session) => {
+        const u = session?.user || null;
+        if (u) {
+          u.uid = u.user_metadata?.firebase_uid || u.id;
+          if (!u.displayName && u.user_metadata?.name) u.displayName = u.user_metadata.name;
+        }
+        window._currentSupabaseUser = u;
+        callback(u);
+      });
+      return data?.subscription || { unsubscribe: () => { } };
+    } catch (e) {
+      return { unsubscribe: () => { } };
+    }
   },
 
   async signInWithEmailAndPassword(email, password) {
