@@ -19,6 +19,16 @@
   <meta name="theme-color" content="#064E3B">
   <script src="js/mobile-bridge.js"></script>
 
+  <!-- Instant Dashboard Redirect if user is already authenticated -->
+  <script>
+    try {
+      const sbToken = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
+      if (sbToken && JSON.parse(sbToken).user) {
+        window.location.replace('dashboard.html');
+      }
+    } catch (_) {}
+  </script>
+
   <!-- Favicon -->
   <link rel="icon" href="assets/messLiner-logo.png" type="image/png">
 </head>

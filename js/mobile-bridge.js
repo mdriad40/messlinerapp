@@ -2,9 +2,9 @@
  * Messliner Mobile Bridge & Native App Resilience Engine
  * Provides:
  * 1. Zero Blue Tap Highlight / Native Touch Feedback across all mobile browsers & WebViews
- * 2. Universal PageLoader Watchdog (Guarantees preloader NEVER gets stuck, even on errors or offline)
+ * 2. Preloader Smoothness (Ensures preloader stays until data is loaded, no premature blank screen)
  * 3. Real-Time Dynamic Native Status Bar Color Tracking with Zero Latency
- * 4. Error Guard for Unhandled Exceptions during App Boot
+ * 4. Emergency Error Guard for Unhandled Exceptions
  */
 (function () {
   'use strict';
@@ -52,42 +52,40 @@
   }
 
   // ========================================================
-  // 2. UNIVERSAL PRELOADER WATCHDOG (NEVER GETS STUCK)
+  // 2. PRELOADER RESILIENCE (NO PREMATURE BLANK SCREEN)
   // ========================================================
-  function dismissPageLoader() {
+  const isDashboardPage = window.location.pathname.includes('dashboard') ||
+    window.location.href.includes('dashboard.html');
+
+  function emergencyDismissLoader() {
     try {
       const loader = document.getElementById('pageLoader');
       if (loader && loader.style.display !== 'none') {
         loader.classList.add('fade-out');
         setTimeout(() => {
           loader.style.display = 'none';
-        }, 180);
+        }, 220);
       }
 
       // If on login page and authPage is hidden, show it
-      const authPage = document.getElementById('authPage');
-      if (authPage && (authPage.style.display === 'none' || !authPage.style.display)) {
-        authPage.style.display = 'flex';
+      if (!isDashboardPage) {
+        const authPage = document.getElementById('authPage');
+        if (authPage && (authPage.style.display === 'none' || !authPage.style.display)) {
+          authPage.style.display = 'flex';
+        }
       }
     } catch (_) { }
   }
 
-  // Hard safety watchdog: Max 2.5s for any page to dismiss the preloader
-  const watchdogTimer = setTimeout(() => {
-    dismissPageLoader();
-  }, 2500);
+  // Emergency safety watchdog:
+  // If after 6.5s the loader is somehow still active (e.g. offline/network freeze), force dismiss.
+  setTimeout(emergencyDismissLoader, 6500);
 
-  // If page finishes loading normally before 2.5s
-  window.addEventListener('load', () => {
-    setTimeout(dismissPageLoader, 300);
-  });
-
-  // Global error safety: if any script errors during boot, do not keep spinner spinning
+  // If a fatal script error occurs on login page, dismiss loader safely
   window.addEventListener('error', function () {
-    setTimeout(dismissPageLoader, 500);
-  });
-  window.addEventListener('unhandledrejection', function () {
-    setTimeout(dismissPageLoader, 500);
+    if (!isDashboardPage) {
+      setTimeout(emergencyDismissLoader, 1500);
+    }
   });
 
   // ========================================================
