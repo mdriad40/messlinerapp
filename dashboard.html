@@ -7,6 +7,10 @@
   <meta name="description" content="Messliner Dashboard — Manage your dining meals, finances, and members.">
   <title>Messliner — Dashboard</title>
 
+  <!-- Mobile App Bridge & Theme Color -->
+  <meta name="theme-color" content="#064E3B">
+  <script src="js/mobile-bridge.js"></script>
+
   <!-- Bengali & English Typography (SolaimanLipi & Kalpurush matching Bangladesh Railway standard) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -140,13 +144,163 @@
       box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
     }
 
-    /* Scrollbar green tint */
-    ::-webkit-scrollbar-thumb {
-      background: #A7F3D0;
+    /* ========================================================
+       Global Native App Polish: Zero Blue Tap Highlight & Hidden Scrollbars
+       ======================================================== */
+    *,
+    *::before,
+    *::after {
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-touch-callout: none;
+      outline: none;
     }
 
-    ::-webkit-scrollbar-thumb:hover {
-      background: #6EE7B7;
+    *:focus:not(:focus-visible) {
+      outline: none !important;
+    }
+
+    /* Desktop Scrollbar — Sleek 6px Thinner Width, Lighter Emerald Theme, Zero Arrows */
+    @media (min-width: 1024px) {
+      ::-webkit-scrollbar,
+      .content-area::-webkit-scrollbar,
+      body::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+        display: block;
+      }
+
+      ::-webkit-scrollbar-button,
+      .content-area::-webkit-scrollbar-button,
+      body::-webkit-scrollbar-button {
+        display: none;
+        width: 0;
+        height: 0;
+      }
+
+      ::-webkit-scrollbar-track,
+      .content-area::-webkit-scrollbar-track,
+      body::-webkit-scrollbar-track {
+        background: #F1F5F9;
+        border-radius: 9999px;
+      }
+
+      ::-webkit-scrollbar-thumb,
+      .content-area::-webkit-scrollbar-thumb,
+      body::-webkit-scrollbar-thumb {
+        background: #6EE7B7;
+        border-radius: 9999px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover,
+      .content-area::-webkit-scrollbar-thumb:hover,
+      body::-webkit-scrollbar-thumb:hover {
+        background: #34D399;
+      }
+
+      ::-webkit-scrollbar-thumb:active,
+      .content-area::-webkit-scrollbar-thumb:active,
+      body::-webkit-scrollbar-thumb:active {
+        background: #10B981;
+      }
+
+      ::-webkit-scrollbar-corner {
+        background: transparent;
+      }
+
+      body.dark-theme ::-webkit-scrollbar-track,
+      body.dark-theme .content-area::-webkit-scrollbar-track {
+        background: #0F172A;
+      }
+
+      body.dark-theme ::-webkit-scrollbar-thumb,
+      body.dark-theme .content-area::-webkit-scrollbar-thumb {
+        background: rgba(110, 231, 183, 0.45);
+      }
+
+      body.dark-theme ::-webkit-scrollbar-thumb:hover,
+      body.dark-theme .content-area::-webkit-scrollbar-thumb:hover {
+        background: #6EE7B7;
+      }
+
+      /* Firefox-only support (does not trigger Windows 11 Chrome Fluent collapse) */
+      @-moz-document url-prefix() {
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: #6EE7B7 #F1F5F9;
+        }
+
+        body.dark-theme * {
+          scrollbar-color: rgba(110, 231, 183, 0.45) #0F172A;
+        }
+      }
+    }
+
+    /* Mobile & Tablet Devices (< 1024px): Scrollbar Completely Hidden */
+    @media (max-width: 1023px) {
+
+      *::-webkit-scrollbar,
+      ::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        background: transparent !important;
+      }
+
+      *::-webkit-scrollbar-thumb,
+      ::-webkit-scrollbar-thumb,
+      *::-webkit-scrollbar-track,
+      ::-webkit-scrollbar-track {
+        display: none !important;
+        background: transparent !important;
+      }
+
+      * {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+      }
+    }
+
+    /* Hardware Accelerated Native-Smooth Scrolling */
+    html,
+    body,
+    .content-area,
+    .main-content,
+    .modal-body {
+      scroll-behavior: smooth !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+
+    .content-area {
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: scroll-position;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      overscroll-behavior-y: auto !important;
+      overscroll-behavior-x: hidden !important;
+    }
+
+    /* Responsive Touch & Instant Native Feedback */
+    a,
+    button,
+    .btn,
+    .tab-btn,
+    .profile-menu-row,
+    .bottom-nav-item,
+    .nav-item,
+    [onclick] {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-touch-callout: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Profile menu row smooth native touch feedback */
+    .profile-menu-row:active {
+      background: #F1F5F9 !important;
+      transform: scale(0.995);
+      transition: transform 0.08s ease, background 0.08s ease;
     }
 
     /* Sidebar brand icon - light theme styling */
@@ -7207,7 +7361,7 @@
               flex: 1 1 0% !important;
               min-height: 0 !important;
               overflow-y: auto !important;
-              overscroll-behavior-y: contain;
+              overscroll-behavior-y: auto;
               -webkit-overflow-scrolling: touch;
               padding: 20px 20px 12px;
               display: flex;
@@ -7215,19 +7369,14 @@
               gap: 14px;
               scroll-behavior: smooth;
               background: linear-gradient(to bottom, #F9FFFC 0%, #fff 80px);
+              scrollbar-width: none !important;
+              -ms-overflow-style: none !important;
             }
 
             .ai-messages-area::-webkit-scrollbar {
-              width: 4px;
-            }
-
-            .ai-messages-area::-webkit-scrollbar-track {
-              background: transparent;
-            }
-
-            .ai-messages-area::-webkit-scrollbar-thumb {
-              background: #D1FAE5;
-              border-radius: 4px;
+              display: none !important;
+              width: 0 !important;
+              height: 0 !important;
             }
 
             /* Capability chips (welcome screen) */
