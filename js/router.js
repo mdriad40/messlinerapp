@@ -188,32 +188,8 @@ const Router = {
       return 'slide-forward';
     }
 
-    // Inspect visible bottom navigation items to match bottom nav slide direction precisely
-    const bottomNavBtns = Array.from(document.querySelectorAll('.bottom-nav-item:not([style*="display: none"]):not([style*="display:none"])'));
-    if (bottomNavBtns.length > 0) {
-      const mapToNavPage = (p) => {
-        if (['mealchart', 'bazar', 'summary', 'fridaymeal', 'export-slip'].includes(p)) return 'overview';
-        if (['mealhistory', 'bazarroster', 'tasks', 'notices'].includes(p)) return (this.role === 'admin' ? 'mymeal' : 'dashboard');
-        return p;
-      };
-      const pNav = mapToNavPage(prevPage);
-      const nNav = mapToNavPage(newPage);
-      const pIdx = bottomNavBtns.findIndex(b => b.dataset.page === pNav);
-      const nIdx = bottomNavBtns.findIndex(b => b.dataset.page === nNav);
-      if (pIdx !== -1 && nIdx !== -1 && pIdx !== nIdx) {
-        return nIdx > pIdx ? 'slide-forward' : 'slide-backward';
-      }
-    }
-
-    // Primary tab order fallback for desktop sidebar and other navigations
-    const tabOrder = ['dashboard', 'users', 'meals', 'finance', 'ledger', 'overview', 'mymeal', 'user-bills', 'profile', 'more', 'settings', 'help'];
-    const prevIdx = tabOrder.indexOf(prevPage);
-    const newIdx = tabOrder.indexOf(newPage);
-    if (prevIdx !== -1 && newIdx !== -1 && prevIdx !== newIdx) {
-      return newIdx > prevIdx ? 'slide-forward' : 'slide-backward';
-    }
-
-    return 'slide-fade';
+    // Bottom navigation & primary tabs switch instantly like native apps (zero slide lag)
+    return '';
   },
 
   /**
@@ -451,8 +427,15 @@ const Router = {
     // Smoothly slide bottom nav indicator to the newly active tab
     this.updateBottomNavIndicator(!!this._initialNav);
 
-    // Trigger page-specific setup and render
-    this._onPageEnter(page);
+    // Sync native status bar color immediately for the newly active page
+    if (window.syncMesslinerStatusBar) {
+      window.syncMesslinerStatusBar();
+    }
+
+    // Trigger page-specific setup and render without blocking the frame
+    requestAnimationFrame(() => {
+      this._onPageEnter(page);
+    });
 
     // Restore scroll position for the new page without layout thrashing
     if (page !== 'export-slip') {

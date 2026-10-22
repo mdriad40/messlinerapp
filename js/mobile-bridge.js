@@ -141,15 +141,24 @@
         }
       }
 
-      // Check MyMeal mobile hero banner if active on screen
-      const myMealHero = document.querySelector('.mymeal-mobile-hero-wrapper');
-      if (myMealHero && myMealHero.offsetParent !== null) {
-        return '#06281B';
+      // 1. Check active page section for hero banner or member dining
+      const activeSection = document.querySelector('.page-section.active');
+      if (activeSection) {
+        const heroBanner = activeSection.querySelector('.mymeal-mobile-hero-wrapper, .fp-hero-banner');
+        if (heroBanner) {
+          return '#06281B';
+        }
+
+        const isUserRole = document.body.classList.contains('role-user') || 
+                           (window.Messliner && Messliner.state && Messliner.state.role === 'user');
+        if (isUserRole && (activeSection.id === 'page-overview' || activeSection.id === 'page-dashboard' || activeSection.id === 'page-mymeal')) {
+          return '#06281B';
+        }
       }
 
-      // Check top header background
+      // 2. Check visible top header background
       const topHeader = document.querySelector('.top-header');
-      if (topHeader) {
+      if (topHeader && window.getComputedStyle(topHeader).display !== 'none') {
         const bg = window.getComputedStyle(topHeader).backgroundColor;
         const hex = rgbToHex(bg);
         if (hex && hex !== 'transparent') return hex;
@@ -251,7 +260,8 @@
     };
   }
 
-  window.addEventListener('popstate', () => setTimeout(debouncedSync, 280));
+  window.addEventListener('hashchange', () => sync());
+  window.addEventListener('popstate', () => sync());
   window.addEventListener('resize', debouncedSync, { passive: true });
 
   document.addEventListener('DOMContentLoaded', () => {
