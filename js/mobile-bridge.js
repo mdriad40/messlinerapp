@@ -132,51 +132,27 @@
   function detectTopColor() {
     try {
       const isDark = document.body && document.body.classList.contains('dark-theme');
-      if (isDark) {
-        return '#0F172A';
+      if (isDark) return '#0F172A';
+
+      if (!isDashboardPage) {
+        const authPane = document.querySelector('.auth-left-pane, #authPage');
+        if (authPane && window.getComputedStyle(authPane).display !== 'none') {
+          return '#064E3B';
+        }
       }
 
-      // If Auth Page is visible on landing
-      const authPane = document.querySelector('.auth-left-pane, #authPage');
-      if (authPane && !isDashboardPage && window.getComputedStyle(authPane).display !== 'none') {
-        return '#064E3B';
+      // Check MyMeal mobile hero banner if active on screen
+      const myMealHero = document.querySelector('.mymeal-mobile-hero-wrapper');
+      if (myMealHero && myMealHero.offsetParent !== null) {
+        return '#06281B';
       }
 
-      // Check header or element at top
-      const sampleX = Math.floor(window.innerWidth / 2);
-      const sampleY = 12;
-      let elem = document.elementFromPoint(sampleX, sampleY);
-
-      while (elem && elem !== document.documentElement) {
-        if (elem.classList.contains('mymeal-mobile-hero-wrapper')) {
-          return '#06281B'; // Deep Forest Green Hero Banner
-        }
-        if (elem.classList.contains('auth-left-pane')) {
-          return '#064E3B'; // Emerald Green Auth Banner
-        }
-        if (elem.classList.contains('top-header')) {
-          const bg = rgbToHex(window.getComputedStyle(elem).backgroundColor);
-          if (bg && bg !== 'transparent') return bg;
-          return '#FFFFFF';
-        }
-
-        const style = window.getComputedStyle(elem);
-        const hex = rgbToHex(style.backgroundColor);
-        if (hex) {
-          return hex;
-        }
-
-        elem = elem.parentElement;
-      }
-
-      if (document.body) {
-        const bodyBg = rgbToHex(window.getComputedStyle(document.body).backgroundColor);
-        if (bodyBg && bodyBg !== 'transparent') return bodyBg;
-      }
-
-      const metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (metaTheme && metaTheme.content && metaTheme.content !== 'transparent') {
-        return metaTheme.content.toUpperCase();
+      // Check top header background
+      const topHeader = document.querySelector('.top-header');
+      if (topHeader) {
+        const bg = window.getComputedStyle(topHeader).backgroundColor;
+        const hex = rgbToHex(bg);
+        if (hex && hex !== 'transparent') return hex;
       }
     } catch (_) { }
 
@@ -258,12 +234,12 @@
     }
   }
 
-  // Intercept History API for SPA Navigation
+  // Intercept History API for SPA Navigation (delay sync until tab transition finishes)
   const originalPushState = history.pushState;
   if (originalPushState) {
     history.pushState = function () {
       originalPushState.apply(this, arguments);
-      debouncedSync();
+      setTimeout(debouncedSync, 280);
     };
   }
 
@@ -271,12 +247,11 @@
   if (originalReplaceState) {
     history.replaceState = function () {
       originalReplaceState.apply(this, arguments);
-      debouncedSync();
+      setTimeout(debouncedSync, 280);
     };
   }
 
-  window.addEventListener('popstate', debouncedSync);
-  window.addEventListener('scroll', debouncedSync, { passive: true });
+  window.addEventListener('popstate', () => setTimeout(debouncedSync, 280));
   window.addEventListener('resize', debouncedSync, { passive: true });
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -284,7 +259,7 @@
     sync();
   });
 
-  // Observe DOM changes (active tab switches in SPA) with debounce
+  // Observe theme changes on body with debounce
   try {
     const observer = new MutationObserver(() => {
       checkNativeEnvironment();
@@ -292,10 +267,10 @@
     });
 
     if (document.body) {
-      observer.observe(document.body, { attributes: true, childList: true, subtree: false });
+      observer.observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: false });
     } else {
       document.addEventListener('DOMContentLoaded', () => {
-        observer.observe(document.body, { attributes: true, childList: true, subtree: false });
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: false });
       });
     }
   } catch (_) { }
@@ -452,7 +427,7 @@
       const diffX = e.touches[0].clientX - startX;
 
       if (!isPulling) {
-        if (diffY > 8 && diffY > Math.abs(diffX) * 1.3 && getActiveScrollTop(e.target) <= 2) {
+        if (diffY > 10 && diffY > Math.abs(diffX) * 1.3 && getActiveScrollTop(e.target) <= 2) {
           isPulling = true;
           if (ptrEl) ptrEl.style.transition = 'none';
         } else if (diffY < -5 || Math.abs(diffX) > 15) {
@@ -475,13 +450,9 @@
           if (arrowBox) {
             arrowBox.style.transform = `rotate(${progress * 180}deg)`;
           }
-
-          if (e.cancelable && diffY > 20) {
-            e.preventDefault();
-          }
         }
       }
-    }, { passive: false });
+    }, { passive: true });
 
     function cancelPull() {
       isTracking = false;

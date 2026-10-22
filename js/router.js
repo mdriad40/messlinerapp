@@ -611,8 +611,9 @@ const Router = {
       }
 
       if (noAnim) {
-        void indicator.offsetHeight; // force reflow
-        indicator.style.transition = '';
+        requestAnimationFrame(() => {
+          indicator.style.transition = '';
+        });
       }
     };
 

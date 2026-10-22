@@ -337,11 +337,12 @@
     .content-area,
     .main-content,
     .modal-body {
-      scroll-behavior: smooth !important;
+      scroll-behavior: auto !important;
       -webkit-overflow-scrolling: touch !important;
     }
 
     .content-area {
+      scroll-behavior: auto !important;
       transform: translateZ(0);
       -webkit-transform: translateZ(0);
       will-change: scroll-position;
@@ -600,18 +601,21 @@
     }
 
     .page-section.active.slide-forward {
-      animation: tabSlideForward 0.24s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+      animation: tabSlideForward 0.20s cubic-bezier(0.16, 1, 0.3, 1) both !important;
       will-change: transform, opacity;
+      contain: paint;
     }
 
     .page-section.active.slide-backward {
-      animation: tabSlideBackward 0.24s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+      animation: tabSlideBackward 0.20s cubic-bezier(0.16, 1, 0.3, 1) both !important;
       will-change: transform, opacity;
+      contain: paint;
     }
 
     .page-section.active.slide-fade {
-      animation: tabSlideFade 0.22s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+      animation: tabSlideFade 0.18s cubic-bezier(0.16, 1, 0.3, 1) both !important;
       will-change: transform, opacity;
+      contain: paint;
     }
 
     @keyframes tabSlideForward {
