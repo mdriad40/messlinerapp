@@ -392,7 +392,7 @@ window.Messliner = window.DineDesk = {
 
     const userData = data.userData;
     this.state.actualRole = userData.role || 'user';
-    const viewMode = sessionStorage.getItem('viewMode');
+    const viewMode = localStorage.getItem('viewMode') || sessionStorage.getItem('viewMode');
     if (this.state.actualRole === 'admin' && viewMode === 'user') {
       this.state.role = 'user';
     } else {

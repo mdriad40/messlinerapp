@@ -1814,9 +1814,12 @@ const HistoryModule = {
    * Toggle between admin and user views (for admins only)
    */
   toggleViewMode() {
-    const currentMode = sessionStorage.getItem('viewMode') || 'admin';
+    const currentMode = localStorage.getItem('viewMode') || sessionStorage.getItem('viewMode') || 'admin';
     const nextMode = currentMode === 'user' ? 'admin' : 'user';
     sessionStorage.setItem('viewMode', nextMode);
+    try {
+      localStorage.setItem('viewMode', nextMode);
+    } catch (_) {}
 
     const loader = document.getElementById('pageLoader');
     if (loader) {
@@ -1825,8 +1828,12 @@ const HistoryModule = {
     }
 
     setTimeout(() => {
-      window.location.reload();
-    }, 600);
+      if (window.SwipeRefreshChannel && typeof window.SwipeRefreshChannel.postMessage === 'function') {
+        window.SwipeRefreshChannel.postMessage('refresh');
+      } else {
+        window.location.reload();
+      }
+    }, 250);
   },
 
   /**
