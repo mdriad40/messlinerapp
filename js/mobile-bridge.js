@@ -100,9 +100,9 @@
   });
 
   // ========================================================
-  // 3. REAL-TIME NATIVE STATUS BAR COLOR SYNC
+  // 3. REAL-TIME NATIVE STATUS BAR & FOOTER COLOR SYNC
   // ========================================================
-  let lastSentColor = null;
+  let lastSentPayload = null;
   let rafId = null;
 
   function rgbToHex(rgbStr) {
@@ -126,9 +126,20 @@
 
   function detectTopColor() {
     try {
-      const sampleX = Math.floor(window.innerWidth / 2);
-      const sampleY = 8;
+      const isDark = document.body && document.body.classList.contains('dark-theme');
+      if (isDark) {
+        return '#0F172A';
+      }
 
+      // If Auth Page is visible on landing
+      const authPane = document.querySelector('.auth-left-pane, #authPage');
+      if (authPane && !isDashboardPage && window.getComputedStyle(authPane).display !== 'none') {
+        return '#064E3B';
+      }
+
+      // Check header or element at top
+      const sampleX = Math.floor(window.innerWidth / 2);
+      const sampleY = 12;
       let elem = document.elementFromPoint(sampleX, sampleY);
 
       while (elem && elem !== document.documentElement) {
@@ -139,7 +150,9 @@
           return '#064E3B'; // Emerald Green Auth Banner
         }
         if (elem.classList.contains('top-header')) {
-          return '#FFFFFF'; // Clean White Header
+          const bg = rgbToHex(window.getComputedStyle(elem).backgroundColor);
+          if (bg && bg !== 'transparent') return bg;
+          return '#FFFFFF';
         }
 
         const style = window.getComputedStyle(elem);
@@ -153,7 +166,7 @@
 
       if (document.body) {
         const bodyBg = rgbToHex(window.getComputedStyle(document.body).backgroundColor);
-        if (bodyBg) return bodyBg;
+        if (bodyBg && bodyBg !== 'transparent') return bodyBg;
       }
 
       const metaTheme = document.querySelector('meta[name="theme-color"]');
@@ -162,12 +175,27 @@
       }
     } catch (_) { }
 
-    return '#064E3B'; // Messliner default brand green
+    return isDashboardPage ? '#FFFFFF' : '#064E3B';
   }
 
-  function sendColor(hexColor) {
-    if (!hexColor || hexColor === lastSentColor) return;
-    lastSentColor = hexColor;
+  function detectBottomColor() {
+    try {
+      const isDark = document.body && document.body.classList.contains('dark-theme');
+      if (isDark) {
+        return '#0F172A';
+      }
+      return '#FFFFFF';
+    } catch (_) { }
+    return '#FFFFFF';
+  }
+
+  function sendColor(topHex, bottomHex) {
+    if (!topHex) topHex = isDashboardPage ? '#FFFFFF' : '#064E3B';
+    if (!bottomHex) bottomHex = '#FFFFFF';
+
+    const payloadKey = `${topHex}_${bottomHex}`;
+    if (payloadKey === lastSentPayload) return;
+    lastSentPayload = payloadKey;
 
     let meta = document.querySelector('meta[name="theme-color"]');
     if (!meta) {
@@ -175,11 +203,16 @@
       meta.name = 'theme-color';
       document.head.appendChild(meta);
     }
-    meta.setAttribute('content', hexColor);
+    meta.setAttribute('content', topHex);
+
+    const payload = JSON.stringify({
+      statusBarColor: topHex,
+      navBarColor: bottomHex
+    });
 
     if (window.StatusBarChannel && typeof window.StatusBarChannel.postMessage === 'function') {
       try {
-        window.StatusBarChannel.postMessage(hexColor);
+        window.StatusBarChannel.postMessage(payload);
       } catch (e) { }
     }
   }
@@ -187,14 +220,15 @@
   function sync() {
     if (rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(() => {
-      const color = detectTopColor();
-      sendColor(color);
+      const topColor = detectTopColor();
+      const bottomColor = detectBottomColor();
+      sendColor(topColor, bottomColor);
     });
   }
 
-  window.syncMesslinerStatusBar = function (forcedColor) {
-    if (forcedColor) {
-      sendColor(forcedColor);
+  window.syncMesslinerStatusBar = function (forcedTop, forcedBottom) {
+    if (forcedTop) {
+      sendColor(forcedTop, forcedBottom || '#FFFFFF');
     } else {
       sync();
     }
