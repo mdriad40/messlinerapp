@@ -67,8 +67,13 @@
         }, 220);
       }
 
-      // If on login page and authPage is hidden, show it
-      if (!isDashboardPage) {
+      // If on login page and authPage is hidden, show it; if on dashboard, ensure appShell is visible
+      if (isDashboardPage) {
+        const appShell = document.getElementById('appShell');
+        if (appShell && appShell.style.display === 'none') {
+          appShell.style.display = 'flex';
+        }
+      } else {
         const authPage = document.getElementById('authPage');
         if (authPage && (authPage.style.display === 'none' || !authPage.style.display)) {
           authPage.style.display = 'flex';
@@ -203,7 +208,9 @@
       meta.name = 'theme-color';
       document.head.appendChild(meta);
     }
-    meta.setAttribute('content', topHex);
+    if (meta.getAttribute('content') !== topHex) {
+      meta.setAttribute('content', topHex);
+    }
 
     const payload = JSON.stringify({
       statusBarColor: topHex,
@@ -234,10 +241,18 @@
     }
   };
 
+  let debounceTimer = null;
+  function debouncedSync() {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(sync, 80);
+  }
+
   function checkNativeEnvironment() {
     if (window.StatusBarChannel) {
-      document.documentElement.classList.add('is-native-flutter-app');
-      if (document.body) {
+      if (!document.documentElement.classList.contains('is-native-flutter-app')) {
+        document.documentElement.classList.add('is-native-flutter-app');
+      }
+      if (document.body && !document.body.classList.contains('is-native-flutter-app')) {
         document.body.classList.add('is-native-flutter-app');
       }
     }
@@ -248,7 +263,7 @@
   if (originalPushState) {
     history.pushState = function () {
       originalPushState.apply(this, arguments);
-      setTimeout(sync, 50);
+      debouncedSync();
     };
   }
 
@@ -256,24 +271,24 @@
   if (originalReplaceState) {
     history.replaceState = function () {
       originalReplaceState.apply(this, arguments);
-      setTimeout(sync, 50);
+      debouncedSync();
     };
   }
 
-  window.addEventListener('popstate', () => setTimeout(sync, 50));
-  window.addEventListener('scroll', sync, { passive: true });
-  window.addEventListener('resize', sync, { passive: true });
+  window.addEventListener('popstate', debouncedSync);
+  window.addEventListener('scroll', debouncedSync, { passive: true });
+  window.addEventListener('resize', debouncedSync, { passive: true });
 
   document.addEventListener('DOMContentLoaded', () => {
     checkNativeEnvironment();
     sync();
   });
 
-  // Observe DOM changes (active tab switches in SPA)
+  // Observe DOM changes (active tab switches in SPA) with debounce
   try {
     const observer = new MutationObserver(() => {
       checkNativeEnvironment();
-      sync();
+      debouncedSync();
     });
 
     if (document.body) {
