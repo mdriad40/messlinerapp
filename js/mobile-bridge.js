@@ -410,13 +410,13 @@
           }
           el = el.parentElement;
         }
-        const contentArea = document.querySelector('.content-area') || 
-                            document.querySelector('.dashboard-container') ||
-                            document.querySelector('#appShell');
+        const contentArea = document.querySelector('.content-area') ||
+          document.querySelector('.dashboard-container') ||
+          document.querySelector('#appShell');
         if (contentArea && contentArea.scrollHeight > contentArea.clientHeight) {
           return contentArea.scrollTop;
         }
-      } catch (_) {}
+      } catch (_) { }
       return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
     }
 
@@ -432,7 +432,7 @@
       return getActiveScrollTop(target) <= 2;
     }
 
-    window.addEventListener('touchstart', function(e) {
+    window.addEventListener('touchstart', function (e) {
       if (!ptrEl) injectPtrStylesAndDom();
       if (!canStartPull(e)) {
         isTracking = false;
@@ -445,7 +445,7 @@
       isPulling = false;
     }, { passive: true });
 
-    window.addEventListener('touchmove', function(e) {
+    window.addEventListener('touchmove', function (e) {
       if (!isTracking || isRefreshing || !e.touches || e.touches.length !== 1) return;
       currentY = e.touches[0].clientY;
       const diffY = currentY - startY;
@@ -494,7 +494,7 @@
       }
     }
 
-    window.addEventListener('touchend', function(e) {
+    window.addEventListener('touchend', function (e) {
       if (!isTracking || !isPulling || isRefreshing) {
         cancelPull();
         return;
@@ -512,7 +512,7 @@
         }
 
         if (navigator.vibrate) {
-          try { navigator.vibrate(15); } catch (_) {}
+          try { navigator.vibrate(15); } catch (_) { }
         }
 
         setTimeout(() => {
