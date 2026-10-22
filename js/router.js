@@ -264,6 +264,15 @@ const Router = {
         }, { once: true });
       }
       target.classList.add('active');
+
+      // Instantly restore scroll position synchronously at the moment of activation (zero animation/gliding)
+      if (page !== 'export-slip') {
+        const savedScroll = this.scrollPositions[page] || 0;
+        if (contentArea) {
+          contentArea.scrollTop = savedScroll;
+        }
+        window.scrollTo(0, savedScroll);
+      }
     }
 
     // Toggle active class on body and content-area for AI Assistant
@@ -437,25 +446,12 @@ const Router = {
       this._onPageEnter(page);
     });
 
-    // Restore scroll position for the new page without layout thrashing
+    // Keep scroll position fixed without delayed jump animations
     if (page !== 'export-slip') {
       const savedScroll = this.scrollPositions[page] || 0;
-      if (contentArea) {
+      if (contentArea && contentArea.scrollTop !== savedScroll) {
         contentArea.scrollTop = savedScroll;
       }
-      window.scrollTo(0, savedScroll);
-
-      // Re-apply after layout settles
-      requestAnimationFrame(() => {
-        if (this.currentPage === page && contentArea && contentArea.scrollTop !== savedScroll) {
-          contentArea.scrollTop = savedScroll;
-        }
-      });
-      setTimeout(() => {
-        if (this.currentPage === page && contentArea && contentArea.scrollTop !== savedScroll) {
-          contentArea.scrollTop = savedScroll;
-        }
-      }, 50);
     }
   },
 
