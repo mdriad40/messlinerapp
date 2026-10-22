@@ -60,7 +60,7 @@
   function emergencyDismissLoader() {
     try {
       const loader = document.getElementById('pageLoader');
-      if (loader && loader.style.display !== 'none') {
+      if (loader) {
         loader.classList.add('fade-out');
         setTimeout(() => {
           loader.style.display = 'none';
@@ -70,7 +70,7 @@
       // If on login page and authPage is hidden, show it; if on dashboard, ensure appShell is visible
       if (isDashboardPage) {
         const appShell = document.getElementById('appShell');
-        if (appShell && appShell.style.display === 'none') {
+        if (appShell && (appShell.style.display === 'none' || window.getComputedStyle(appShell).display === 'none')) {
           appShell.style.display = 'flex';
         }
       } else {

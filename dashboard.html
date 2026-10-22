@@ -41,12 +41,16 @@
     })();
   </script>
   <style>
-    /* 0ms Instant Loader Dismiss if cache is available */
-    html.ml-has-cache #pageLoader {
-      opacity: 0 !important;
-      pointer-events: none !important;
-      visibility: hidden !important;
-      display: none !important;
+    /* Seamless Splash Transition Matching Native App - Never leave a blank empty screen */
+    #pageLoader {
+      background: #072B1D !important;
+    }
+    #pageLoader .brand-text {
+      color: #FFFFFF !important;
+    }
+    #pageLoader .spinner {
+      border-color: rgba(255, 255, 255, 0.18) !important;
+      border-top-color: #10B981 !important;
     }
   </style>
 

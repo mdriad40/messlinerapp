@@ -271,7 +271,6 @@ const Router = {
         if (contentArea) {
           contentArea.scrollTop = savedScroll;
         }
-        window.scrollTo(0, savedScroll);
       }
     }
 
@@ -441,10 +440,14 @@ const Router = {
       window.syncMesslinerStatusBar();
     }
 
-    // Trigger page-specific setup and render without blocking the frame
-    requestAnimationFrame(() => {
+    // Trigger page-specific setup and render (immediate on cold boot, non-blocking on tab switch)
+    if (this._initialNav) {
       this._onPageEnter(page);
-    });
+    } else {
+      requestAnimationFrame(() => {
+        this._onPageEnter(page);
+      });
+    }
 
     // Keep scroll position fixed without delayed jump animations
     if (page !== 'export-slip') {
