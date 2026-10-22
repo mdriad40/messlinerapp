@@ -113,6 +113,7 @@ const Router = {
     const contentArea = document.querySelector('.content-area');
     if (contentArea) {
       contentArea.addEventListener('scroll', () => {
+        if (this._isRestoringScroll) return; // Prevent spurious collapse/restoration scroll events from wiping saved positions!
         if (this.currentPage && this.currentPage !== 'export-slip') {
           this.scrollPositions[this.currentPage] = contentArea.scrollTop;
         }
@@ -212,12 +213,15 @@ const Router = {
 
     // Save scroll position of current page before switching (skip export-slip — it uses overflow:hidden)
     const contentArea = document.querySelector('.content-area');
-    if (prevPage && prevPage !== 'export-slip') {
-      const scrollY = (contentArea && typeof contentArea.scrollTop === 'number')
+    if (prevPage && prevPage !== 'export-slip' && contentArea) {
+      const scrollY = (typeof contentArea.scrollTop === 'number')
         ? contentArea.scrollTop
-        : (window.scrollY || document.documentElement.scrollTop || 0);
+        : 0;
       this.scrollPositions[prevPage] = scrollY;
     }
+
+    // Flag that we are restoring scroll so spurious DOM collapse scroll events are ignored
+    this._isRestoringScroll = true;
 
     // Validate page
     const section = document.getElementById(`page-${page}`);
@@ -440,21 +444,33 @@ const Router = {
       window.syncMesslinerStatusBar();
     }
 
-    // Trigger page-specific setup and render (immediate on cold boot, non-blocking on tab switch)
+    const targetScroll = (page !== 'export-slip') ? (this.scrollPositions[page] || 0) : 0;
+
+    // Trigger page-specific setup and render
     if (this._initialNav) {
       this._onPageEnter(page);
-    } else {
-      requestAnimationFrame(() => {
-        this._onPageEnter(page);
-      });
-    }
-
-    // Keep scroll position fixed without delayed jump animations
-    if (page !== 'export-slip') {
-      const savedScroll = this.scrollPositions[page] || 0;
-      if (contentArea && contentArea.scrollTop !== savedScroll) {
-        contentArea.scrollTop = savedScroll;
+      if (contentArea && contentArea.scrollTop !== targetScroll) {
+        contentArea.scrollTop = targetScroll;
       }
+      this._isRestoringScroll = false;
+    } else {
+      this._onPageEnter(page);
+      if (contentArea && contentArea.scrollTop !== targetScroll) {
+        contentArea.scrollTop = targetScroll;
+      }
+
+      // Re-confirm scroll position once layout/DOM settle, then release guard
+      requestAnimationFrame(() => {
+        if (this.currentPage === page && contentArea && contentArea.scrollTop !== targetScroll) {
+          contentArea.scrollTop = targetScroll;
+        }
+        setTimeout(() => {
+          if (this.currentPage === page && contentArea && contentArea.scrollTop !== targetScroll) {
+            contentArea.scrollTop = targetScroll;
+          }
+          this._isRestoringScroll = false;
+        }, 60);
+      });
     }
   },
 
