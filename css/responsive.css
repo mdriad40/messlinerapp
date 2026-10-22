@@ -52,7 +52,7 @@
     overscroll-behavior-y: auto !important;
     overscroll-behavior-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
-    scroll-behavior: auto !important;
+    scroll-behavior: smooth !important;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
     will-change: scroll-position;
@@ -204,7 +204,7 @@
     overflow-y: auto !important;
     overscroll-behavior-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    scroll-behavior: auto !important;
+    scroll-behavior: smooth !important;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
     will-change: scroll-position;
@@ -1421,7 +1421,7 @@
     overflow-y: auto !important;
     overscroll-behavior-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    scroll-behavior: auto !important;
+    scroll-behavior: smooth !important;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
     will-change: scroll-position;
@@ -1449,6 +1449,7 @@
   .profile-text-desktop {
     display: none !important;
   }
+
   .profile-text-mobile {
     display: inline !important;
   }
@@ -2296,6 +2297,7 @@ body:has(#page-notices.active) .header-text-block {
 }
 
 @media (max-width: 768px) {
+
   body:has(#page-mealhistory.active) .top-header .header-right,
   body:has(#page-bazarroster.active) .top-header .header-right,
   body:has(#page-tasks.active) .top-header .header-right,

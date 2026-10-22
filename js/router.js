@@ -113,7 +113,6 @@ const Router = {
     const contentArea = document.querySelector('.content-area');
     if (contentArea) {
       contentArea.addEventListener('scroll', () => {
-        if (this._isRestoringScroll) return; // Prevent spurious collapse/restoration scroll events from wiping saved positions!
         if (this.currentPage && this.currentPage !== 'export-slip') {
           this.scrollPositions[this.currentPage] = contentArea.scrollTop;
         }
@@ -213,15 +212,12 @@ const Router = {
 
     // Save scroll position of current page before switching (skip export-slip — it uses overflow:hidden)
     const contentArea = document.querySelector('.content-area');
-    if (prevPage && prevPage !== 'export-slip' && contentArea) {
-      const scrollY = (typeof contentArea.scrollTop === 'number')
+    if (prevPage && prevPage !== 'export-slip') {
+      const scrollY = (contentArea && typeof contentArea.scrollTop === 'number')
         ? contentArea.scrollTop
-        : 0;
+        : (window.scrollY || document.documentElement.scrollTop || 0);
       this.scrollPositions[prevPage] = scrollY;
     }
-
-    // Flag that we are restoring scroll so spurious DOM collapse scroll events are ignored
-    this._isRestoringScroll = true;
 
     // Validate page
     const section = document.getElementById(`page-${page}`);
@@ -268,14 +264,6 @@ const Router = {
         }, { once: true });
       }
       target.classList.add('active');
-
-      // Instantly restore scroll position synchronously at the moment of activation (zero animation/gliding)
-      if (page !== 'export-slip') {
-        const savedScroll = this.scrollPositions[page] || 0;
-        if (contentArea) {
-          contentArea.scrollTop = savedScroll;
-        }
-      }
     }
 
     // Toggle active class on body and content-area for AI Assistant
@@ -444,33 +432,30 @@ const Router = {
       window.syncMesslinerStatusBar();
     }
 
-    const targetScroll = (page !== 'export-slip') ? (this.scrollPositions[page] || 0) : 0;
-
-    // Trigger page-specific setup and render
-    if (this._initialNav) {
+    // Trigger page-specific setup and render without blocking the frame
+    requestAnimationFrame(() => {
       this._onPageEnter(page);
-      if (contentArea && contentArea.scrollTop !== targetScroll) {
-        contentArea.scrollTop = targetScroll;
-      }
-      this._isRestoringScroll = false;
-    } else {
-      this._onPageEnter(page);
-      if (contentArea && contentArea.scrollTop !== targetScroll) {
-        contentArea.scrollTop = targetScroll;
-      }
+    });
 
-      // Re-confirm scroll position once layout/DOM settle, then release guard
+    // Restore scroll position for the new page without layout thrashing
+    if (page !== 'export-slip') {
+      const savedScroll = this.scrollPositions[page] || 0;
+      if (contentArea) {
+        contentArea.scrollTop = savedScroll;
+      }
+      window.scrollTo(0, savedScroll);
+
+      // Re-apply after layout settles
       requestAnimationFrame(() => {
-        if (this.currentPage === page && contentArea && contentArea.scrollTop !== targetScroll) {
-          contentArea.scrollTop = targetScroll;
+        if (this.currentPage === page && contentArea && contentArea.scrollTop !== savedScroll) {
+          contentArea.scrollTop = savedScroll;
         }
-        setTimeout(() => {
-          if (this.currentPage === page && contentArea && contentArea.scrollTop !== targetScroll) {
-            contentArea.scrollTop = targetScroll;
-          }
-          this._isRestoringScroll = false;
-        }, 60);
       });
+      setTimeout(() => {
+        if (this.currentPage === page && contentArea && contentArea.scrollTop !== savedScroll) {
+          contentArea.scrollTop = savedScroll;
+        }
+      }, 50);
     }
   },
 

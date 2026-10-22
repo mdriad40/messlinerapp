@@ -60,7 +60,7 @@
   function emergencyDismissLoader() {
     try {
       const loader = document.getElementById('pageLoader');
-      if (loader) {
+      if (loader && loader.style.display !== 'none') {
         loader.classList.add('fade-out');
         setTimeout(() => {
           loader.style.display = 'none';
@@ -70,7 +70,7 @@
       // If on login page and authPage is hidden, show it; if on dashboard, ensure appShell is visible
       if (isDashboardPage) {
         const appShell = document.getElementById('appShell');
-        if (appShell && (appShell.style.display === 'none' || window.getComputedStyle(appShell).display === 'none')) {
+        if (appShell && appShell.style.display === 'none') {
           appShell.style.display = 'flex';
         }
       } else {
@@ -149,8 +149,8 @@
           return '#06281B';
         }
 
-        const isUserRole = document.body.classList.contains('role-user') || 
-                           (window.Messliner && Messliner.state && Messliner.state.role === 'user');
+        const isUserRole = document.body.classList.contains('role-user') ||
+          (window.Messliner && Messliner.state && Messliner.state.role === 'user');
         if (isUserRole && (activeSection.id === 'page-overview' || activeSection.id === 'page-dashboard' || activeSection.id === 'page-mymeal')) {
           return '#06281B';
         }

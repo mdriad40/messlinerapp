@@ -408,7 +408,7 @@
   overscroll-behavior-y: auto !important;
   overscroll-behavior-x: hidden !important;
   -webkit-overflow-scrolling: touch !important;
-  scroll-behavior: auto !important;
+  scroll-behavior: smooth !important;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   will-change: scroll-position;
