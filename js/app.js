@@ -357,15 +357,36 @@ window.Messliner = window.DineDesk = {
 
   /**
    * Fast loader dismissal with smooth CSS fade-out
+   * On mobile member panel, guarantees at least 1.5s shimmer skeleton preview on reload
    */
   _dismissLoaderFast() {
     const loaderEl = document.getElementById('pageLoader');
-    if (loaderEl && loaderEl.style.display !== 'none') {
-      loaderEl.classList.add('fade-out');
-      setTimeout(() => {
-        loaderEl.style.display = 'none';
-      }, 200);
-    }
+    if (!loaderEl || loaderEl.style.display === 'none') return;
+    if (this._loaderDismissing) return;
+
+    const isMobile = window.innerWidth <= 768;
+    let isMember = true;
+    if (this.state && this.state.role === 'admin') isMember = false;
+    if (document.documentElement.classList.contains('ml-is-admin') || document.body.classList.contains('role-admin')) isMember = false;
+
+    // Minimum display time on reload for mobile member shimmer: 1.5 seconds (1500ms)
+    const minDuration = (isMobile && isMember) ? 1500 : 0;
+    const startTime = window.__ML_LOAD_START_TIME || Date.now();
+    const elapsed = Date.now() - startTime;
+    const remainingDelay = Math.max(0, minDuration - elapsed);
+
+    this._loaderDismissing = true;
+    setTimeout(() => {
+      if (loaderEl && loaderEl.style.display !== 'none') {
+        loaderEl.classList.add('fade-out');
+        setTimeout(() => {
+          loaderEl.style.display = 'none';
+          this._loaderDismissing = false;
+        }, 220);
+      } else {
+        this._loaderDismissing = false;
+      }
+    }, remainingDelay);
   },
 
   /**

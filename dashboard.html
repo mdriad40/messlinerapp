@@ -52,103 +52,45 @@
           }
         }
 
-        const _rawHash = (window.location.hash || '').replace('#', '').trim().toLowerCase();
-        let _savedPage = '';
-        try { _savedPage = (sessionStorage.getItem('ml_current_page') || '').trim().toLowerCase(); } catch (_) { }
-        const _bootPage = _rawHash || _savedPage;
-        const _diningSubpages = ['mealchart', 'bazar', 'summary', 'fridaymeal'];
-        const _isDiningSubpage = _diningSubpages.includes(_bootPage);
-
-        if (_isDiningSubpage) {
-          document.documentElement.classList.add('ml-dining-subpage-boot', 'ml-subpage-' + _bootPage);
+        window.__ML_LOAD_START_TIME = Date.now();
+        const _hash = (window.location.hash || '').replace('#', '').toLowerCase();
+        if (['mealchart', 'bazar', 'bazarhistory', 'summary', 'fridaymeal', 'dining'].includes(_hash)) {
+          document.documentElement.classList.add('ml-loader-dining');
         }
-
-        const _now = new Date();
-        const _mNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        const _mName = _mNames[_now.getMonth()];
-        const _yr = _now.getFullYear();
-        const _dy = String(_now.getDate()).padStart(2, '0');
-        document.addEventListener('DOMContentLoaded', () => {
-          const setTxt = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-          setTxt('bazarHistoryMonthValue', _mName);
-          setTxt('bazarHistoryYearValue', _yr);
-          setTxt('mealChartDayValue', _dy);
-          setTxt('mealChartMonthValue', _mName);
-          setTxt('mealChartYearValue', _yr);
-          setTxt('mealChartDetailsDate', `${_dy} ${_mName} ${_yr}`);
-          setTxt('summaryMonthValue', _mName);
-          setTxt('summaryYearValue', _yr);
-          setTxt('summaryMonthLabel', `${_mName} ${_yr}`);
-          setTxt('fridayPageMonthValue', _mName);
-          setTxt('fridayPageYearValue', _yr);
-
-          if (_isDiningSubpage) {
-            document.body.classList.add('dining-subpage-active');
-            const titles = {
-              mealchart: 'Meal Chart',
-              bazar: 'Bazar',
-              summary: 'Summary',
-              fridaymeal: "Friday Meal's"
-            };
-            const titleContainer = document.getElementById('headerTitleContainer');
-            if (titleContainer) titleContainer.style.setProperty('display', 'flex', 'important');
-            const searchBar = document.querySelector('.header-search-bar');
-            if (searchBar) searchBar.style.setProperty('display', 'none', 'important');
-            const greetingEl = document.getElementById('headerGreeting');
-            if (greetingEl) greetingEl.style.display = 'none';
-            const headerTitle = document.getElementById('headerTitle');
-            if (headerTitle) headerTitle.textContent = titles[_bootPage] || 'Meal Chart';
-            const backBtn = document.getElementById('headerBackBtn');
-            if (backBtn) backBtn.style.display = 'inline-flex';
+        const _viewMode = localStorage.getItem('viewMode') || sessionStorage.getItem('viewMode');
+        let _isAdmin = false;
+        try {
+          const _rawToken = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
+          const _em = _rawToken ? JSON.parse(_rawToken)?.user?.email : null;
+          if (_em) {
+            const _cd = localStorage.getItem('ml_cache_v2_' + _em.toLowerCase().replace(/[\.\$#\[\]\/@]/g, '_'));
+            if (_cd && JSON.parse(_cd)?.userData?.role === 'admin' && _viewMode !== 'user') {
+              _isAdmin = true;
+            }
           }
-        });
+        } catch (_) {}
+        if (_isAdmin) {
+          document.documentElement.classList.add('ml-is-admin');
+        }
       } catch (_) { }
     })();
   </script>
   <style>
-    /* 0ms Instant Loader Dismiss if cache is available */
-    html.ml-has-cache #pageLoader {
+    /* On Desktop or Admin, instant 0ms Loader Dismiss if cache is available */
+    @media (min-width: 769px) {
+      html.ml-has-cache #pageLoader {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+        display: none !important;
+      }
+    }
+    body.role-admin.ml-has-cache #pageLoader,
+    html.ml-is-admin.ml-has-cache #pageLoader {
       opacity: 0 !important;
       pointer-events: none !important;
       visibility: hidden !important;
       display: none !important;
-    }
-
-    /* Dining subpages (Meal Chart, Bazar, Summary, Friday's Meal):
-       When refreshing on these pages, skip universal preloader completely so only shimmer skeleton shows */
-    html.ml-dining-subpage-boot #pageLoader {
-      opacity: 0 !important;
-      pointer-events: none !important;
-      visibility: hidden !important;
-      display: none !important;
-    }
-
-    html.ml-dining-subpage-boot #appShell {
-      display: flex !important;
-    }
-
-    html.ml-dining-subpage-boot #page-dashboard {
-      display: none !important;
-    }
-
-    html.ml-subpage-mealchart #page-mealchart {
-      display: block !important;
-    }
-
-    html.ml-subpage-bazar #page-bazar {
-      display: block !important;
-    }
-
-    html.ml-subpage-bazar #bazarUserViewContainer {
-      display: block !important;
-    }
-
-    html.ml-subpage-summary #page-summary {
-      display: block !important;
-    }
-
-    html.ml-subpage-fridaymeal #page-fridaymeal {
-      display: block !important;
     }
   </style>
 
@@ -975,12 +917,166 @@
 
   <!-- ======== PAGE LOADER ======== -->
   <div id="pageLoader" class="page-loader">
-    <div class="sidebar-brand-icon"
-      style="width:56px;height:56px;display:flex;align-items:center;justify-content:center;">
-      <img src="assets/messLiner-logo.png" alt="Messliner Logo" style="width:48px;height:48px;object-fit:contain;">
+    <!-- Desktop / Admin Spinner Loader -->
+    <div class="loader-desktop-spinner">
+      <div class="sidebar-brand-icon"
+        style="width:56px;height:56px;display:flex;align-items:center;justify-content:center;">
+        <img src="assets/messLiner-logo.png" alt="Messliner Logo" style="width:48px;height:48px;object-fit:contain;">
+      </div>
+      <span class="brand-text">Messliner</span>
+      <div class="spinner" style="margin-top:8px;"></div>
     </div>
-    <span class="brand-text">Messliner</span>
-    <div class="spinner" style="margin-top:8px;"></div>
+
+    <!-- Mobile Member Shimmer Skeleton Preloader (YouTube / Facebook App Style) -->
+    <div class="loader-mobile-shimmer">
+      <!-- VIEW A: Home / Dashboard Shimmer View -->
+      <div class="shimmer-view-home">
+        <!-- Top Navigation / Greeting Bar -->
+        <div class="mshimmer-topbar">
+          <div class="mshimmer-circle" style="width:42px;height:42px;"></div>
+          <div class="mshimmer-col" style="flex:1;gap:6px;">
+            <div class="mshimmer-bar" style="width:110px;height:14px;border-radius:6px;"></div>
+            <div class="mshimmer-bar" style="width:160px;height:10px;border-radius:5px;opacity:0.7;"></div>
+          </div>
+          <div class="mshimmer-circle" style="width:36px;height:36px;border-radius:10px;"></div>
+        </div>
+
+        <!-- Hero Balance Card -->
+        <div class="mshimmer-card mshimmer-hero-card">
+          <div class="mshimmer-row" style="justify-content:space-between;align-items:center;">
+            <div class="mshimmer-bar" style="width:90px;height:12px;border-radius:6px;"></div>
+            <div class="mshimmer-pill" style="width:65px;height:22px;border-radius:12px;"></div>
+          </div>
+          <div class="mshimmer-bar" style="width:140px;height:32px;border-radius:8px;margin:12px 0 16px;"></div>
+          <div class="mshimmer-row" style="gap:10px;">
+            <div class="mshimmer-card-mini" style="flex:1;height:50px;border-radius:10px;"></div>
+            <div class="mshimmer-card-mini" style="flex:1;height:50px;border-radius:10px;"></div>
+          </div>
+        </div>
+
+        <!-- Meal Quick Toggle Pills -->
+        <div class="mshimmer-card" style="padding:14px;border-radius:14px;">
+          <div class="mshimmer-row" style="justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div class="mshimmer-bar" style="width:120px;height:14px;border-radius:6px;"></div>
+            <div class="mshimmer-bar" style="width:50px;height:12px;border-radius:6px;"></div>
+          </div>
+          <div class="mshimmer-row" style="gap:8px;">
+            <div class="mshimmer-pill" style="flex:1;height:38px;border-radius:10px;"></div>
+            <div class="mshimmer-pill" style="flex:1;height:38px;border-radius:10px;"></div>
+            <div class="mshimmer-pill" style="flex:1;height:38px;border-radius:10px;"></div>
+          </div>
+        </div>
+
+        <!-- Quick Action / Stats 4-Grid -->
+        <div class="mshimmer-grid-2x2">
+          <div class="mshimmer-card" style="height:88px;border-radius:14px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;">
+            <div class="mshimmer-circle" style="width:32px;height:32px;border-radius:8px;"></div>
+            <div class="mshimmer-bar" style="width:70%;height:12px;border-radius:5px;"></div>
+          </div>
+          <div class="mshimmer-card" style="height:88px;border-radius:14px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;">
+            <div class="mshimmer-circle" style="width:32px;height:32px;border-radius:8px;"></div>
+            <div class="mshimmer-bar" style="width:65%;height:12px;border-radius:5px;"></div>
+          </div>
+          <div class="mshimmer-card" style="height:88px;border-radius:14px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;">
+            <div class="mshimmer-circle" style="width:32px;height:32px;border-radius:8px;"></div>
+            <div class="mshimmer-bar" style="width:80%;height:12px;border-radius:5px;"></div>
+          </div>
+          <div class="mshimmer-card" style="height:88px;border-radius:14px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;">
+            <div class="mshimmer-circle" style="width:32px;height:32px;border-radius:8px;"></div>
+            <div class="mshimmer-bar" style="width:60%;height:12px;border-radius:5px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW B: Dining / Subpage Shimmer View -->
+      <div class="shimmer-view-dining">
+        <!-- Dining Top Header -->
+        <div class="mshimmer-topbar">
+          <div class="mshimmer-circle" style="width:38px;height:38px;border-radius:10px;"></div>
+          <div class="mshimmer-bar" style="width:130px;height:18px;border-radius:6px;"></div>
+          <div class="mshimmer-circle" style="width:38px;height:38px;border-radius:10px;"></div>
+        </div>
+
+        <!-- Dropdowns / Selector Bar -->
+        <div class="mshimmer-row" style="gap:8px;margin-bottom:12px;">
+          <div class="mshimmer-pill" style="flex:1;height:38px;border-radius:10px;"></div>
+          <div class="mshimmer-pill" style="flex:1.2;height:38px;border-radius:10px;"></div>
+          <div class="mshimmer-pill" style="flex:1;height:38px;border-radius:10px;"></div>
+        </div>
+
+        <!-- Banner Card -->
+        <div class="mshimmer-card" style="padding:16px;border-radius:14px;margin-bottom:14px;">
+          <div class="mshimmer-row" style="justify-content:space-between;align-items:center;">
+            <div class="mshimmer-bar" style="width:100px;height:12px;border-radius:5px;"></div>
+            <div class="mshimmer-bar" style="width:80px;height:24px;border-radius:8px;"></div>
+          </div>
+        </div>
+
+        <!-- List / Table Skeleton Rows -->
+        <div class="mshimmer-card" style="padding:12px;border-radius:14px;display:flex;flex-direction:column;gap:12px;">
+          <div class="mshimmer-row" style="align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.04);">
+            <div class="mshimmer-circle" style="width:38px;height:38px;border-radius:10px;flex-shrink:0;"></div>
+            <div class="mshimmer-col" style="flex:1;gap:6px;">
+              <div class="mshimmer-bar" style="width:50%;height:14px;border-radius:5px;"></div>
+              <div class="mshimmer-bar" style="width:30%;height:10px;border-radius:4px;opacity:0.6;"></div>
+            </div>
+            <div class="mshimmer-bar" style="width:45px;height:16px;border-radius:6px;"></div>
+          </div>
+          <div class="mshimmer-row" style="align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.04);">
+            <div class="mshimmer-circle" style="width:38px;height:38px;border-radius:10px;flex-shrink:0;"></div>
+            <div class="mshimmer-col" style="flex:1;gap:6px;">
+              <div class="mshimmer-bar" style="width:65%;height:14px;border-radius:5px;"></div>
+              <div class="mshimmer-bar" style="width:35%;height:10px;border-radius:4px;opacity:0.6;"></div>
+            </div>
+            <div class="mshimmer-bar" style="width:50px;height:16px;border-radius:6px;"></div>
+          </div>
+          <div class="mshimmer-row" style="align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.04);">
+            <div class="mshimmer-circle" style="width:38px;height:38px;border-radius:10px;flex-shrink:0;"></div>
+            <div class="mshimmer-col" style="flex:1;gap:6px;">
+              <div class="mshimmer-bar" style="width:45%;height:14px;border-radius:5px;"></div>
+              <div class="mshimmer-bar" style="width:25%;height:10px;border-radius:4px;opacity:0.6;"></div>
+            </div>
+            <div class="mshimmer-bar" style="width:40px;height:16px;border-radius:6px;"></div>
+          </div>
+          <div class="mshimmer-row" style="align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.04);">
+            <div class="mshimmer-circle" style="width:38px;height:38px;border-radius:10px;flex-shrink:0;"></div>
+            <div class="mshimmer-col" style="flex:1;gap:6px;">
+              <div class="mshimmer-bar" style="width:55%;height:14px;border-radius:5px;"></div>
+              <div class="mshimmer-bar" style="width:35%;height:10px;border-radius:4px;opacity:0.6;"></div>
+            </div>
+            <div class="mshimmer-bar" style="width:48px;height:16px;border-radius:6px;"></div>
+          </div>
+          <div class="mshimmer-row" style="align-items:center;gap:12px;padding:8px 0;">
+            <div class="mshimmer-circle" style="width:38px;height:38px;border-radius:10px;flex-shrink:0;"></div>
+            <div class="mshimmer-col" style="flex:1;gap:6px;">
+              <div class="mshimmer-bar" style="width:60%;height:14px;border-radius:5px;"></div>
+              <div class="mshimmer-bar" style="width:30%;height:10px;border-radius:4px;opacity:0.6;"></div>
+            </div>
+            <div class="mshimmer-bar" style="width:52px;height:16px;border-radius:6px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Nav Skeleton -->
+      <div class="mshimmer-bottomnav">
+        <div class="mshimmer-bottomnav-item">
+          <div class="mshimmer-circle" style="width:22px;height:22px;border-radius:6px;"></div>
+          <div class="mshimmer-bar" style="width:28px;height:7px;border-radius:4px;"></div>
+        </div>
+        <div class="mshimmer-bottomnav-item">
+          <div class="mshimmer-circle" style="width:22px;height:22px;border-radius:6px;"></div>
+          <div class="mshimmer-bar" style="width:28px;height:7px;border-radius:4px;"></div>
+        </div>
+        <div class="mshimmer-bottomnav-item">
+          <div class="mshimmer-circle" style="width:22px;height:22px;border-radius:6px;"></div>
+          <div class="mshimmer-bar" style="width:28px;height:7px;border-radius:4px;"></div>
+        </div>
+        <div class="mshimmer-bottomnav-item">
+          <div class="mshimmer-circle" style="width:22px;height:22px;border-radius:6px;"></div>
+          <div class="mshimmer-bar" style="width:28px;height:7px;border-radius:4px;"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ======== ONBOARDING PAGE ======== -->
@@ -6102,7 +6198,7 @@
               <div class="custom-dropdown" id="mealChartDayDropdown">
                 <button class="custom-dropdown-trigger"
                   onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                  <span id="mealChartDayValue">23</span>
+                  <span id="mealChartDayValue">Loading...</span>
                   <div class="custom-dropdown-arrow"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="mealChartDayMenu"></div>
@@ -6112,7 +6208,7 @@
               <div class="custom-dropdown" id="mealChartMonthDropdown">
                 <button class="custom-dropdown-trigger"
                   onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                  <span id="mealChartMonthValue">October</span>
+                  <span id="mealChartMonthValue">Loading...</span>
                   <div class="custom-dropdown-arrow"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="mealChartMonthMenu"></div>
@@ -6122,7 +6218,7 @@
               <div class="custom-dropdown" id="mealChartYearDropdown">
                 <button class="custom-dropdown-trigger"
                   onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                  <span id="mealChartYearValue">2026</span>
+                  <span id="mealChartYearValue">Loading...</span>
                   <div class="custom-dropdown-arrow"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="mealChartYearMenu"></div>
@@ -6134,7 +6230,7 @@
           <div class="card">
             <div class="meal-logs-header">
               <h3 class="meal-logs-title">Daily Meal Logs</h3>
-              <span id="mealChartDetailsDate" class="meal-logs-date-badge">23 October 2026</span>
+              <span id="mealChartDetailsDate" class="meal-logs-date-badge">Loading date...</span>
             </div>
             <div class="table-wrapper"
               style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: var(--space-4);">
@@ -6149,22 +6245,46 @@
                 </thead>
                 <tbody id="mealChartDetailsBody">
                   <tr>
-                    <td><div class="bazar-skeleton-line wide"></div></td>
-                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                    <td>
+                      <div class="bazar-skeleton-line wide"></div>
+                    </td>
+                    <td class="text-center">
+                      <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                    </td>
+                    <td class="text-center">
+                      <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                    </td>
+                    <td class="text-center">
+                      <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                    </td>
                   </tr>
                   <tr>
-                    <td><div class="bazar-skeleton-line wide"></div></td>
-                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                    <td>
+                      <div class="bazar-skeleton-line wide"></div>
+                    </td>
+                    <td class="text-center">
+                      <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                    </td>
+                    <td class="text-center">
+                      <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                    </td>
+                    <td class="text-center">
+                      <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                    </td>
                   </tr>
                   <tr>
-                    <td><div class="bazar-skeleton-line wide"></div></td>
-                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                    <td>
+                      <div class="bazar-skeleton-line wide"></div>
+                    </td>
+                    <td class="text-center">
+                      <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                    </td>
+                    <td class="text-center">
+                      <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                    </td>
+                    <td class="text-center">
+                      <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -6189,7 +6309,7 @@
                 <div class="custom-dropdown" id="bazarHistoryMonthDropdown">
                   <button class="custom-dropdown-trigger"
                     onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                    <span id="bazarHistoryMonthValue">October</span>
+                    <span id="bazarHistoryMonthValue">Loading...</span>
                     <div class="custom-dropdown-arrow"></div>
                   </button>
                   <div class="custom-dropdown-menu" id="bazarHistoryMonthMenu"></div>
@@ -6199,7 +6319,7 @@
                 <div class="custom-dropdown" id="bazarHistoryYearDropdown">
                   <button class="custom-dropdown-trigger"
                     onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                    <span id="bazarHistoryYearValue">2026</span>
+                    <span id="bazarHistoryYearValue">Loading...</span>
                     <div class="custom-dropdown-arrow"></div>
                   </button>
                   <div class="custom-dropdown-menu" id="bazarHistoryYearMenu"></div>
@@ -6539,7 +6659,7 @@
               <div class="custom-dropdown summary-dropdown" id="summaryMonthDropdown">
                 <button class="custom-dropdown-trigger"
                   onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                  <span id="summaryMonthValue">October</span>
+                  <span id="summaryMonthValue">Loading...</span>
                   <div class="custom-dropdown-arrow"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="summaryMonthMenu"></div>
@@ -6548,7 +6668,7 @@
               <div class="custom-dropdown summary-dropdown" id="summaryYearDropdown">
                 <button class="custom-dropdown-trigger"
                   onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                  <span id="summaryYearValue">2026</span>
+                  <span id="summaryYearValue">Loading...</span>
                   <div class="custom-dropdown-arrow"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="summaryYearMenu"></div>
@@ -6568,10 +6688,12 @@
               </div>
               <div>
                 <div class="summary-rate-label">Meal Rate</div>
-                <div class="summary-rate-month" id="summaryMonthLabel">October 2026</div>
+                <div class="summary-rate-month" id="summaryMonthLabel">—</div>
               </div>
             </div>
-            <div class="summary-rate-amount" id="summaryMealRate"><div class="summary-rate-skeleton"></div></div>
+            <div class="summary-rate-amount" id="summaryMealRate">
+              <div class="summary-rate-skeleton"></div>
+            </div>
           </div>
 
           <!-- Members Summary Grid -->
@@ -6643,7 +6765,7 @@
                 <button class="custom-dropdown-trigger" style="padding: 10px 8px; gap: 4px; font-size: 0.83rem;"
                   onclick="event.stopPropagation(); document.querySelectorAll('.custom-dropdown').forEach(d => d !== this.parentElement && d.classList.remove('active')); this.parentElement.classList.toggle('active')">
                   <span id="fridayPageWeekValue"
-                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Friday</span>
+                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</span>
                   <div class="custom-dropdown-arrow" style="margin-left: 2px;"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="fridayPageWeekMenu"></div>
@@ -6654,7 +6776,7 @@
                 <button class="custom-dropdown-trigger" style="padding: 10px 8px; gap: 4px; font-size: 0.83rem;"
                   onclick="event.stopPropagation(); document.querySelectorAll('.custom-dropdown').forEach(d => d !== this.parentElement && d.classList.remove('active')); this.parentElement.classList.toggle('active')">
                   <span id="fridayPageMonthValue"
-                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">October</span>
+                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</span>
                   <div class="custom-dropdown-arrow" style="margin-left: 2px;"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="fridayPageMonthMenu"></div>
@@ -6665,7 +6787,7 @@
                 <button class="custom-dropdown-trigger" style="padding: 10px 8px; gap: 4px; font-size: 0.83rem;"
                   onclick="event.stopPropagation(); document.querySelectorAll('.custom-dropdown').forEach(d => d !== this.parentElement && d.classList.remove('active')); this.parentElement.classList.toggle('active')">
                   <span id="fridayPageYearValue"
-                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">2026</span>
+                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</span>
                   <div class="custom-dropdown-arrow" style="margin-left: 2px;"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="fridayPageYearMenu"></div>
@@ -6718,19 +6840,37 @@
                   </thead>
                   <tbody id="fridayMealChartBody">
                     <tr>
-                      <td style="text-align:left;"><div class="bazar-skeleton-line wide"></div></td>
-                      <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-                      <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div></td>
+                      <td style="text-align:left;">
+                        <div class="bazar-skeleton-line wide"></div>
+                      </td>
+                      <td style="text-align:center;">
+                        <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                      </td>
+                      <td style="text-align:center;">
+                        <div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div>
+                      </td>
                     </tr>
                     <tr>
-                      <td style="text-align:left;"><div class="bazar-skeleton-line wide"></div></td>
-                      <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-                      <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div></td>
+                      <td style="text-align:left;">
+                        <div class="bazar-skeleton-line wide"></div>
+                      </td>
+                      <td style="text-align:center;">
+                        <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                      </td>
+                      <td style="text-align:center;">
+                        <div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div>
+                      </td>
                     </tr>
                     <tr>
-                      <td style="text-align:left;"><div class="bazar-skeleton-line wide"></div></td>
-                      <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-                      <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div></td>
+                      <td style="text-align:left;">
+                        <div class="bazar-skeleton-line wide"></div>
+                      </td>
+                      <td style="text-align:center;">
+                        <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                      </td>
+                      <td style="text-align:center;">
+                        <div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
