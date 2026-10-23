@@ -1690,13 +1690,13 @@ textarea.form-input {
   .mshimmer-hero-banner {
     background: linear-gradient(160deg, #06281b 0%, #0d3b26 50%, #051a12 100%);
     border-radius: 0 0 28px 28px;
-    padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 20px 16px;
+    padding: 16px 16px 18px 16px !important;
     width: 100%;
     box-sizing: border-box;
     box-shadow: 0 16px 36px -8px rgba(4, 32, 22, 0.4);
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    margin-bottom: 0;
   }
 
   .mshimmer-user-topbar {
@@ -1704,6 +1704,9 @@ textarea.form-input {
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    margin-bottom: 14px;
+    padding: 2px 0;
+    box-sizing: border-box;
   }
 
   .mshimmer-hero-inner-card {

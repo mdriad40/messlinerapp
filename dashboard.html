@@ -951,30 +951,54 @@
 
           <!-- Hero Balance Card (translucent green glass card) -->
           <div class="mshimmer-hero-inner-card">
-            <!-- Top tag row -->
-            <div class="mshimmer-row" style="justify-content:space-between;align-items:center;">
+            <!-- Card Top Header (Tag left, Mode pill right) -->
+            <div class="mshimmer-row" style="justify-content:space-between;align-items:center;margin-bottom:8px;">
               <div class="mshimmer-pill" style="width:130px;height:18px;border-radius:10px;"></div>
-              <div class="mshimmer-pill" style="width:75px;height:20px;border-radius:10px;"></div>
+              <div class="mshimmer-pill" style="width:75px;height:22px;border-radius:20px;"></div>
             </div>
-            <!-- Main Hero Big Number -->
-            <div style="margin:12px 0 16px;">
-              <div class="mshimmer-bar" style="width:145px;height:34px;border-radius:8px;"></div>
+            <!-- Main Hero Big Number (My Balance) -->
+            <div style="margin:6px 0 16px 0;">
+              <div class="mshimmer-bar" style="width:140px;height:36px;border-radius:8px;"></div>
             </div>
-            <!-- Unified 3-Column Stats Shelf with thin dividers -->
-            <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid rgba(255,255,255,0.12);">
-              <div class="mshimmer-col" style="flex:1;gap:5px;align-items:center;">
-                <div class="mshimmer-bar" style="width:48px;height:9px;border-radius:4px;"></div>
-                <div class="mshimmer-bar" style="width:56px;height:14px;border-radius:5px;"></div>
+            <!-- Unified 6-Metric Stats Shelf (2 Rows with dividers, matching real dashboardStats) -->
+            <div style="display:flex;flex-direction:column;width:100%;">
+              <!-- Shelf Row 1: Deposit | My Meal | Meal Cost -->
+              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                <div class="mshimmer-col" style="flex:1;gap:3px;align-items:center;">
+                  <div class="mshimmer-bar" style="width:46px;height:10px;border-radius:4px;"></div>
+                  <div class="mshimmer-bar" style="width:58px;height:15px;border-radius:5px;"></div>
+                </div>
+                <div style="width:1px;height:28px;background:rgba(255,255,255,0.14);"></div>
+                <div class="mshimmer-col" style="flex:1;gap:3px;align-items:center;">
+                  <div class="mshimmer-bar" style="width:46px;height:10px;border-radius:4px;"></div>
+                  <div class="mshimmer-bar" style="width:58px;height:15px;border-radius:5px;"></div>
+                </div>
+                <div style="width:1px;height:28px;background:rgba(255,255,255,0.14);"></div>
+                <div class="mshimmer-col" style="flex:1;gap:3px;align-items:center;">
+                  <div class="mshimmer-bar" style="width:46px;height:10px;border-radius:4px;"></div>
+                  <div class="mshimmer-bar" style="width:58px;height:15px;border-radius:5px;"></div>
+                </div>
               </div>
-              <div style="width:1px;height:26px;background:rgba(255,255,255,0.12);"></div>
-              <div class="mshimmer-col" style="flex:1;gap:5px;align-items:center;">
-                <div class="mshimmer-bar" style="width:48px;height:9px;border-radius:4px;"></div>
-                <div class="mshimmer-bar" style="width:56px;height:14px;border-radius:5px;"></div>
-              </div>
-              <div style="width:1px;height:26px;background:rgba(255,255,255,0.12);"></div>
-              <div class="mshimmer-col" style="flex:1;gap:5px;align-items:center;">
-                <div class="mshimmer-bar" style="width:48px;height:9px;border-radius:4px;"></div>
-                <div class="mshimmer-bar" style="width:56px;height:14px;border-radius:5px;"></div>
+
+              <!-- Shelf Horizontal Divider -->
+              <div style="height:1px;width:100%;background:rgba(255,255,255,0.1);margin:10px 0;"></div>
+
+              <!-- Shelf Row 2: Other Cost | Deduction | Meal Rate -->
+              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                <div class="mshimmer-col" style="flex:1;gap:3px;align-items:center;">
+                  <div class="mshimmer-bar" style="width:46px;height:10px;border-radius:4px;"></div>
+                  <div class="mshimmer-bar" style="width:58px;height:15px;border-radius:5px;"></div>
+                </div>
+                <div style="width:1px;height:28px;background:rgba(255,255,255,0.14);"></div>
+                <div class="mshimmer-col" style="flex:1;gap:3px;align-items:center;">
+                  <div class="mshimmer-bar" style="width:46px;height:10px;border-radius:4px;"></div>
+                  <div class="mshimmer-bar" style="width:58px;height:15px;border-radius:5px;"></div>
+                </div>
+                <div style="width:1px;height:28px;background:rgba(255,255,255,0.14);"></div>
+                <div class="mshimmer-col" style="flex:1;gap:3px;align-items:center;">
+                  <div class="mshimmer-bar" style="width:46px;height:10px;border-radius:4px;"></div>
+                  <div class="mshimmer-bar" style="width:58px;height:15px;border-radius:5px;"></div>
+                </div>
               </div>
             </div>
           </div>
