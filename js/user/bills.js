@@ -19,11 +19,14 @@ const UserBillsModule = {
   selectedBillId: null,
   selectedPayBillMethod: 'cash',
 
+  readyPromise: null,
+  _resolveReady: null,
+
   /**
    * Preset category icons matching admin ledger
    */
   categoryIcons: {
-    cook: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>`,
+    cook: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="1" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>`,
     wifi: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`,
     electricity: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
     water: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`,
@@ -53,6 +56,10 @@ const UserBillsModule = {
     this.userId = userId || this.getUserId();
     this.currentCycle = Utils.currentMonth();
 
+    if (!this.readyPromise) {
+      this.readyPromise = new Promise(res => { this._resolveReady = res; });
+    }
+
     if (initialData?.bills) {
       this.bills = initialData.bills;
     }
@@ -74,11 +81,14 @@ const UserBillsModule = {
 
     if (!this.diningId) {
       console.warn('[UserBillsModule] No active diningId available during init');
+      if (this._resolveReady) { this._resolveReady(); this._resolveReady = null; }
       return;
     }
 
-    // Fetch historyStartDate if not preloaded
-    this.fetchHistoryStartDate();
+    // Fetch historyStartDate if not preloaded (non-blocking)
+    if (!this.historyStartDate) {
+      this.fetchHistoryStartDate();
+    }
 
     // Close cycle dropdown on outside click
     if (!this._docClickListenerAdded) {
@@ -89,6 +99,16 @@ const UserBillsModule = {
           if (container) container.classList.remove('open');
         }
       });
+    }
+
+    // Synchronously render preloaded/cached data immediately so DOM is complete before shimmer dismisses
+    this.renderOverview();
+    this.renderBills();
+    this.renderHistory();
+
+    if (this._resolveReady && (this.bills && Object.keys(this.bills).length > 0 || this.userDeposits && Object.keys(this.userDeposits).length > 0)) {
+      this._resolveReady();
+      this._resolveReady = null;
     }
 
     // Attach Live Listeners
@@ -119,6 +139,7 @@ const UserBillsModule = {
       this.renderOverview();
       this.renderBills();
       this.renderHistory();
+      if (this._resolveReady) { this._resolveReady(); this._resolveReady = null; }
     });
 
     // 2. Listen to Deposits
@@ -126,6 +147,7 @@ const UserBillsModule = {
       this.userDeposits = snap.val() || {};
       this.renderOverview();
       this.renderHistory();
+      if (this._resolveReady) { this._resolveReady(); this._resolveReady = null; }
     });
 
     // 3. Listen to Payment Requests
@@ -134,6 +156,7 @@ const UserBillsModule = {
       this.renderOverview();
       this.renderBills();
       this.renderHistory();
+      if (this._resolveReady) { this._resolveReady(); this._resolveReady = null; }
     });
 
     // 4. Listen to Meals
@@ -615,45 +638,43 @@ const UserBillsModule = {
     this.userId = this.getUserId();
     this.attachListeners();
 
-    // If paymentRequests are still empty, fetch immediately once
+    const fetchPromises = [];
     if (this.diningId && (!this.paymentRequests || Object.keys(this.paymentRequests).length === 0)) {
-      try {
-        const pSnap = await db.ref(`dinings/${this.diningId}/paymentRequests`).once('value');
-        if (pSnap.exists()) {
-          this.paymentRequests = pSnap.val() || {};
-        }
-      } catch (e) {
-        console.warn('PaymentRequests prefetch notice:', e);
-      }
+      fetchPromises.push(
+        db.ref(`dinings/${this.diningId}/paymentRequests`).once('value').then(pSnap => {
+          if (pSnap.exists()) this.paymentRequests = pSnap.val() || {};
+        }).catch(e => { console.warn('PaymentRequests prefetch notice:', e); })
+      );
     }
 
-    // If paymentMethods are still empty, fetch immediately once
     if (this.diningId && (!this.paymentMethods || Object.keys(this.paymentMethods).length === 0)) {
-      try {
-        const pmSnap = await db.ref(`dinings/${this.diningId}/settings/paymentMethods`).once('value');
-        if (pmSnap.exists()) {
-          this.paymentMethods = pmSnap.val() || {};
-        }
-      } catch (e) {
-        console.warn('PaymentMethods prefetch notice:', e);
-      }
+      fetchPromises.push(
+        db.ref(`dinings/${this.diningId}/settings/paymentMethods`).once('value').then(pmSnap => {
+          if (pmSnap.exists()) this.paymentMethods = pmSnap.val() || {};
+        }).catch(e => { console.warn('PaymentMethods prefetch notice:', e); })
+      );
     }
 
-    // If bills are still empty, fetch immediately once
     if (this.diningId && (!this.bills || Object.keys(this.bills).length === 0)) {
-      try {
-        const bSnap = await db.ref(`dinings/${this.diningId}/bills`).once('value');
-        if (bSnap.exists()) {
-          this.bills = bSnap.val() || {};
-        }
-      } catch (e) {
-        console.warn('Bills prefetch notice:', e);
-      }
+      fetchPromises.push(
+        db.ref(`dinings/${this.diningId}/bills`).once('value').then(bSnap => {
+          if (bSnap.exists()) this.bills = bSnap.val() || {};
+        }).catch(e => { console.warn('Bills prefetch notice:', e); })
+      );
+    }
+
+    if (fetchPromises.length > 0) {
+      await Promise.all(fetchPromises);
     }
 
     this.renderOverview();
     this.renderBills();
     this.renderHistory();
+
+    if (this._resolveReady) {
+      this._resolveReady();
+      this._resolveReady = null;
+    }
   },
 
   /**

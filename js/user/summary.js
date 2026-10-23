@@ -13,12 +13,19 @@ const SummaryModule = {
     "July", "August", "September", "October", "November", "December"
   ],
 
+  readyPromise: null,
+  _resolveReady: null,
+
   /**
    * Initialize Summary Module
    */
   init(diningId, userId) {
     this.diningId = diningId;
     this.userId = userId;
+
+    if (!this.readyPromise) {
+      this.readyPromise = new Promise(res => { this._resolveReady = res; });
+    }
 
     const now = new Date();
     this.selectedYear = now.getFullYear();
@@ -164,28 +171,7 @@ const SummaryModule = {
 
     if (!listEl) return;
 
-    // Show skeleton loader for meal rate
-    if (rateValEl) {
-      rateValEl.innerHTML = '<div class="summary-rate-skeleton"></div>';
-    }
-
-    // Show skeleton loader with shimmer lines
-    listEl.innerHTML = `
-      <div class="bazar-skeleton" style="grid-column: 1 / -1;">
-        <div class="bazar-skeleton-card">
-          <div class="bazar-skeleton-line wide"></div>
-          <div class="bazar-skeleton-line narrow"></div>
-        </div>
-        <div class="bazar-skeleton-card">
-          <div class="bazar-skeleton-line wide"></div>
-          <div class="bazar-skeleton-line narrow"></div>
-        </div>
-        <div class="bazar-skeleton-card">
-          <div class="bazar-skeleton-line wide"></div>
-          <div class="bazar-skeleton-line narrow"></div>
-        </div>
-      </div>
-    `;
+    // Cleaned so main pageLoader shimmer handles the display without double-skeleton flicker
 
     const formattedMonth = `${this.selectedYear}-${String(this.selectedMonth).padStart(2, '0')}`;
 
@@ -372,6 +358,11 @@ const SummaryModule = {
           <p>Failed to load monthly summary data.</p>
         </div>
       `;
+    } finally {
+      if (this._resolveReady) {
+        this._resolveReady();
+        this._resolveReady = null;
+      }
     }
   },
 

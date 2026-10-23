@@ -103,9 +103,10 @@ const Router = {
       this._showPage(page);
     });
 
-    // Navigate to initial page from URL hash
+    // Navigate to initial page from URL hash or session
     this._initialNav = true;
-    const initialPage = location.hash.replace('#', '') || 'dashboard';
+    const rawHash = (location.hash || '').replace(/^[#\/]+/, '').split('?')[0].toLowerCase();
+    const initialPage = rawHash || (sessionStorage.getItem('ml_current_page') || '').toLowerCase() || 'dashboard';
     this._showPage(initialPage);
     this._initialNav = false;
 
@@ -263,13 +264,23 @@ const Router = {
       sessionStorage.setItem('ml_current_page', page);
     } catch (_) { }
 
-    document.documentElement.classList.remove('ml-loader-dining', 'ml-loader-ledger', 'ml-loader-profile');
-    if (['mealchart', 'bazar', 'bazarhistory', 'summary', 'fridaymeal', 'dining', 'history', 'mealhistory', 'bazarroster', 'tasks', 'notices'].includes(page)) {
-      document.documentElement.classList.add('ml-loader-dining');
-    } else if (['ledger', 'user-bills', 'bills'].includes(page)) {
-      document.documentElement.classList.add('ml-loader-ledger');
-    } else if (['profile', 'userprofile', 'more', 'settings'].includes(page)) {
-      document.documentElement.classList.add('ml-loader-profile');
+    let targetLoaderClass = null;
+    if (['mealchart', 'fridaymeal'].includes(page)) {
+      targetLoaderClass = 'ml-loader-mealchart';
+    } else if (['bazar', 'bazarhistory', 'summary'].includes(page)) {
+      targetLoaderClass = 'ml-loader-bazar';
+    } else if (['overview', 'dining', 'history', 'mealhistory', 'bazarroster', 'tasks', 'notices', 'meals', 'mymeal', 'export-slip'].includes(page)) {
+      targetLoaderClass = 'ml-loader-dining';
+    } else if (['ledger', 'user-bills', 'bills', 'finance'].includes(page)) {
+      targetLoaderClass = 'ml-loader-ledger';
+    } else if (['profile', 'userprofile', 'more', 'settings', 'help'].includes(page)) {
+      targetLoaderClass = 'ml-loader-profile';
+    }
+
+    const classesToRemove = ['ml-loader-dining', 'ml-loader-ledger', 'ml-loader-profile', 'ml-loader-mealchart', 'ml-loader-bazar'].filter(c => c !== targetLoaderClass);
+    document.documentElement.classList.remove(...classesToRemove);
+    if (targetLoaderClass) {
+      document.documentElement.classList.add(targetLoaderClass);
     }
 
     // Hide all page sections
@@ -468,7 +479,7 @@ const Router = {
         if (contentArea) {
           try {
             contentArea.scrollTo({ top: savedScroll, left: 0, behavior: 'instant' });
-          } catch (_) {}
+          } catch (_) { }
           contentArea.scrollTop = savedScroll;
         }
         try {

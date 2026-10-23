@@ -19,12 +19,19 @@ const BazarHistoryModule = {
     'July', 'August', 'September', 'October', 'November', 'December'
   ],
 
+  readyPromise: null,
+  _resolveReady: null,
+
   /**
    * Initialize Bazar History module
    */
-  async init(diningId, userId) {
+  async init(diningId, userId, initialData) {
     this.diningId = diningId || (window.Messliner && Messliner.state && Messliner.state.diningId);
     this.userId = userId || (window.Messliner && Messliner.state && Messliner.state.userId);
+
+    if (!this.readyPromise) {
+      this.readyPromise = new Promise(res => { this._resolveReady = res; });
+    }
 
     if (!this._initialized) {
       const now = new Date();
@@ -33,36 +40,55 @@ const BazarHistoryModule = {
       this._initialized = true;
     }
 
+    if (initialData?.bazar) {
+      this.rawBazarData = initialData.bazar;
+    }
+    if (initialData?.settings?.historyStartDate) {
+      this.createdDate = new Date(initialData.settings.historyStartDate);
+    } else if (initialData?.info?.createdAt) {
+      this.createdDate = new Date(initialData.info.createdAt);
+    } else if (!this.createdDate) {
+      this.createdDate = new Date(2026, 0, 1);
+    }
+
     // Immediately populate dropdowns synchronously so dates are fixed with zero loading delay
     this.populateYearDropdown();
     this.populateMonthDropdown();
 
-    try {
-      if (this.diningId) {
-        const startRef = await db.ref(`dinings/${this.diningId}/settings/historyStartDate`).once('value');
+    // If we have rawBazarData from initialData, render immediately & resolve ready
+    if (this.rawBazarData) {
+      this.renderMonthData();
+      if (this._resolveReady) {
+        this._resolveReady();
+        this._resolveReady = null;
+      }
+    }
+
+    // Setup Realtime Firebase listener immediately (synchronous / non-blocking)
+    this.setupRealtimeListener();
+
+    // Fetch start date in background if not already provided in initialData
+    if (!initialData?.settings?.historyStartDate && !initialData?.info?.createdAt && this.diningId) {
+      db.ref(`dinings/${this.diningId}/settings/historyStartDate`).once('value').then(startRef => {
         let startDateStr = startRef.val();
         if (startDateStr) {
           this.createdDate = new Date(startDateStr);
+          this.populateYearDropdown();
+          this.populateMonthDropdown();
         } else {
-          const infoSnap = await db.ref(`dinings/${this.diningId}/info/createdAt`).once('value');
-          const createdAt = infoSnap.val();
-          if (createdAt) {
-            this.createdDate = new Date(createdAt);
-          } else {
-            this.createdDate = new Date(2026, 0, 1);
-          }
+          return db.ref(`dinings/${this.diningId}/info/createdAt`).once('value').then(infoSnap => {
+            const createdAt = infoSnap.val();
+            if (createdAt) {
+              this.createdDate = new Date(createdAt);
+              this.populateYearDropdown();
+              this.populateMonthDropdown();
+            }
+          });
         }
-      } else {
-        this.createdDate = new Date(2026, 0, 1);
-      }
-    } catch (e) {
-      console.error('[BazarHistoryModule] Fetch start date error:', e);
-      this.createdDate = new Date(2026, 0, 1);
+      }).catch(e => {
+        console.error('[BazarHistoryModule] Fetch start date error:', e);
+      });
     }
-
-    this.populateYearDropdown();
-    this.populateMonthDropdown();
-    this.setupRealtimeListener();
   },
 
   /**
@@ -72,11 +98,15 @@ const BazarHistoryModule = {
     if (!this.diningId && window.Messliner && Messliner.state) {
       this.diningId = Messliner.state.diningId;
     }
-    if (!this.diningId) return;
+    if (!this.diningId) {
+      if (this._resolveReady) { this._resolveReady(); this._resolveReady = null; }
+      return;
+    }
 
     if (this._listeningDiningId === this.diningId && this._bazarRef) {
       // Already listening to this dining group, render current cached data
       this.renderMonthData();
+      if (this._resolveReady) { this._resolveReady(); this._resolveReady = null; }
       return;
     }
 
@@ -91,8 +121,16 @@ const BazarHistoryModule = {
       this.rawBazarData = snap.val() || {};
       this._lastRenderedHtml = null;
       this.renderMonthData();
+      if (this._resolveReady) {
+        this._resolveReady();
+        this._resolveReady = null;
+      }
     }, err => {
       console.error('[BazarHistoryModule] Realtime error:', err);
+      if (this._resolveReady) {
+        this._resolveReady();
+        this._resolveReady = null;
+      }
     });
   },
 
@@ -187,17 +225,8 @@ const BazarHistoryModule = {
       this.diningId = Messliner.state.diningId;
     }
 
-    // Only show skeleton loader if we have zero cached data (initial fetch before snapshot returns)
+    // If rawBazarData is null, main pageLoader shimmer handles the display cleanly
     if (this.rawBazarData === null) {
-      listEl.innerHTML = `
-        <div class="bazar-skeleton">
-          ${[1, 2, 3].map(() => `
-            <div class="bazar-skeleton-card">
-              <div class="bazar-skeleton-line wide"></div>
-              <div class="bazar-skeleton-line narrow"></div>
-            </div>
-          `).join('')}
-        </div>`;
       return;
     }
 

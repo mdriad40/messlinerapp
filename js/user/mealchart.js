@@ -16,12 +16,19 @@ const MealChartModule = {
     'July', 'August', 'September', 'October', 'November', 'December'
   ],
 
+  readyPromise: null,
+  _resolveReady: null,
+
   /**
    * Initialize Meal Chart
    */
   async init(diningId, userId) {
     this.diningId = diningId;
     this.userId = userId;
+
+    if (!this.readyPromise) {
+      this.readyPromise = new Promise(res => { this._resolveReady = res; });
+    }
 
     // Set default selected date to today (present date)
     const now = new Date();
@@ -60,7 +67,7 @@ const MealChartModule = {
     this.populateYearDropdown();
     this.populateMonthDropdown();
     this.populateDayDropdown();
-    this.loadMonthData();
+    await this.loadMonthData();
   },
 
   /**
@@ -237,28 +244,7 @@ const MealChartModule = {
    * Render shimmer skeleton for meal chart table
    */
   renderSkeleton() {
-    const tbody = document.getElementById('mealChartDetailsBody');
-    if (!tbody) return;
-    tbody.innerHTML = `
-      <tr>
-        <td><div class="bazar-skeleton-line wide"></div></td>
-        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-      </tr>
-      <tr>
-        <td><div class="bazar-skeleton-line wide"></div></td>
-        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-      </tr>
-      <tr>
-        <td><div class="bazar-skeleton-line wide"></div></td>
-        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-      </tr>
-    `;
+    // Kept clean so the main Shimmer Effect handles the preloading without double-flicker
   },
 
   /**
@@ -270,19 +256,16 @@ const MealChartModule = {
     }
     if (!this.diningId) return;
 
-    if (!this._dataLoaded) {
-      this.renderSkeleton();
-    }
-
     const formattedMonth = `${this.selectedYear}-${String(this.selectedMonth).padStart(2, '0')}`;
 
     try {
       const snap = await db.ref(`dinings/${this.diningId}/meals/${formattedMonth}`).once('value');
       this.mealsData = snap.val() || {};
       this._dataLoaded = true;
-      this.renderDailyDetails();
+      await this.renderDailyDetails();
     } catch (e) {
       console.error('[MealChartModule] Load month data error:', e);
+      if (this._resolveReady) { this._resolveReady(); this._resolveReady = null; }
     }
   },
 
@@ -403,6 +386,11 @@ const MealChartModule = {
     } catch (e) {
       console.error('[MealChartModule] Detail render error:', e);
       tbody.innerHTML = `<tr><td colspan="4" class="text-center p-6" style="color:var(--text-tertiary);">Failed to load meal logs.</td></tr>`;
+    } finally {
+      if (this._resolveReady) {
+        this._resolveReady();
+        this._resolveReady = null;
+      }
     }
   },
 

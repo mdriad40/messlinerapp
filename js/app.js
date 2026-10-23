@@ -260,7 +260,11 @@ window.Messliner = window.DineDesk = {
         ]);
       };
 
-      // ── STAGE 1 (CRITICAL PATH): Fetch Home Page & 4 User Tabs essential data ──
+      // Check if user is currently loading directly into a bills/ledger subpage
+      const initialActivePage = (window.Router?.currentPage || (window.location.hash || '').replace(/^[#\/]+/, '').split('?')[0] || sessionStorage.getItem('ml_current_page') || '').toLowerCase();
+      const isBillsPage = ['user-bills', 'bills', 'ledger'].includes(initialActivePage);
+
+      // ── STAGE 1 (CRITICAL PATH): Fetch Home Page & Subpages essential data ──
       const [
         userSnap,
         bazarSnap,
@@ -268,7 +272,9 @@ window.Messliner = window.DineDesk = {
         usersSnap,
         settingsSnap,
         depositsSnap,
-        infoSnap
+        infoSnap,
+        billsSnap,
+        prSnap
       ] = await Promise.all([
         safeFetch(`dinings/${diningId}/users/${userId}`),
         safeFetch(`dinings/${diningId}/bazar`),
@@ -276,7 +282,9 @@ window.Messliner = window.DineDesk = {
         safeFetch(`dinings/${diningId}/users`),
         safeFetch(`dinings/${diningId}/settings`),
         safeFetch(`dinings/${diningId}/deposits`),
-        safeFetch(`dinings/${diningId}/info`)
+        safeFetch(`dinings/${diningId}/info`),
+        isBillsPage ? safeFetch(`dinings/${diningId}/bills`) : Promise.resolve({ val: () => null }),
+        isBillsPage ? safeFetch(`dinings/${diningId}/paymentRequests`) : Promise.resolve({ val: () => null })
       ]);
 
       const freshPayload = {
@@ -288,8 +296,8 @@ window.Messliner = window.DineDesk = {
         settings: settingsSnap.val() || {},
         deposits: depositsSnap.val() || {},
         info: infoSnap.val() || {},
-        bills: {},
-        paymentRequests: {}
+        bills: billsSnap ? (billsSnap.val() || {}) : {},
+        paymentRequests: prSnap ? (prSnap.val() || {}) : {}
       };
 
       if (!freshPayload.userData) {
@@ -316,18 +324,26 @@ window.Messliner = window.DineDesk = {
       this._dismissLoaderFast();
 
       // ── STAGE 2: Non-blocking Background Hydration for Bills & Secondary Modules ──
-      Promise.all([
-        db.ref(`dinings/${diningId}/bills`).once('value'),
-        db.ref(`dinings/${diningId}/paymentRequests`).once('value')
-      ]).then(([billsSnap, prSnap]) => {
-        freshPayload.bills = billsSnap.val() || {};
-        freshPayload.paymentRequests = prSnap.val() || {};
+      const billsHydrationPromise = isBillsPage && billsSnap && prSnap && billsSnap.val() !== null
+        ? Promise.resolve([billsSnap, prSnap])
+        : Promise.all([
+            db.ref(`dinings/${diningId}/bills`).once('value'),
+            db.ref(`dinings/${diningId}/paymentRequests`).once('value')
+          ]);
+
+      billsHydrationPromise.then(([bSnap, pSnap]) => {
+        freshPayload.bills = bSnap.val() || {};
+        freshPayload.paymentRequests = pSnap.val() || {};
         if (window.UserBillsModule) {
           UserBillsModule.bills = freshPayload.bills;
           UserBillsModule.paymentRequests = freshPayload.paymentRequests;
           UserBillsModule.renderOverview();
           UserBillsModule.renderBills();
           UserBillsModule.renderHistory();
+          if (UserBillsModule._resolveReady) {
+            UserBillsModule._resolveReady();
+            UserBillsModule._resolveReady = null;
+          }
         }
         // Save complete payload to cache for subsequent 0.05s loads
         this._saveToCache(cacheKey, freshPayload);
@@ -357,9 +373,10 @@ window.Messliner = window.DineDesk = {
 
   /**
    * Fast loader dismissal with smooth CSS fade-out
-   * On mobile member panel, guarantees at least 1.5s shimmer skeleton preview on reload
+   * On mobile member panel, guarantees at least 1.5s shimmer skeleton preview on reload,
+   * and waits for subpage data (Meal Chart, Bazar, Summary, Friday Meal) to fully render before dismissing
    */
-  _dismissLoaderFast() {
+  async _dismissLoaderFast() {
     const loaderEl = document.getElementById('pageLoader');
     if (!loaderEl) return;
     if (this._loaderDismissing || loaderEl.classList.contains('fade-out')) return;
@@ -375,19 +392,46 @@ window.Messliner = window.DineDesk = {
     const elapsed = Date.now() - startTime;
     const remainingDelay = Math.max(0, minDuration - elapsed);
 
+    // Check if user is currently loading directly into a subpage
+    const activePage = (window.Router?.currentPage || (window.location.hash || '').replace(/^[#\/]+/, '').split('?')[0] || sessionStorage.getItem('ml_current_page') || '').toLowerCase();
+    let subpagePromise = null;
+    if (activePage === 'mealchart' && window.MealChartModule?.readyPromise) {
+      subpagePromise = window.MealChartModule.readyPromise;
+    } else if (activePage === 'fridaymeal' && window.FridayMealPageModule?.readyPromise) {
+      subpagePromise = window.FridayMealPageModule.readyPromise;
+    } else if ((activePage === 'bazar' || activePage === 'bazarhistory') && window.BazarHistoryModule?.readyPromise) {
+      subpagePromise = window.BazarHistoryModule.readyPromise;
+    } else if (activePage === 'summary' && window.SummaryModule?.readyPromise) {
+      subpagePromise = window.SummaryModule.readyPromise;
+    } else if (['user-bills', 'bills', 'ledger'].includes(activePage) && window.UserBillsModule?.readyPromise) {
+      subpagePromise = window.UserBillsModule.readyPromise;
+    }
+
     this._loaderDismissing = true;
-    setTimeout(() => {
-      if (loaderEl) {
-        loaderEl.classList.add('fade-out');
-        try { loaderEl.style.setProperty('display', 'none', 'important'); } catch (_) { loaderEl.style.display = 'none'; }
-        setTimeout(() => {
-          try { loaderEl.style.setProperty('display', 'none', 'important'); } catch (_) { loaderEl.style.display = 'none'; }
-          this._loaderDismissing = false;
-        }, 220);
+
+    // Guaranteed minimum 1.5s delay
+    const delayPromise = new Promise(resolve => setTimeout(resolve, remainingDelay));
+    // Safety timeout: max 2.5s so loader never hangs under poor network
+    const safetyTimeout = new Promise(resolve => setTimeout(resolve, 2500));
+
+    try {
+      if (subpagePromise) {
+        await Promise.all([delayPromise, Promise.race([subpagePromise, safetyTimeout])]);
       } else {
-        this._loaderDismissing = false;
+        await delayPromise;
       }
-    }, remainingDelay);
+    } catch (_) { }
+
+    if (loaderEl) {
+      loaderEl.classList.add('fade-out');
+      try { loaderEl.style.setProperty('display', 'none', 'important'); } catch (_) { loaderEl.style.display = 'none'; }
+      setTimeout(() => {
+        try { loaderEl.style.setProperty('display', 'none', 'important'); } catch (_) { loaderEl.style.display = 'none'; }
+        this._loaderDismissing = false;
+      }, 220);
+    } else {
+      this._loaderDismissing = false;
+    }
   },
 
   /**
@@ -812,7 +856,7 @@ window.Messliner = window.DineDesk = {
     Notifications.initListener(diningId, userId, this.state.userJoinedAt);
     if (window.MealChartModule) MealChartModule.init(diningId, userId);
     if (window.BazarHistoryModule) {
-      BazarHistoryModule.init(diningId, userId);
+      BazarHistoryModule.init(diningId, userId, initialData);
       Messliner.bazarHistory = BazarHistoryModule;
     }
     if (window.SummaryModule) {

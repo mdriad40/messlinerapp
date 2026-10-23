@@ -1678,9 +1678,15 @@ textarea.form-input {
     -webkit-overflow-scrolling: touch;
   }
 
-  .shimmer-view-home,
-  .shimmer-view-dining {
+  .shimmer-view-home {
     display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0;
+  }
+
+  .shimmer-view-dining {
+    display: none;
     flex-direction: column;
     width: 100%;
     gap: 0;
@@ -1690,7 +1696,7 @@ textarea.form-input {
   .mshimmer-hero-banner {
     background: linear-gradient(160deg, #06281b 0%, #0d3b26 50%, #051a12 100%);
     border-radius: 0 0 28px 28px;
-    padding: 16px 16px 18px 16px !important;
+    padding: calc(env(safe-area-inset-top, 0px) + 20px) 16px 26px 16px !important;
     width: 100%;
     box-sizing: border-box;
     box-shadow: 0 16px 36px -8px rgba(4, 32, 22, 0.4);
@@ -1713,7 +1719,7 @@ textarea.form-input {
     background: rgba(255, 255, 255, 0.055);
     border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 20px;
-    padding: 16px 16px 14px 16px;
+    padding: 18px 16px 17px 16px;
     width: 100%;
     box-sizing: border-box;
   }
@@ -1734,40 +1740,43 @@ textarea.form-input {
     box-sizing: border-box;
   }
 
-  .shimmer-view-dining,
   .shimmer-view-ledger,
-  .shimmer-view-profile {
+  .shimmer-view-profile,
+  .shimmer-view-mealchart,
+  .shimmer-view-bazar {
     display: none;
     flex-direction: column;
     gap: 14px;
     width: 100%;
-  }
-
-  .shimmer-view-ledger,
-  .shimmer-view-profile {
     padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 20px 16px;
     box-sizing: border-box;
   }
 
   /* Page-wise Shimmer View Triggers */
-  html.ml-loader-dining .shimmer-view-home {
+  html.ml-loader-dining .shimmer-view-home,
+  html.ml-loader-ledger .shimmer-view-home,
+  html.ml-loader-profile .shimmer-view-home,
+  html.ml-loader-mealchart .shimmer-view-home,
+  html.ml-loader-bazar .shimmer-view-home {
     display: none !important;
   }
   html.ml-loader-dining .shimmer-view-dining {
     display: flex !important;
   }
 
-  html.ml-loader-ledger .shimmer-view-home {
-    display: none !important;
-  }
   html.ml-loader-ledger .shimmer-view-ledger {
     display: flex !important;
   }
 
-  html.ml-loader-profile .shimmer-view-home {
-    display: none !important;
-  }
   html.ml-loader-profile .shimmer-view-profile {
+    display: flex !important;
+  }
+
+  html.ml-loader-mealchart .shimmer-view-mealchart {
+    display: flex !important;
+  }
+
+  html.ml-loader-bazar .shimmer-view-bazar {
     display: flex !important;
   }
 

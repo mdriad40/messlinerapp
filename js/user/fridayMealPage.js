@@ -42,11 +42,18 @@ const FridayMealPageModule = {
 
   createdDate: null,
 
+  readyPromise: null,
+  _resolveReady: null,
+
   /* ─── Init ───────────────────── */
   init(diningId, userId) {
     this.diningId = diningId || window.Messliner?.state?.diningId;
     this.userId = userId || window.Messliner?.state?.userId;
     this.role = window.Messliner?.state?.role || this.role;
+
+    if (!this.readyPromise) {
+      this.readyPromise = new Promise(res => { this._resolveReady = res; });
+    }
 
     const now = new Date();
     this.currentYear = this.currentYear || now.getFullYear();
@@ -98,6 +105,7 @@ const FridayMealPageModule = {
       this._bazarLoaded = true;
       this._summaryLoaded = true;
       this._render();
+      if (this._resolveReady) { this._resolveReady(); this._resolveReady = null; }
       return;
     }
 
@@ -106,6 +114,7 @@ const FridayMealPageModule = {
     // If already listening to this exact dining & month and data is ready, just render
     if (this._currentListenDiningId === this.diningId && this._currentListenMk === mk && this._mealsLoaded) {
       this._render();
+      if (this._resolveReady) { this._resolveReady(); this._resolveReady = null; }
       return;
     }
 
@@ -119,19 +128,27 @@ const FridayMealPageModule = {
     this._bazarLoaded = false;
     this._summaryLoaded = false;
 
-    // Render skeleton while waiting for data
-    this._render();
+    const _checkReady = () => {
+      if (this._mealsLoaded && this._bazarLoaded) {
+        if (this._resolveReady) {
+          this._resolveReady();
+          this._resolveReady = null;
+        }
+      }
+    };
 
     this._mealsRef = db.ref(`dinings/${this.diningId}/fridayMeals/${mk}`);
     this._mealsRef.on('value', (snap) => {
       this.fridayMealsData = snap.val() || {};
       this._mealsLoaded = true;
       this._render();
+      _checkReady();
     }, (err) => {
       console.warn('[FridayMealPage] Meals listener error:', err);
       this.fridayMealsData = {};
       this._mealsLoaded = true;
       this._render();
+      _checkReady();
     });
 
     this._bazarRef = db.ref(`dinings/${this.diningId}/fridayBazar/${mk}`);
@@ -139,11 +156,13 @@ const FridayMealPageModule = {
       this.fridayBazarData = snap.val() || {};
       this._bazarLoaded = true;
       this._render();
+      _checkReady();
     }, (err) => {
       console.warn('[FridayMealPage] Bazar listener error:', err);
       this.fridayBazarData = {};
       this._bazarLoaded = true;
       this._render();
+      _checkReady();
     });
 
     this._summaryRef = db.ref(`dinings/${this.diningId}/fridaySummary/${mk}`);
@@ -191,7 +210,7 @@ const FridayMealPageModule = {
           this.createdDate = new Date(startDateStr);
           this.renderFridaySelector();
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
   },
 
@@ -434,23 +453,7 @@ const FridayMealPageModule = {
 
     // Table
     if (!this._mealsLoaded) {
-      container.innerHTML = `
-        <tr>
-          <td style="text-align:left;"><div class="bazar-skeleton-line wide"></div></td>
-          <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-          <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div></td>
-        </tr>
-        <tr>
-          <td style="text-align:left;"><div class="bazar-skeleton-line wide"></div></td>
-          <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-          <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div></td>
-        </tr>
-        <tr>
-          <td style="text-align:left;"><div class="bazar-skeleton-line wide"></div></td>
-          <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
-          <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div></td>
-        </tr>
-      `;
+      container.innerHTML = '';
       return;
     }
 
@@ -519,18 +522,6 @@ const FridayMealPageModule = {
     if (!container) return;
 
     if (!this._bazarLoaded) {
-      container.innerHTML = `
-        <div class="bazar-skeleton">
-          <div class="bazar-skeleton-card">
-            <div class="bazar-skeleton-line wide"></div>
-            <div class="bazar-skeleton-line narrow"></div>
-          </div>
-          <div class="bazar-skeleton-card">
-            <div class="bazar-skeleton-line wide"></div>
-            <div class="bazar-skeleton-line narrow"></div>
-          </div>
-        </div>
-      `;
       return;
     }
 
@@ -738,25 +729,25 @@ const FridayMealPageModule = {
 
       const dash = Messliner.userDashboard;
       let displayBalanceBefore = myData.balanceBefore; // fallback to stored
-      let displayBalanceAfter  = myData.balanceAfter;  // fallback to stored
+      let displayBalanceAfter = myData.balanceAfter;  // fallback to stored
 
       if (isViewingCurrentMonth && dash) {
         // 1. Compute current live balance (same formula as dashboard renderStats)
-        const mealRate   = Messliner.state.monthlyMealRate || 0;
-        const settings   = dash.settings || {};
-        const rateMode   = settings.rateMode || 'market';
+        const mealRate = Messliner.state.monthlyMealRate || 0;
+        const settings = dash.settings || {};
+        const rateMode = settings.rateMode || 'market';
         const fixedRates = rateMode === 'fixed' ? (settings.fixedRates || null) : null;
-        const mealCost   = Utils.calcMealCost(
+        const mealCost = Utils.calcMealCost(
           mealRate,
           dash.monthlyMeals || 0,
           dash.monthlyMealsBreakdown || null,
           fixedRates
         );
         const currentLiveBalance =
-          (dash.monthlyDeposit    || 0) -
-          mealCost                       -
+          (dash.monthlyDeposit || 0) -
+          mealCost -
           (dash.monthlyOtherCosting || 0) -
-          (dash.monthlyDeduction   || 0);
+          (dash.monthlyDeduction || 0);
 
         // 2. Add back friday_meal deductions for this week AND all later weeks
         //    so we get the balance as it was BEFORE this Friday's deduction.
@@ -771,7 +762,7 @@ const FridayMealPageModule = {
         }
 
         displayBalanceBefore = currentLiveBalance + addBack;
-        displayBalanceAfter  = displayBalanceBefore - Utils.num(myData.deducted);
+        displayBalanceAfter = displayBalanceBefore - Utils.num(myData.deducted);
       }
       // ────────────────────────────────────────────────────────────────────
 
