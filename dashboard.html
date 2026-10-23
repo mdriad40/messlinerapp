@@ -52,6 +52,17 @@
           }
         }
 
+        const _rawHash = (window.location.hash || '').replace('#', '').trim().toLowerCase();
+        let _savedPage = '';
+        try { _savedPage = (sessionStorage.getItem('ml_current_page') || '').trim().toLowerCase(); } catch (_) { }
+        const _bootPage = _rawHash || _savedPage;
+        const _diningSubpages = ['mealchart', 'bazar', 'summary', 'fridaymeal'];
+        const _isDiningSubpage = _diningSubpages.includes(_bootPage);
+
+        if (_isDiningSubpage) {
+          document.documentElement.classList.add('ml-dining-subpage-boot', 'ml-subpage-' + _bootPage);
+        }
+
         const _now = new Date();
         const _mNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         const _mName = _mNames[_now.getMonth()];
@@ -70,6 +81,26 @@
           setTxt('summaryMonthLabel', `${_mName} ${_yr}`);
           setTxt('fridayPageMonthValue', _mName);
           setTxt('fridayPageYearValue', _yr);
+
+          if (_isDiningSubpage) {
+            document.body.classList.add('dining-subpage-active');
+            const titles = {
+              mealchart: 'Meal Chart',
+              bazar: 'Bazar',
+              summary: 'Summary',
+              fridaymeal: "Friday Meal's"
+            };
+            const titleContainer = document.getElementById('headerTitleContainer');
+            if (titleContainer) titleContainer.style.setProperty('display', 'flex', 'important');
+            const searchBar = document.querySelector('.header-search-bar');
+            if (searchBar) searchBar.style.setProperty('display', 'none', 'important');
+            const greetingEl = document.getElementById('headerGreeting');
+            if (greetingEl) greetingEl.style.display = 'none';
+            const headerTitle = document.getElementById('headerTitle');
+            if (headerTitle) headerTitle.textContent = titles[_bootPage] || 'Meal Chart';
+            const backBtn = document.getElementById('headerBackBtn');
+            if (backBtn) backBtn.style.display = 'inline-flex';
+          }
         });
       } catch (_) { }
     })();
@@ -81,6 +112,43 @@
       pointer-events: none !important;
       visibility: hidden !important;
       display: none !important;
+    }
+
+    /* Dining subpages (Meal Chart, Bazar, Summary, Friday's Meal):
+       When refreshing on these pages, skip universal preloader completely so only shimmer skeleton shows */
+    html.ml-dining-subpage-boot #pageLoader {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+      display: none !important;
+    }
+
+    html.ml-dining-subpage-boot #appShell {
+      display: flex !important;
+    }
+
+    html.ml-dining-subpage-boot #page-dashboard {
+      display: none !important;
+    }
+
+    html.ml-subpage-mealchart #page-mealchart {
+      display: block !important;
+    }
+
+    html.ml-subpage-bazar #page-bazar {
+      display: block !important;
+    }
+
+    html.ml-subpage-bazar #bazarUserViewContainer {
+      display: block !important;
+    }
+
+    html.ml-subpage-summary #page-summary {
+      display: block !important;
+    }
+
+    html.ml-subpage-fridaymeal #page-fridaymeal {
+      display: block !important;
     }
   </style>
 

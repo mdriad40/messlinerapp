@@ -109,6 +109,19 @@ const Router = {
     this._showPage(initialPage);
     this._initialNav = false;
 
+    // Clean up temporary boot classes once Router has taken full control of page sections
+    document.documentElement.classList.remove(
+      'ml-dining-subpage-boot',
+      'ml-subpage-mealchart',
+      'ml-subpage-bazar',
+      'ml-subpage-summary',
+      'ml-subpage-fridaymeal'
+    );
+    const pageLoader = document.getElementById('pageLoader');
+    if (pageLoader && ['mealchart', 'bazar', 'summary', 'fridaymeal'].includes(initialPage)) {
+      pageLoader.style.display = 'none';
+    }
+
     // Continuously preserve scroll position of active page
     const contentArea = document.querySelector('.content-area');
     if (contentArea) {
@@ -249,6 +262,9 @@ const Router = {
     const transitionClass = this._getTransitionClass(prevPage, page);
 
     this.currentPage = page;
+    try {
+      sessionStorage.setItem('ml_current_page', page);
+    } catch (_) { }
 
     // Hide all page sections
     document.querySelectorAll('.page-section').forEach(s => {
