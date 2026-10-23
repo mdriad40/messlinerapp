@@ -1671,18 +1671,64 @@ textarea.form-input {
     width: 100%;
     height: 100%;
     box-sizing: border-box;
-    padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px calc(env(safe-area-inset-bottom, 0px) + 68px) 16px;
+    padding: 0 0 calc(env(safe-area-inset-bottom, 0px) + 68px) 0 !important;
     position: relative;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
   }
 
-  .shimmer-view-home {
+  .shimmer-view-home,
+  .shimmer-view-dining {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0;
+  }
+
+  /* Deep Forest Green Hero Banner at Top */
+  .mshimmer-hero-banner {
+    background: linear-gradient(160deg, #06281b 0%, #0d3b26 50%, #051a12 100%);
+    border-radius: 0 0 28px 28px;
+    padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 20px 16px;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 16px 36px -8px rgba(4, 32, 22, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .mshimmer-user-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .mshimmer-hero-inner-card {
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 20px;
+    padding: 16px 16px 14px 16px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .mshimmer-hero-banner .mshimmer-bar,
+  .mshimmer-hero-banner .mshimmer-pill,
+  .mshimmer-hero-banner .mshimmer-circle {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.12) 25%, rgba(255, 255, 255, 0.28) 50%, rgba(255, 255, 255, 0.12) 75%) !important;
+    background-size: 200% 100% !important;
+  }
+
+  .mshimmer-body-content {
+    padding: 14px 16px 20px 16px;
     display: flex;
     flex-direction: column;
     gap: 14px;
     width: 100%;
+    box-sizing: border-box;
   }
 
   .shimmer-view-dining,
@@ -1692,6 +1738,12 @@ textarea.form-input {
     flex-direction: column;
     gap: 14px;
     width: 100%;
+  }
+
+  .shimmer-view-ledger,
+  .shimmer-view-profile {
+    padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 20px 16px;
+    box-sizing: border-box;
   }
 
   /* Page-wise Shimmer View Triggers */
