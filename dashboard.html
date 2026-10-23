@@ -54,7 +54,7 @@
 
         window.__ML_LOAD_START_TIME = Date.now();
         const _hash = (window.location.hash || '').replace('#', '').toLowerCase();
-        if (['mealchart', 'bazar', 'bazarhistory', 'summary', 'fridaymeal', 'dining'].includes(_hash)) {
+        if (['mealchart', 'bazar', 'bazarhistory', 'summary', 'fridaymeal', 'dining', 'history', 'mealhistory', 'bazarroster', 'tasks', 'notices'].includes(_hash)) {
           document.documentElement.classList.add('ml-loader-dining');
         } else if (['ledger', 'user-bills', 'bills'].includes(_hash)) {
           document.documentElement.classList.add('ml-loader-ledger');

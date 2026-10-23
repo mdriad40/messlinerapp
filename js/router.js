@@ -117,10 +117,7 @@ const Router = {
       'ml-subpage-summary',
       'ml-subpage-fridaymeal'
     );
-    const pageLoader = document.getElementById('pageLoader');
-    if (pageLoader && ['mealchart', 'bazar', 'summary', 'fridaymeal'].includes(initialPage)) {
-      pageLoader.style.display = 'none';
-    }
+
 
     // Continuously preserve scroll position of active page
     const contentArea = document.querySelector('.content-area');
@@ -267,7 +264,7 @@ const Router = {
     } catch (_) { }
 
     document.documentElement.classList.remove('ml-loader-dining', 'ml-loader-ledger', 'ml-loader-profile');
-    if (['mealchart', 'bazar', 'bazarhistory', 'summary', 'fridaymeal', 'dining'].includes(page)) {
+    if (['mealchart', 'bazar', 'bazarhistory', 'summary', 'fridaymeal', 'dining', 'history', 'mealhistory', 'bazarroster', 'tasks', 'notices'].includes(page)) {
       document.documentElement.classList.add('ml-loader-dining');
     } else if (['ledger', 'user-bills', 'bills'].includes(page)) {
       document.documentElement.classList.add('ml-loader-ledger');

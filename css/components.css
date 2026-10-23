@@ -1589,9 +1589,10 @@ textarea.form-input {
 }
 
 .page-loader.fade-out {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  display: none !important;
 }
 
 .page-loader .brand-text {
@@ -1646,7 +1647,7 @@ textarea.form-input {
 }
 
 @media (max-width: 768px) {
-  html:not(.ml-is-admin) body:not(.role-admin) .page-loader {
+  html:not(.ml-is-admin) body:not(.role-admin) .page-loader:not(.fade-out) {
     background: #F8FAFC !important;
     padding: 0 !important;
     display: flex !important;

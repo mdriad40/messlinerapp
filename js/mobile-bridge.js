@@ -60,10 +60,11 @@
   function emergencyDismissLoader() {
     try {
       const loader = document.getElementById('pageLoader');
-      if (loader && loader.style.display !== 'none') {
+      if (loader && !loader.classList.contains('fade-out')) {
         loader.classList.add('fade-out');
+        try { loader.style.setProperty('display', 'none', 'important'); } catch (_) { loader.style.display = 'none'; }
         setTimeout(() => {
-          loader.style.display = 'none';
+          try { loader.style.setProperty('display', 'none', 'important'); } catch (_) { loader.style.display = 'none'; }
         }, 220);
       }
 

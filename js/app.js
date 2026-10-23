@@ -361,8 +361,8 @@ window.Messliner = window.DineDesk = {
    */
   _dismissLoaderFast() {
     const loaderEl = document.getElementById('pageLoader');
-    if (!loaderEl || loaderEl.style.display === 'none') return;
-    if (this._loaderDismissing) return;
+    if (!loaderEl) return;
+    if (this._loaderDismissing || loaderEl.classList.contains('fade-out')) return;
 
     const isMobile = window.innerWidth <= 768;
     let isMember = true;
@@ -377,10 +377,11 @@ window.Messliner = window.DineDesk = {
 
     this._loaderDismissing = true;
     setTimeout(() => {
-      if (loaderEl && loaderEl.style.display !== 'none') {
+      if (loaderEl) {
         loaderEl.classList.add('fade-out');
+        try { loaderEl.style.setProperty('display', 'none', 'important'); } catch (_) { loaderEl.style.display = 'none'; }
         setTimeout(() => {
-          loaderEl.style.display = 'none';
+          try { loaderEl.style.setProperty('display', 'none', 'important'); } catch (_) { loaderEl.style.display = 'none'; }
           this._loaderDismissing = false;
         }, 220);
       } else {
