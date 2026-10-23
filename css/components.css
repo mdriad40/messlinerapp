@@ -1684,17 +1684,34 @@ textarea.form-input {
     width: 100%;
   }
 
-  .shimmer-view-dining {
+  .shimmer-view-dining,
+  .shimmer-view-ledger,
+  .shimmer-view-profile {
     display: none;
     flex-direction: column;
     gap: 14px;
     width: 100%;
   }
 
+  /* Page-wise Shimmer View Triggers */
   html.ml-loader-dining .shimmer-view-home {
     display: none !important;
   }
   html.ml-loader-dining .shimmer-view-dining {
+    display: flex !important;
+  }
+
+  html.ml-loader-ledger .shimmer-view-home {
+    display: none !important;
+  }
+  html.ml-loader-ledger .shimmer-view-ledger {
+    display: flex !important;
+  }
+
+  html.ml-loader-profile .shimmer-view-home {
+    display: none !important;
+  }
+  html.ml-loader-profile .shimmer-view-profile {
     display: flex !important;
   }
 

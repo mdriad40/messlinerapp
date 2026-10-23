@@ -266,6 +266,15 @@ const Router = {
       sessionStorage.setItem('ml_current_page', page);
     } catch (_) { }
 
+    document.documentElement.classList.remove('ml-loader-dining', 'ml-loader-ledger', 'ml-loader-profile');
+    if (['mealchart', 'bazar', 'bazarhistory', 'summary', 'fridaymeal', 'dining'].includes(page)) {
+      document.documentElement.classList.add('ml-loader-dining');
+    } else if (['ledger', 'user-bills', 'bills'].includes(page)) {
+      document.documentElement.classList.add('ml-loader-ledger');
+    } else if (['profile', 'userprofile', 'more', 'settings'].includes(page)) {
+      document.documentElement.classList.add('ml-loader-profile');
+    }
+
     // Hide all page sections
     document.querySelectorAll('.page-section').forEach(s => {
       s.classList.remove('active', 'slide-forward', 'slide-backward', 'slide-fade');
