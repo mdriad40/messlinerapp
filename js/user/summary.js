@@ -20,6 +20,15 @@ const SummaryModule = {
     this.diningId = diningId;
     this.userId = userId;
 
+    const now = new Date();
+    this.selectedYear = now.getFullYear();
+    this.selectedMonth = now.getMonth() + 1;
+    this.createdDate = this.createdDate || new Date(2026, 0, 1);
+
+    // Immediately populate dropdowns synchronously so dates are fixed with zero loading delay
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
+
     // Fetch start date/creation date
     Promise.all([
       db.ref(`dinings/${diningId}/settings/historyStartDate`).once('value'),
@@ -155,11 +164,26 @@ const SummaryModule = {
 
     if (!listEl) return;
 
-    // Show skeleton loader
+    // Show skeleton loader for meal rate
+    if (rateValEl) {
+      rateValEl.innerHTML = '<div class="summary-rate-skeleton"></div>';
+    }
+
+    // Show skeleton loader with shimmer lines
     listEl.innerHTML = `
       <div class="bazar-skeleton" style="grid-column: 1 / -1;">
-        <div class="bazar-skeleton-card" style="height:150px; margin-bottom:15px;"></div>
-        <div class="bazar-skeleton-card" style="height:150px; margin-bottom:15px;"></div>
+        <div class="bazar-skeleton-card">
+          <div class="bazar-skeleton-line wide"></div>
+          <div class="bazar-skeleton-line narrow"></div>
+        </div>
+        <div class="bazar-skeleton-card">
+          <div class="bazar-skeleton-line wide"></div>
+          <div class="bazar-skeleton-line narrow"></div>
+        </div>
+        <div class="bazar-skeleton-card">
+          <div class="bazar-skeleton-line wide"></div>
+          <div class="bazar-skeleton-line narrow"></div>
+        </div>
       </div>
     `;
 
@@ -341,6 +365,7 @@ const SummaryModule = {
 
     } catch (e) {
       console.error('[SummaryModule] Load month data error:', e);
+      if (rateValEl) rateValEl.textContent = '৳0';
       listEl.innerHTML = `
         <div class="bazar-empty-state" style="grid-column: 1 / -1;">
           <h3>Error</h3>
@@ -354,6 +379,11 @@ const SummaryModule = {
    * Refresh module
    */
   refresh() {
+    if (!this.diningId && window.Messliner && Messliner.state) {
+      this.diningId = Messliner.state.diningId;
+    }
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
     this.loadMonthData();
   }
 };

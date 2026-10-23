@@ -235,6 +235,9 @@ const UserDashboard = {
     if (this._logsRef) this._logsRef.off();
     if (this._adminLogsRef) this._adminLogsRef.off();
 
+    // Immediately update My Meal tab visibility from existing/cached settings
+    this.updateMyMealVisibility();
+
     // Listen to user data
     this._userRef = db.ref(`dinings/${diningId}/users/${userId}`);
     this._userRef.on('value', (snap) => {
@@ -2897,9 +2900,10 @@ const UserDashboard = {
    * Update visibility of 'My Meal' section and 'Dining Overview' based on manager settings
    */
   updateMyMealVisibility() {
-    const role = Messliner.state.role;
+    const role = (window.Messliner && Messliner.state && Messliner.state.role) || (this.userData && this.userData.role) || 'user';
     const isAdmin = role === 'admin';
-    const showMyMeal = isAdmin && !!this.settings.managerMealEnabled;
+    const s = this.settings || (window.Messliner && Messliner.state && Messliner.state.settings) || {};
+    const showMyMeal = isAdmin && !!s.managerMealEnabled;
 
     const navMyMeal = document.getElementById('navMyMeal');
     const bottomNavMyMeal = document.getElementById('bottomNavMyMeal');

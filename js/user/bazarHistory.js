@@ -33,6 +33,10 @@ const BazarHistoryModule = {
       this._initialized = true;
     }
 
+    // Immediately populate dropdowns synchronously so dates are fixed with zero loading delay
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
+
     try {
       if (this.diningId) {
         const startRef = await db.ref(`dinings/${this.diningId}/settings/historyStartDate`).once('value');

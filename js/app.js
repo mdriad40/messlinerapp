@@ -117,7 +117,7 @@ window.Messliner = window.DineDesk = {
           }
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     if (syncUser && syncUser.email) {
       console.log('[Messliner] Instant Boot from synchronous session:', syncUser.email);
@@ -142,7 +142,7 @@ window.Messliner = window.DineDesk = {
               return;
             }
           }
-        } catch (_) {}
+        } catch (_) { }
 
         // Truly not authenticated — redirect to login
         window.location.replace('index.html');
@@ -167,19 +167,28 @@ window.Messliner = window.DineDesk = {
     console.log('[Messliner] Booting for user:', user.email);
 
     const emailKey = Utils.encodeEmail(user.email);
-    const cacheKey = `ml_cache_v2_${emailKey}`;
+    const urlParams = new URLSearchParams(window.location.search);
+    const impersonateUserId = urlParams.get('impersonate');
+    const cacheKey = impersonateUserId ? `ml_cache_v2_imp_${impersonateUserId}` : `ml_cache_v2_${emailKey}`;
 
     // ── FAST PATH: Instant Cache Hydration (< 50ms) ──
     let hasHydratedFromCache = false;
     try {
-      const cachedRaw = localStorage.getItem(cacheKey);
+      let cachedRaw = null;
+      if (impersonateUserId) {
+        cachedRaw = window.__ML_BOOT_IMP_CACHE ? JSON.stringify(window.__ML_BOOT_IMP_CACHE) : localStorage.getItem(cacheKey);
+      } else {
+        cachedRaw = localStorage.getItem(cacheKey);
+      }
       if (cachedRaw) {
-        const cached = JSON.parse(cachedRaw);
+        const cached = typeof cachedRaw === 'object' ? cachedRaw : JSON.parse(cachedRaw);
         if (cached && cached.mapping && cached.userData) {
-          console.log('[Messliner] Fast Boot: Instant cache hydration in 0.05s...');
-          hasHydratedFromCache = true;
-          this._renderDashboardPayload(cached, true);
-          this._dismissLoaderFast();
+          if (!impersonateUserId || (cached.mapping && cached.mapping.userId === impersonateUserId)) {
+            console.log('[Messliner] Fast Boot: Instant cache hydration in 0.05s...');
+            hasHydratedFromCache = true;
+            this._renderDashboardPayload(cached, true);
+            this._dismissLoaderFast();
+          }
         }
       }
     } catch (e) {
@@ -194,7 +203,7 @@ window.Messliner = window.DineDesk = {
         try {
           const cachedMapRaw = localStorage.getItem(mappingCacheKey);
           if (cachedMapRaw) mapping = JSON.parse(cachedMapRaw);
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // If no cached mapping, fetch it first
@@ -202,16 +211,16 @@ window.Messliner = window.DineDesk = {
         const mappingSnap = await db.ref(`userMappings/emailToDining/${emailKey}`).once('value');
         mapping = mappingSnap.val();
         if (mapping && mapping.diningId) {
-          try { localStorage.setItem(mappingCacheKey, JSON.stringify(mapping)); } catch (_) {}
+          try { localStorage.setItem(mappingCacheKey, JSON.stringify(mapping)); } catch (_) { }
         }
       } else {
         // If cached mapping exists, revalidate in background
         db.ref(`userMappings/emailToDining/${emailKey}`).once('value').then(snap => {
           const freshMap = snap.val();
           if (freshMap && freshMap.diningId) {
-            try { localStorage.setItem(mappingCacheKey, JSON.stringify(freshMap)); } catch (_) {}
+            try { localStorage.setItem(mappingCacheKey, JSON.stringify(freshMap)); } catch (_) { }
           }
-        }).catch(() => {});
+        }).catch(() => { });
       }
 
       if (!mapping || !mapping.diningId) {
@@ -232,8 +241,6 @@ window.Messliner = window.DineDesk = {
 
       // Support impersonation
       let activeUserId = mapping.userId;
-      const urlParams = new URLSearchParams(window.location.search);
-      const impersonateUserId = urlParams.get('impersonate');
       if (impersonateUserId) {
         const targetSnap = await db.ref(`dinings/${mapping.diningId}/users/${impersonateUserId}`).once('value');
         if (targetSnap.exists()) {
@@ -480,7 +487,8 @@ window.Messliner = window.DineDesk = {
     const diningInfo = data.info || {};
     this.state.diningName = diningInfo.name || this.state.diningName || 'Messliner';
     this.state.diningCode = diningInfo.code || this.state.diningCode || '';
-    this._setupUI(userData, diningInfo);
+    this.state.settings = settings;
+    this._setupUI(userData, diningInfo, settings);
     this._initModules(diningId, userId, meals, data);
 
     // ── Step 4b: Inject data directly into UserDashboard ──
@@ -535,6 +543,9 @@ window.Messliner = window.DineDesk = {
     UserDashboard.renderStats();
     UserDashboard.renderMealToggles();
     UserDashboard.renderRecentActivity(diningId);
+    if (typeof UserDashboard.updateMyMealVisibility === 'function') {
+      UserDashboard.updateMyMealVisibility();
+    }
 
     // ── Step 4c: Inject data directly into HistoryModule ──
     HistoryModule.currentUserData = userData;
@@ -542,6 +553,9 @@ window.Messliner = window.DineDesk = {
     HistoryModule.diningInfo = data.info || {};
     HistoryModule.usersMap = allUsers;
     HistoryModule.cachedMeals = meals;
+    if (typeof HistoryModule.applyAiAssistantSettings === 'function') {
+      HistoryModule.applyAiAssistantSettings();
+    }
 
     {
       const uDepositsArr = [];
@@ -611,7 +625,7 @@ window.Messliner = window.DineDesk = {
   /**
    * Setup UI elements (sidebar, header, etc.)
    */
-  _setupUI(userData, diningInfo = null) {
+  _setupUI(userData, diningInfo = null, settings = null) {
     const role = this.state.role;
     const isAdmin = role === 'admin';
     this.state.userName = userData.name || 'User';
@@ -694,6 +708,21 @@ window.Messliner = window.DineDesk = {
     if (billsNavBtn) {
       billsNavBtn.style.display = isAdmin ? 'none' : 'flex';
     }
+
+    // Show/hide AI Assistant nav item based on admin role or dining settings
+    const activeSettings = settings || this.state.settings || (window.HistoryModule && HistoryModule.settings) || {};
+    const isAiEnabled = activeSettings.aiAssistantEnabled !== false;
+    const aiNavBtn = document.getElementById('nav-item-aiassistant');
+    if (aiNavBtn) {
+      aiNavBtn.style.display = (isAdmin || isAiEnabled) ? 'flex' : 'none';
+    }
+
+    // Show/hide My Meal tab for Admin based on managerMealEnabled setting
+    const showMyMeal = isAdmin && !!activeSettings.managerMealEnabled;
+    const navMyMeal = document.getElementById('navMyMeal');
+    const bottomNavMyMeal = document.getElementById('bottomNavMyMeal');
+    if (navMyMeal) navMyMeal.style.display = showMyMeal ? 'flex' : 'none';
+    if (bottomNavMyMeal) bottomNavMyMeal.style.display = showMyMeal ? 'flex' : 'none';
     const bottomOverviewBtn = document.querySelector('.bottom-nav-item[data-page="overview"]');
     if (bottomOverviewBtn) {
       bottomOverviewBtn.style.display = isAdmin ? 'none' : 'flex';
@@ -821,6 +850,35 @@ window.Messliner = window.DineDesk = {
     db.ref(`dinings/${diningId}/bazar`).on('value', () => this._recalcMealRate());
     db.ref(`dinings/${diningId}/meals`).on('value', () => this._recalcMealRate());
     db.ref(`dinings/${diningId}/deposits`).on('value', () => this._recalcDeposits());
+    db.ref(`dinings/${diningId}/settings`).on('value', (snap) => {
+      const freshSettings = snap.val() || {};
+      this.state.settings = freshSettings;
+      const isAdmin = this.state.role === 'admin';
+      const isAiEnabled = freshSettings.aiAssistantEnabled !== false;
+
+      const aiNavBtn = document.getElementById('nav-item-aiassistant');
+      if (aiNavBtn) {
+        aiNavBtn.style.display = (isAdmin || isAiEnabled) ? 'flex' : 'none';
+      }
+
+      if (window.HistoryModule) {
+        HistoryModule.settings = freshSettings;
+        if (typeof HistoryModule.applyAiAssistantSettings === 'function') {
+          HistoryModule.applyAiAssistantSettings();
+        }
+      }
+
+      if (window.UserDashboard) {
+        UserDashboard.settings = freshSettings;
+        if (typeof UserDashboard.updateMyMealVisibility === 'function') {
+          UserDashboard.updateMyMealVisibility();
+        }
+      }
+
+      if (!isAdmin && !isAiEnabled && window.Router && Router.currentPage === 'aiassistant') {
+        Router.navigate('dashboard');
+      }
+    });
   },
 
   /**

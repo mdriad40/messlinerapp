@@ -43,42 +43,15 @@ const FridayMealPageModule = {
   createdDate: null,
 
   /* ─── Init ───────────────────── */
-  async init(diningId, userId) {
-    this.diningId = diningId;
-    this.userId = userId;
-    this.role = Messliner.state.role;
+  init(diningId, userId) {
+    this.diningId = diningId || window.Messliner?.state?.diningId;
+    this.userId = userId || window.Messliner?.state?.userId;
+    this.role = window.Messliner?.state?.role || this.role;
 
     const now = new Date();
-    this.currentYear = now.getFullYear();
-    this.currentMonth = now.getMonth() + 1;
-
-    try {
-      const startRef = await db.ref(`dinings/${this.diningId}/settings/historyStartDate`).once('value');
-      let startDateStr = startRef.val();
-      if (startDateStr) {
-        this.createdDate = new Date(startDateStr);
-      } else {
-        const infoSnap = await db.ref(`dinings/${this.diningId}/info/createdAt`).once('value');
-        const createdAt = infoSnap.val();
-        this.createdDate = createdAt ? new Date(createdAt) : new Date(2026, 0, 1);
-      }
-    } catch (e) {
-      console.error('[FridayMealPageModule] Fetch start date error:', e);
-      this.createdDate = new Date(2026, 0, 1);
-    }
-
-    const createdDate = this.createdDate || new Date(2026, 0, 1);
-    const startYear = createdDate.getFullYear();
-    const endYear = now.getFullYear();
-    if (this.currentYear < startYear) this.currentYear = startYear;
-    if (this.currentYear > endYear) this.currentYear = endYear;
-
-    let startMonth = 1;
-    let endMonth = 12;
-    if (this.currentYear === startYear) startMonth = createdDate.getMonth() + 1;
-    if (this.currentYear === endYear) endMonth = now.getMonth() + 1;
-    if (this.currentMonth < startMonth) this.currentMonth = startMonth;
-    if (this.currentMonth > endMonth) this.currentMonth = endMonth;
+    this.currentYear = this.currentYear || now.getFullYear();
+    this.currentMonth = this.currentMonth || (now.getMonth() + 1);
+    this.createdDate = this.createdDate || new Date(2026, 0, 1);
 
     // Default to closest upcoming/most recent Friday
     const fridayDates = this.getFridayDates(this.currentYear, this.currentMonth);
@@ -89,53 +62,137 @@ const FridayMealPageModule = {
     }
     this.selectedFridayIndex = defaultIdx >= 0 ? defaultIdx : 0;
 
+    // Immediately render Friday selectors synchronously so dates are fixed with zero loading delay
+    this.renderFridaySelector();
     this.activeTab = 'chart';
+
+    // Start listening immediately
     this._listenData();
+
+    // Fetch start date in background without blocking
+    if (this.diningId) {
+      db.ref(`dinings/${this.diningId}/settings/historyStartDate`).once('value').then(startRef => {
+        let startDateStr = startRef.val();
+        if (startDateStr) {
+          this.createdDate = new Date(startDateStr);
+          this.renderFridaySelector();
+        } else {
+          return db.ref(`dinings/${this.diningId}/info/createdAt`).once('value').then(infoSnap => {
+            const createdAt = infoSnap.val();
+            if (createdAt) {
+              this.createdDate = new Date(createdAt);
+              this.renderFridaySelector();
+            }
+          });
+        }
+      }).catch(e => {
+        console.warn('[FridayMealPageModule] Fetch start date error:', e);
+      });
+    }
   },
 
   _listenData() {
+    this.diningId = this.diningId || window.Messliner?.state?.diningId;
+    if (!this.diningId) {
+      this._mealsLoaded = true;
+      this._bazarLoaded = true;
+      this._summaryLoaded = true;
+      this._render();
+      return;
+    }
+
     const mk = this.monthKey(this.currentYear, this.currentMonth);
+
+    // If already listening to this exact dining & month and data is ready, just render
+    if (this._currentListenDiningId === this.diningId && this._currentListenMk === mk && this._mealsLoaded) {
+      this._render();
+      return;
+    }
 
     if (this._mealsRef) this._mealsRef.off();
     if (this._bazarRef) this._bazarRef.off();
     if (this._summaryRef) this._summaryRef.off();
 
+    this._currentListenDiningId = this.diningId;
+    this._currentListenMk = mk;
+    this._mealsLoaded = false;
+    this._bazarLoaded = false;
+    this._summaryLoaded = false;
+
+    // Render skeleton while waiting for data
+    this._render();
+
     this._mealsRef = db.ref(`dinings/${this.diningId}/fridayMeals/${mk}`);
     this._mealsRef.on('value', (snap) => {
       this.fridayMealsData = snap.val() || {};
-      if (Router.currentPage === 'fridaymeal') this._render();
+      this._mealsLoaded = true;
+      this._render();
+    }, (err) => {
+      console.warn('[FridayMealPage] Meals listener error:', err);
+      this.fridayMealsData = {};
+      this._mealsLoaded = true;
+      this._render();
     });
 
     this._bazarRef = db.ref(`dinings/${this.diningId}/fridayBazar/${mk}`);
     this._bazarRef.on('value', (snap) => {
       this.fridayBazarData = snap.val() || {};
-      if (Router.currentPage === 'fridaymeal') this._render();
+      this._bazarLoaded = true;
+      this._render();
+    }, (err) => {
+      console.warn('[FridayMealPage] Bazar listener error:', err);
+      this.fridayBazarData = {};
+      this._bazarLoaded = true;
+      this._render();
     });
 
     this._summaryRef = db.ref(`dinings/${this.diningId}/fridaySummary/${mk}`);
     this._summaryRef.on('value', (snap) => {
       this.fridaySummaryData = snap.val() || {};
-      if (Router.currentPage === 'fridaymeal') this._render();
+      this._summaryLoaded = true;
+      this._render();
+    }, (err) => {
+      console.warn('[FridayMealPage] Summary listener error:', err);
+      this.fridaySummaryData = {};
+      this._summaryLoaded = true;
+      this._render();
     });
   },
 
-  async refresh() {
-    try {
-      const startRef = await db.ref(`dinings/${this.diningId}/settings/historyStartDate`).once('value');
-      let startDateStr = startRef.val();
-      if (startDateStr) {
-        this.createdDate = new Date(startDateStr);
-      } else if (!this.createdDate) {
-        const infoSnap = await db.ref(`dinings/${this.diningId}/info/createdAt`).once('value');
-        const createdAt = infoSnap.val();
-        this.createdDate = createdAt ? new Date(createdAt) : new Date(2026, 0, 1);
+  refresh() {
+    this.diningId = this.diningId || window.Messliner?.state?.diningId;
+    this.userId = this.userId || window.Messliner?.state?.userId;
+    this.role = this.role || window.Messliner?.state?.role;
+
+    const now = new Date();
+    if (!this.currentYear) this.currentYear = now.getFullYear();
+    if (!this.currentMonth) this.currentMonth = now.getMonth() + 1;
+    this.createdDate = this.createdDate || new Date(2026, 0, 1);
+
+    if (this.selectedFridayIndex === undefined || this.selectedFridayIndex === null) {
+      const fridayDates = this.getFridayDates(this.currentYear, this.currentMonth);
+      const todayStr = Utils.today();
+      let defaultIdx = fridayDates.length - 1;
+      for (let i = 0; i < fridayDates.length; i++) {
+        if (fridayDates[i] >= todayStr) { defaultIdx = i; break; }
       }
-    } catch (e) {
-      if (!this.createdDate) this.createdDate = new Date(2026, 0, 1);
+      this.selectedFridayIndex = defaultIdx >= 0 ? defaultIdx : 0;
     }
-    this._listenData();
+
     this.renderFridaySelector();
+    this._listenData();
     this._render();
+
+    // Check start date in background if default
+    if (this.diningId && (!this.createdDate || this.createdDate.getTime() === new Date(2026, 0, 1).getTime())) {
+      db.ref(`dinings/${this.diningId}/settings/historyStartDate`).once('value').then(startRef => {
+        let startDateStr = startRef.val();
+        if (startDateStr) {
+          this.createdDate = new Date(startDateStr);
+          this.renderFridaySelector();
+        }
+      }).catch(() => {});
+    }
   },
 
   /* ─── Tab switching ──────────── */
@@ -294,7 +351,7 @@ const FridayMealPageModule = {
 
     const wk = this.weekKey(this.selectedFridayIndex);
     const mealCounts = this.fridayMealsData[wk] || {};
-    const users = Messliner.users?.users || {};
+    const users = window.UsersModule?.users || Messliner.users?.users || {};
 
     // Charge info
     const bazarEntry = this.fridayBazarData[wk];
@@ -316,8 +373,8 @@ const FridayMealPageModule = {
     }
 
     if (chargeStrip) {
-      // Hide the charge card entirely when no meals are recorded
-      if (totalMeals === 0) {
+      // Hide the charge card entirely when meals not loaded or no meals are recorded
+      if (!this._mealsLoaded || totalMeals === 0) {
         chargeStrip.innerHTML = '';
       } else {
         const plateIconSvg = `<svg width="96" height="96" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -376,6 +433,27 @@ const FridayMealPageModule = {
     }
 
     // Table
+    if (!this._mealsLoaded) {
+      container.innerHTML = `
+        <tr>
+          <td style="text-align:left;"><div class="bazar-skeleton-line wide"></div></td>
+          <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+          <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div></td>
+        </tr>
+        <tr>
+          <td style="text-align:left;"><div class="bazar-skeleton-line wide"></div></td>
+          <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+          <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div></td>
+        </tr>
+        <tr>
+          <td style="text-align:left;"><div class="bazar-skeleton-line wide"></div></td>
+          <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+          <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div></td>
+        </tr>
+      `;
+      return;
+    }
+
     const entries = Object.entries(mealCounts).filter(([, c]) => parseInt(c) > 0);
     if (entries.length === 0) {
       container.innerHTML = `
@@ -439,6 +517,22 @@ const FridayMealPageModule = {
   renderFridayBazarTab() {
     const container = document.getElementById('fridayBazarList');
     if (!container) return;
+
+    if (!this._bazarLoaded) {
+      container.innerHTML = `
+        <div class="bazar-skeleton">
+          <div class="bazar-skeleton-card">
+            <div class="bazar-skeleton-line wide"></div>
+            <div class="bazar-skeleton-line narrow"></div>
+          </div>
+          <div class="bazar-skeleton-card">
+            <div class="bazar-skeleton-line wide"></div>
+            <div class="bazar-skeleton-line narrow"></div>
+          </div>
+        </div>
+      `;
+      return;
+    }
 
     const ordinals = ['1st', '2nd', '3rd', '4th'];
 
@@ -543,6 +637,22 @@ const FridayMealPageModule = {
     const fridayDate = fridayDates[this.selectedFridayIndex] || '';
     const ordinals = ['1st', '2nd', '3rd', '4th'];
     const fridayLabel = ordinals[this.selectedFridayIndex];
+
+    if (!this._summaryLoaded) {
+      container.innerHTML = `
+        <div class="bazar-skeleton">
+          <div class="bazar-skeleton-card">
+            <div class="bazar-skeleton-line wide"></div>
+            <div class="bazar-skeleton-line narrow"></div>
+          </div>
+          <div class="bazar-skeleton-card">
+            <div class="bazar-skeleton-line wide"></div>
+            <div class="bazar-skeleton-line narrow"></div>
+          </div>
+        </div>
+      `;
+      return;
+    }
 
     if (!summary) {
       container.innerHTML = `

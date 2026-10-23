@@ -113,7 +113,7 @@ const Router = {
     const contentArea = document.querySelector('.content-area');
     if (contentArea) {
       contentArea.addEventListener('scroll', () => {
-        if (this.currentPage && this.currentPage !== 'export-slip') {
+        if (!this._isRestoringScroll && this.currentPage && this.currentPage !== 'export-slip') {
           this.scrollPositions[this.currentPage] = contentArea.scrollTop;
         }
       }, { passive: true });
@@ -218,6 +218,7 @@ const Router = {
         : (window.scrollY || document.documentElement.scrollTop || 0);
       this.scrollPositions[prevPage] = scrollY;
     }
+    this._isRestoringScroll = true;
 
     // Validate page
     const section = document.getElementById(`page-${page}`);
@@ -437,25 +438,38 @@ const Router = {
       this._onPageEnter(page);
     });
 
-    // Restore scroll position for the new page without layout thrashing
+    // Restore scroll position for the new page directly like a native app (instant jump, zero animation)
     if (page !== 'export-slip') {
       const savedScroll = this.scrollPositions[page] || 0;
-      if (contentArea) {
-        contentArea.scrollTop = savedScroll;
-      }
-      window.scrollTo(0, savedScroll);
-
-      // Re-apply after layout settles
-      requestAnimationFrame(() => {
-        if (this.currentPage === page && contentArea && contentArea.scrollTop !== savedScroll) {
+      const restoreInstantScroll = () => {
+        if (this.currentPage !== page) return;
+        if (contentArea) {
+          try {
+            contentArea.scrollTo({ top: savedScroll, left: 0, behavior: 'instant' });
+          } catch (_) {}
           contentArea.scrollTop = savedScroll;
         }
+        try {
+          window.scrollTo({ top: savedScroll, left: 0, behavior: 'instant' });
+        } catch (_) {
+          window.scrollTo(0, savedScroll);
+        }
+      };
+
+      // Restore immediately synchronously before browser paint
+      restoreInstantScroll();
+
+      // Re-apply after layout settles without any animation
+      requestAnimationFrame(() => {
+        restoreInstantScroll();
+        this._isRestoringScroll = false;
       });
       setTimeout(() => {
-        if (this.currentPage === page && contentArea && contentArea.scrollTop !== savedScroll) {
-          contentArea.scrollTop = savedScroll;
-        }
+        restoreInstantScroll();
+        this._isRestoringScroll = false;
       }, 50);
+    } else {
+      this._isRestoringScroll = false;
     }
   },
 
@@ -496,7 +510,8 @@ const Router = {
         if (Messliner.userDashboard) Messliner.userDashboard.refresh();
         break;
       case 'mealchart':
-        // MealChartModule init is called on app start; no refresh needed here
+        if (window.MealChartModule) MealChartModule.refresh();
+        else if (Messliner.mealChart) Messliner.mealChart.refresh();
         break;
       case 'bazar': {
         const isBazarAdmin = Messliner.state?.role === 'admin';
@@ -524,6 +539,7 @@ const Router = {
         break;
       case 'fridaymeal':
         if (Messliner.fridayMealPage) Messliner.fridayMealPage.refresh();
+        else if (window.FridayMealPageModule) FridayMealPageModule.refresh();
         break;
       case 'more':
         if (Messliner.smsAlert) Messliner.smsAlert.refresh();

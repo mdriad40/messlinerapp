@@ -15,6 +15,9 @@
   <script>
     (function () {
       try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const impersonateUserId = urlParams.get('impersonate');
+
         const sbRaw = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
         if (!sbRaw) {
           // If no auth token exists at all, redirect to index.html before browser renders 600KB DOM
@@ -25,6 +28,17 @@
         if (parsed && parsed.user) {
           window.__ML_BOOT_USER = parsed.user;
           window.__ML_BOOT_USER.uid = parsed.user.user_metadata?.firebase_uid || parsed.user.id;
+
+          // When impersonating a member from admin panel, never load admin's cache
+          if (impersonateUserId) {
+            const cachedImp = localStorage.getItem('ml_cache_v2_imp_' + impersonateUserId);
+            if (cachedImp) {
+              window.__ML_BOOT_IMP_CACHE = JSON.parse(cachedImp);
+              document.documentElement.classList.add('ml-has-cache');
+            }
+            return;
+          }
+
           if (parsed.user.email) {
             const emailKey = parsed.user.email.toLowerCase().replace(/[\.\$#\[\]\/@]/g, '_');
             const cachedMap = localStorage.getItem('ml_map_' + emailKey);
@@ -37,6 +51,26 @@
             }
           }
         }
+
+        const _now = new Date();
+        const _mNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const _mName = _mNames[_now.getMonth()];
+        const _yr = _now.getFullYear();
+        const _dy = String(_now.getDate()).padStart(2, '0');
+        document.addEventListener('DOMContentLoaded', () => {
+          const setTxt = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+          setTxt('bazarHistoryMonthValue', _mName);
+          setTxt('bazarHistoryYearValue', _yr);
+          setTxt('mealChartDayValue', _dy);
+          setTxt('mealChartMonthValue', _mName);
+          setTxt('mealChartYearValue', _yr);
+          setTxt('mealChartDetailsDate', `${_dy} ${_mName} ${_yr}`);
+          setTxt('summaryMonthValue', _mName);
+          setTxt('summaryYearValue', _yr);
+          setTxt('summaryMonthLabel', `${_mName} ${_yr}`);
+          setTxt('fridayPageMonthValue', _mName);
+          setTxt('fridayPageYearValue', _yr);
+        });
       } catch (_) { }
     })();
   </script>
@@ -335,6 +369,12 @@
     html,
     body,
     .content-area,
+    body .content-area,
+    body:has(.page-section.active) .content-area,
+    body:has(#page-dashboard.active) .content-area,
+    body:has(#page-overview.active) .content-area,
+    body:has(#page-meals.active) .content-area,
+    body:has(#page-profile.active) .content-area,
     .main-content,
     .modal-body {
       scroll-behavior: auto !important;
@@ -1536,7 +1576,7 @@
         </button>
 
         <button class="nav-item" id="nav-item-aiassistant" data-page="aiassistant"
-          onclick="Messliner.router.navigate('aiassistant')">
+          onclick="Messliner.router.navigate('aiassistant')" style="display:none;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -5994,7 +6034,7 @@
               <div class="custom-dropdown" id="mealChartDayDropdown">
                 <button class="custom-dropdown-trigger"
                   onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                  <span id="mealChartDayValue">Loading...</span>
+                  <span id="mealChartDayValue">23</span>
                   <div class="custom-dropdown-arrow"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="mealChartDayMenu"></div>
@@ -6004,7 +6044,7 @@
               <div class="custom-dropdown" id="mealChartMonthDropdown">
                 <button class="custom-dropdown-trigger"
                   onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                  <span id="mealChartMonthValue">Loading...</span>
+                  <span id="mealChartMonthValue">October</span>
                   <div class="custom-dropdown-arrow"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="mealChartMonthMenu"></div>
@@ -6014,7 +6054,7 @@
               <div class="custom-dropdown" id="mealChartYearDropdown">
                 <button class="custom-dropdown-trigger"
                   onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                  <span id="mealChartYearValue">Loading...</span>
+                  <span id="mealChartYearValue">2026</span>
                   <div class="custom-dropdown-arrow"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="mealChartYearMenu"></div>
@@ -6026,7 +6066,7 @@
           <div class="card">
             <div class="meal-logs-header">
               <h3 class="meal-logs-title">Daily Meal Logs</h3>
-              <span id="mealChartDetailsDate" class="meal-logs-date-badge">Loading date...</span>
+              <span id="mealChartDetailsDate" class="meal-logs-date-badge">23 October 2026</span>
             </div>
             <div class="table-wrapper"
               style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: var(--space-4);">
@@ -6041,7 +6081,22 @@
                 </thead>
                 <tbody id="mealChartDetailsBody">
                   <tr>
-                    <td colspan="4" class="text-center p-6" style="color: var(--text-tertiary);">Loading meals...</td>
+                    <td><div class="bazar-skeleton-line wide"></div></td>
+                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                  </tr>
+                  <tr>
+                    <td><div class="bazar-skeleton-line wide"></div></td>
+                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                  </tr>
+                  <tr>
+                    <td><div class="bazar-skeleton-line wide"></div></td>
+                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                    <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
                   </tr>
                 </tbody>
               </table>
@@ -6066,7 +6121,7 @@
                 <div class="custom-dropdown" id="bazarHistoryMonthDropdown">
                   <button class="custom-dropdown-trigger"
                     onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                    <span id="bazarHistoryMonthValue">Loading...</span>
+                    <span id="bazarHistoryMonthValue">October</span>
                     <div class="custom-dropdown-arrow"></div>
                   </button>
                   <div class="custom-dropdown-menu" id="bazarHistoryMonthMenu"></div>
@@ -6076,7 +6131,7 @@
                 <div class="custom-dropdown" id="bazarHistoryYearDropdown">
                   <button class="custom-dropdown-trigger"
                     onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                    <span id="bazarHistoryYearValue">Loading...</span>
+                    <span id="bazarHistoryYearValue">2026</span>
                     <div class="custom-dropdown-arrow"></div>
                   </button>
                   <div class="custom-dropdown-menu" id="bazarHistoryYearMenu"></div>
@@ -6416,7 +6471,7 @@
               <div class="custom-dropdown summary-dropdown" id="summaryMonthDropdown">
                 <button class="custom-dropdown-trigger"
                   onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                  <span id="summaryMonthValue">Loading...</span>
+                  <span id="summaryMonthValue">October</span>
                   <div class="custom-dropdown-arrow"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="summaryMonthMenu"></div>
@@ -6425,7 +6480,7 @@
               <div class="custom-dropdown summary-dropdown" id="summaryYearDropdown">
                 <button class="custom-dropdown-trigger"
                   onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
-                  <span id="summaryYearValue">Loading...</span>
+                  <span id="summaryYearValue">2026</span>
                   <div class="custom-dropdown-arrow"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="summaryYearMenu"></div>
@@ -6445,15 +6500,28 @@
               </div>
               <div>
                 <div class="summary-rate-label">Meal Rate</div>
-                <div class="summary-rate-month" id="summaryMonthLabel">—</div>
+                <div class="summary-rate-month" id="summaryMonthLabel">October 2026</div>
               </div>
             </div>
-            <div class="summary-rate-amount" id="summaryMealRate">৳0</div>
+            <div class="summary-rate-amount" id="summaryMealRate"><div class="summary-rate-skeleton"></div></div>
           </div>
 
           <!-- Members Summary Grid -->
           <div id="summaryList" class="summary-grid">
-            <!-- Rendered dynamically -->
+            <div class="bazar-skeleton" style="grid-column: 1 / -1;">
+              <div class="bazar-skeleton-card">
+                <div class="bazar-skeleton-line wide"></div>
+                <div class="bazar-skeleton-line narrow"></div>
+              </div>
+              <div class="bazar-skeleton-card">
+                <div class="bazar-skeleton-line wide"></div>
+                <div class="bazar-skeleton-line narrow"></div>
+              </div>
+              <div class="bazar-skeleton-card">
+                <div class="bazar-skeleton-line wide"></div>
+                <div class="bazar-skeleton-line narrow"></div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -6507,7 +6575,7 @@
                 <button class="custom-dropdown-trigger" style="padding: 10px 8px; gap: 4px; font-size: 0.83rem;"
                   onclick="event.stopPropagation(); document.querySelectorAll('.custom-dropdown').forEach(d => d !== this.parentElement && d.classList.remove('active')); this.parentElement.classList.toggle('active')">
                   <span id="fridayPageWeekValue"
-                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</span>
+                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Friday</span>
                   <div class="custom-dropdown-arrow" style="margin-left: 2px;"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="fridayPageWeekMenu"></div>
@@ -6518,7 +6586,7 @@
                 <button class="custom-dropdown-trigger" style="padding: 10px 8px; gap: 4px; font-size: 0.83rem;"
                   onclick="event.stopPropagation(); document.querySelectorAll('.custom-dropdown').forEach(d => d !== this.parentElement && d.classList.remove('active')); this.parentElement.classList.toggle('active')">
                   <span id="fridayPageMonthValue"
-                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</span>
+                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">October</span>
                   <div class="custom-dropdown-arrow" style="margin-left: 2px;"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="fridayPageMonthMenu"></div>
@@ -6529,7 +6597,7 @@
                 <button class="custom-dropdown-trigger" style="padding: 10px 8px; gap: 4px; font-size: 0.83rem;"
                   onclick="event.stopPropagation(); document.querySelectorAll('.custom-dropdown').forEach(d => d !== this.parentElement && d.classList.remove('active')); this.parentElement.classList.toggle('active')">
                   <span id="fridayPageYearValue"
-                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</span>
+                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">2026</span>
                   <div class="custom-dropdown-arrow" style="margin-left: 2px;"></div>
                 </button>
                 <div class="custom-dropdown-menu" id="fridayPageYearMenu"></div>
@@ -6582,7 +6650,19 @@
                   </thead>
                   <tbody id="fridayMealChartBody">
                     <tr>
-                      <td colspan="3" class="text-center p-6" style="color:var(--text-tertiary);">Loading...</td>
+                      <td style="text-align:left;"><div class="bazar-skeleton-line wide"></div></td>
+                      <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                      <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div></td>
+                    </tr>
+                    <tr>
+                      <td style="text-align:left;"><div class="bazar-skeleton-line wide"></div></td>
+                      <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                      <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div></td>
+                    </tr>
+                    <tr>
+                      <td style="text-align:left;"><div class="bazar-skeleton-line wide"></div></td>
+                      <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+                      <td style="text-align:center;"><div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div></td>
                     </tr>
                   </tbody>
                 </table>
@@ -6593,12 +6673,33 @@
           <!-- Tab: Bazar -->
           <div class="friday-page-tab-content" data-tabpane="bazar">
             <div id="fridayBazarList" class="bazar-history-list friday-bazar-list" style="margin-top:var(--space-4);">
+              <div class="bazar-skeleton">
+                <div class="bazar-skeleton-card">
+                  <div class="bazar-skeleton-line wide"></div>
+                  <div class="bazar-skeleton-line narrow"></div>
+                </div>
+                <div class="bazar-skeleton-card">
+                  <div class="bazar-skeleton-line wide"></div>
+                  <div class="bazar-skeleton-line narrow"></div>
+                </div>
+              </div>
             </div>
           </div>
 
           <!-- Tab: Summary -->
           <div class="friday-page-tab-content" data-tabpane="summary">
-            <div id="fridaySummaryContent" style="margin-top:var(--space-4);"></div>
+            <div id="fridaySummaryContent" style="margin-top:var(--space-4);">
+              <div class="bazar-skeleton">
+                <div class="bazar-skeleton-card">
+                  <div class="bazar-skeleton-line wide"></div>
+                  <div class="bazar-skeleton-line narrow"></div>
+                </div>
+                <div class="bazar-skeleton-card">
+                  <div class="bazar-skeleton-line wide"></div>
+                  <div class="bazar-skeleton-line narrow"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

@@ -28,6 +28,12 @@ const MealChartModule = {
     this.selectedYear = now.getFullYear();
     this.selectedMonth = now.getMonth() + 1;
     this.selectedDay = now.getDate();
+    this.createdDate = this.createdDate || new Date(2026, 0, 1);
+
+    // Immediately populate dropdowns synchronously so dates are fixed with zero loading delay
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
+    this.populateDayDropdown();
 
     try {
       // Fetch history start date or dining creation date
@@ -228,16 +234,52 @@ const MealChartModule = {
   },
 
   /**
+   * Render shimmer skeleton for meal chart table
+   */
+  renderSkeleton() {
+    const tbody = document.getElementById('mealChartDetailsBody');
+    if (!tbody) return;
+    tbody.innerHTML = `
+      <tr>
+        <td><div class="bazar-skeleton-line wide"></div></td>
+        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+      </tr>
+      <tr>
+        <td><div class="bazar-skeleton-line wide"></div></td>
+        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+      </tr>
+      <tr>
+        <td><div class="bazar-skeleton-line wide"></div></td>
+        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+        <td class="text-center"><div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div></td>
+      </tr>
+    `;
+  },
+
+  /**
    * Load entire month's data and update daily breakdown
    */
   async loadMonthData() {
+    if (!this.diningId && window.Messliner && Messliner.state) {
+      this.diningId = Messliner.state.diningId;
+    }
     if (!this.diningId) return;
+
+    if (!this._dataLoaded) {
+      this.renderSkeleton();
+    }
 
     const formattedMonth = `${this.selectedYear}-${String(this.selectedMonth).padStart(2, '0')}`;
 
     try {
       const snap = await db.ref(`dinings/${this.diningId}/meals/${formattedMonth}`).once('value');
       this.mealsData = snap.val() || {};
+      this._dataLoaded = true;
       this.renderDailyDetails();
     } catch (e) {
       console.error('[MealChartModule] Load month data error:', e);
@@ -368,6 +410,12 @@ const MealChartModule = {
    * Refresh module data
    */
   refresh() {
+    if (!this.diningId && window.Messliner && Messliner.state) {
+      this.diningId = Messliner.state.diningId;
+    }
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
+    this.populateDayDropdown();
     this.loadMonthData();
   }
 };

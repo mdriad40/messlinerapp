@@ -7,8 +7,10 @@ const HistoryModule = {
     this.diningId = diningId;
     this.userId = userId;
     this.mealsBreakdown = { breakfast: 0, lunch: 0, dinner: 0 };
-    this.settings = {};
+    this.settings = this.settings || {};
     this.isAiProcessing = false;
+
+    this.applyAiAssistantSettings();
 
     this.selectedYear = new Date().getFullYear();
     this.selectedMonth = new Date().getMonth() + 1;
@@ -1769,10 +1771,10 @@ const HistoryModule = {
   },
 
   applyAiAssistantSettings() {
-    const s = this.settings;
+    const s = this.settings || (window.Messliner && Messliner.state && Messliner.state.settings) || {};
     const isAiEnabled = s.aiAssistantEnabled !== false;
     const isUploadEnabled = s.aiFileUploadEnabled !== false;
-    const isAdmin = Messliner.state.role === 'admin';
+    const isAdmin = (window.Messliner && Messliner.state && Messliner.state.role === 'admin');
 
     // 1. Navigation element visibility
     const aiNavBtn = document.getElementById('nav-item-aiassistant');
@@ -1781,7 +1783,7 @@ const HistoryModule = {
     }
 
     // 2. Routing block
-    if (!isAdmin && !isAiEnabled && Messliner.router.currentPage === 'aiassistant') {
+    if (!isAdmin && !isAiEnabled && window.Messliner && Messliner.router && Messliner.router.currentPage === 'aiassistant') {
       Messliner.router.navigate('dashboard');
     }
 
@@ -1819,7 +1821,7 @@ const HistoryModule = {
     sessionStorage.setItem('viewMode', nextMode);
     try {
       localStorage.setItem('viewMode', nextMode);
-    } catch (_) {}
+    } catch (_) { }
 
     const loader = document.getElementById('pageLoader');
     if (loader) {
@@ -2280,21 +2282,21 @@ const HistoryPageModule = {
   }
 };
 
-window.openMessRulesModal = async function() {
+window.openMessRulesModal = async function () {
   const modal = document.getElementById('messRulesModal');
   if (!modal) return;
-  
+
   const listContainer = document.getElementById('messRulesListContainer');
   const diningSubtitle = document.getElementById('messRulesDiningSub');
   const bodyTitle = document.getElementById('messRulesBodyTitle');
   const desktopTitle = document.querySelector('#messRulesModal .mess-rules-modal-title');
-  
+
   let rawDiningName = (window.Messliner?.history?.diningInfo && window.Messliner.history.diningInfo.name)
     || (window.Messliner?.state?.dining && window.Messliner.state.dining.name)
     || (window.Messliner?.state?.diningInfo && window.Messliner.state.diningInfo.name)
     || document.getElementById('profileDiningName')?.textContent?.trim()
     || '';
-    
+
   if (rawDiningName === 'Loading...' || rawDiningName === '------') {
     rawDiningName = '';
   }
@@ -2310,7 +2312,7 @@ window.openMessRulesModal = async function() {
   if (diningSubtitle) diningSubtitle.textContent = rawDiningName || 'Dining Guidelines';
   if (bodyTitle) bodyTitle.textContent = initialTitle;
   if (desktopTitle) desktopTitle.textContent = initialTitle;
-  
+
   if (listContainer) {
     listContainer.innerHTML = `
       <div style="padding: 36px 16px; text-align: center; color: #64748B;">
@@ -2319,15 +2321,15 @@ window.openMessRulesModal = async function() {
       </div>
     `;
   }
-  
+
   modal.classList.add('active');
-  
+
   try {
     const diningId = window.Messliner?.history?.diningId
       || window.Messliner?.currentDiningId
       || window.Messliner?.state?.user?.diningId
       || localStorage.getItem('messliner_dining_id');
-      
+
     if (!diningId) throw new Error('Dining ID not found');
 
     if (!rawDiningName) {
@@ -2340,22 +2342,22 @@ window.openMessRulesModal = async function() {
           if (desktopTitle) desktopTitle.textContent = updatedTitle;
           if (diningSubtitle) diningSubtitle.textContent = rawDiningName;
         }
-      } catch (_) {}
+      } catch (_) { }
     }
-    
+
     const snap = await db.ref(`dinings/${diningId}/rules`).once('value');
     let rules = snap.val() || [];
     if (typeof rules === 'object' && !Array.isArray(rules)) {
       rules = Object.values(rules);
     }
-    
+
     // Check fallback in settings if empty
     if ((!rules || rules.length === 0) && window.Messliner?.history?.settings?.rules) {
       const sRules = window.Messliner.history.settings.rules;
       if (Array.isArray(sRules)) rules = sRules;
       else if (typeof sRules === 'string') rules = sRules.split('\n').map(r => r.trim()).filter(Boolean);
     }
-    
+
     const escapeRuleHtml = (str) => {
       if (!str) return '';
       return String(str)
@@ -2365,7 +2367,7 @@ window.openMessRulesModal = async function() {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
     };
-    
+
     if (!rules || rules.length === 0) {
       // Fallback default rules matching onboarding step
       rules = [
@@ -2375,7 +2377,7 @@ window.openMessRulesModal = async function() {
         'Be respectful to other mess members and the manager.'
       ];
     }
-    
+
     listContainer.innerHTML = `
       <div class="join-rules-wrapper">
         <div class="join-rules-list">

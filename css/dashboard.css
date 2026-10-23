@@ -408,7 +408,7 @@
   overscroll-behavior-y: auto !important;
   overscroll-behavior-x: hidden !important;
   -webkit-overflow-scrolling: touch !important;
-  scroll-behavior: smooth !important;
+  scroll-behavior: auto !important;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   will-change: scroll-position;
@@ -3781,6 +3781,17 @@ body.dining-subpage-active .content-area,
   font-weight: var(--weight-extrabold);
   color: #ECFDF5;
   letter-spacing: -0.5px;
+}
+
+.summary-rate-skeleton {
+  width: 58px;
+  height: 20px;
+  display: inline-block;
+  vertical-align: middle;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.18) 25%, rgba(255, 255, 255, 0.42) 50%, rgba(255, 255, 255, 0.18) 75%);
+  background-size: 400% 100%;
+  border-radius: var(--radius-full);
+  animation: shimmer 1.4s infinite;
 }
 
 /* ---- Summary Grid ---- */
