@@ -405,7 +405,7 @@
   padding: var(--space-6);
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  overscroll-behavior-y: auto !important;
+  overscroll-behavior-y: contain !important;
   overscroll-behavior-x: hidden !important;
   -webkit-overflow-scrolling: touch !important;
   scroll-behavior: auto !important;

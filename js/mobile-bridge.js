@@ -300,17 +300,33 @@
     let isTracking = false;
     let isPulling = false;
     let isRefreshing = false;
+    let wasPulling = false;
     let startY = 0;
     let startX = 0;
     let currentY = 0;
-    const PULL_THRESHOLD = 68;
+    let cachedScrollEl = null;
+    let rafId = null;
+
+    const PULL_THRESHOLD = 64; // Distance in px to trigger refresh
+    const MAX_PULL = 86;       // Maximum visual pull distance
+    const RESTING_POS = -75;   // Fully off-screen resting position
+    const REFRESH_POS = 18;    // Resting position while refreshing
 
     function injectPtrStylesAndDom() {
-      if (document.getElementById('ml-ptr-styles')) return;
+      if (document.getElementById('ml-ptr-styles')) {
+        ptrEl = document.getElementById('ml-ptr-spinner-card');
+        if (ptrEl) arrowBox = ptrEl.querySelector('.ml-ptr-arrow-box');
+        return;
+      }
 
       const style = document.createElement('style');
       style.id = 'ml-ptr-styles';
       style.textContent = `
+        /* Prevent browser native pull-to-refresh conflicts with custom PTR */
+        html, body, .content-area, .dashboard-container {
+          overscroll-behavior-y: contain !important;
+        }
+
         #ml-ptr-spinner-card {
           position: fixed;
           top: 14px;
@@ -329,7 +345,7 @@
           pointer-events: none;
           opacity: 0;
           will-change: transform, opacity;
-          transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.18s ease;
+          transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.2s ease;
         }
         body.dark-theme #ml-ptr-spinner-card {
           background: #1E293B;
@@ -341,7 +357,7 @@
           align-items: center;
           justify-content: center;
           transform-origin: center center;
-          transition: transform 0.08s linear;
+          will-change: transform;
         }
         .ml-ptr-spin-box {
           display: none;
@@ -349,10 +365,10 @@
           justify-content: center;
         }
         #ml-ptr-spinner-card.is-refreshing .ml-ptr-arrow-box {
-          display: none;
+          display: none !important;
         }
         #ml-ptr-spinner-card.is-refreshing .ml-ptr-spin-box {
-          display: flex;
+          display: flex !important;
         }
         .ml-ptr-spin-icon {
           animation: ml-ptr-rotate 0.75s linear infinite;
@@ -384,14 +400,14 @@
       arrowBox = ptrEl.querySelector('.ml-ptr-arrow-box');
     }
 
-    function getActiveScrollTop(target) {
+    function findScrollContainer(target) {
       try {
         let el = target;
         while (el && el !== document.body && el !== document.documentElement) {
           if (el.scrollHeight > el.clientHeight + 2) {
             const overflowY = window.getComputedStyle(el).overflowY;
             if (overflowY === 'auto' || overflowY === 'scroll') {
-              return el.scrollTop;
+              return el;
             }
           }
           el = el.parentElement;
@@ -399,11 +415,17 @@
         const contentArea = document.querySelector('.content-area') ||
           document.querySelector('.dashboard-container') ||
           document.querySelector('#appShell');
-        if (contentArea && contentArea.scrollHeight > contentArea.clientHeight) {
-          return contentArea.scrollTop;
-        }
+        if (contentArea) return contentArea;
       } catch (_) { }
-      return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      return document.scrollingElement || document.documentElement || document.body;
+    }
+
+    function getScrollTop(el) {
+      if (!el) return 0;
+      if (el === document.body || el === document.documentElement || el === document.scrollingElement) {
+        return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      }
+      return el.scrollTop || 0;
     }
 
     function canStartPull(e) {
@@ -415,13 +437,69 @@
       if (document.querySelector('.modal.show, .modal.active, .swal2-container')) {
         return false;
       }
-      return getActiveScrollTop(target) <= 2;
+      cachedScrollEl = findScrollContainer(target);
+      return getScrollTop(cachedScrollEl) <= 2;
     }
 
-    window.addEventListener('touchstart', function (e) {
+    function calculatePullDist(diffY) {
+      if (diffY <= 0) return 0;
+      const pullY = Math.max(0, diffY - 8);
+      // Smooth diminishing returns damping curve
+      const rawDist = pullY * 0.48;
+      return Math.min(rawDist, MAX_PULL);
+    }
+
+    function updatePullVisuals() {
+      if (!isPulling || !ptrEl) return;
+      const diffY = currentY - startY;
+      const pullDist = calculatePullDist(diffY);
+
+      if (pullDist <= 0) {
+        ptrEl.style.transform = `translate3d(-50%, ${RESTING_POS}px, 0)`;
+        ptrEl.style.opacity = '0';
+        if (arrowBox) arrowBox.style.transform = 'rotate(0deg)';
+      } else {
+        const cardY = RESTING_POS + (pullDist * 1.05);
+        ptrEl.style.transform = `translate3d(-50%, ${cardY}px, 0)`;
+        ptrEl.style.opacity = String(Math.min(pullDist / 28, 1));
+
+        const progress = Math.min(pullDist / PULL_THRESHOLD, 1);
+        if (arrowBox) {
+          arrowBox.style.transform = `rotate(${progress * 180}deg)`;
+        }
+      }
+    }
+
+    function cancelPull() {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      isTracking = false;
+      isPulling = false;
+      cachedScrollEl = null;
+
+      if (ptrEl && !isRefreshing) {
+        ptrEl.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.2s ease';
+        ptrEl.style.transform = `translate3d(-50%, ${RESTING_POS}px, 0)`;
+        ptrEl.style.opacity = '0';
+        if (arrowBox) {
+          arrowBox.style.transition = 'transform 0.2s ease';
+          arrowBox.style.transform = 'rotate(0deg)';
+        }
+      }
+    }
+
+    function onTouchStart(e) {
       if (!ptrEl) injectPtrStylesAndDom();
+      // If a previous pull was somehow left visible or canceled, ensure it's reset
+      if (!isRefreshing && ptrEl && !isPulling && ptrEl.style.opacity !== '0' && ptrEl.style.opacity !== '') {
+        cancelPull();
+      }
+
       if (!canStartPull(e)) {
         isTracking = false;
+        cachedScrollEl = null;
         return;
       }
       startY = e.touches[0].clientY;
@@ -429,66 +507,60 @@
       currentY = startY;
       isTracking = true;
       isPulling = false;
-    }, { passive: true });
+    }
 
-    window.addEventListener('touchmove', function (e) {
+    function onTouchMove(e) {
       if (!isTracking || isRefreshing || !e.touches || e.touches.length !== 1) return;
       currentY = e.touches[0].clientY;
       const diffY = currentY - startY;
       const diffX = e.touches[0].clientX - startX;
 
       if (!isPulling) {
-        if (diffY > 10 && diffY > Math.abs(diffX) * 1.3 && getActiveScrollTop(e.target) <= 2) {
+        if (diffY > 8 && diffY > Math.abs(diffX) * 1.2 && getScrollTop(cachedScrollEl) <= 2) {
           isPulling = true;
+          wasPulling = true;
           if (ptrEl) ptrEl.style.transition = 'none';
-        } else if (diffY < -5 || Math.abs(diffX) > 15) {
+          if (arrowBox) arrowBox.style.transition = 'none';
+        } else if (diffY < -4 || Math.abs(diffX) > 12) {
           isTracking = false;
           return;
         }
       }
 
-      if (isPulling && ptrEl) {
-        if (diffY <= 0) {
-          ptrEl.style.transform = 'translate3d(-50%, -75px, 0)';
-          ptrEl.style.opacity = '0';
-          if (arrowBox) arrowBox.style.transform = 'rotate(0deg)';
-        } else {
-          const pullDist = Math.min(diffY * 0.44, 85);
-          ptrEl.style.transform = `translate3d(-50%, ${pullDist - 60}px, 0)`;
-          ptrEl.style.opacity = String(Math.min(pullDist / 35, 1));
-
-          const progress = Math.min(pullDist / PULL_THRESHOLD, 1);
-          if (arrowBox) {
-            arrowBox.style.transform = `rotate(${progress * 180}deg)`;
-          }
+      if (isPulling) {
+        if (e.cancelable) {
+          e.preventDefault();
         }
-      }
-    }, { passive: true });
-
-    function cancelPull() {
-      isTracking = false;
-      isPulling = false;
-      if (ptrEl && !isRefreshing) {
-        ptrEl.style.transition = 'transform 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.18s ease';
-        ptrEl.style.transform = 'translate3d(-50%, -75px, 0)';
-        ptrEl.style.opacity = '0';
-        if (arrowBox) arrowBox.style.transform = 'rotate(0deg)';
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(updatePullVisuals);
       }
     }
 
-    window.addEventListener('touchend', function (e) {
+    function onTouchEnd(e) {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+
       if (!isTracking || !isPulling || isRefreshing) {
         cancelPull();
         return;
       }
+
+      if (e.changedTouches && e.changedTouches[0]) {
+        currentY = e.changedTouches[0].clientY;
+      }
       const diffY = currentY - startY;
-      const pullDist = Math.min(diffY * 0.44, 85);
+      const pullDist = calculatePullDist(diffY);
 
       if (pullDist >= PULL_THRESHOLD) {
         isRefreshing = true;
+        isTracking = false;
+        isPulling = false;
+
         if (ptrEl) {
-          ptrEl.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.15s ease';
-          ptrEl.style.transform = 'translate3d(-50%, 18px, 0)';
+          ptrEl.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.15s ease';
+          ptrEl.style.transform = `translate3d(-50%, ${REFRESH_POS}px, 0)`;
           ptrEl.style.opacity = '1';
           ptrEl.classList.add('is-refreshing');
         }
@@ -503,26 +575,48 @@
           } else {
             window.location.reload();
           }
-        }, 150);
+        }, 180);
 
+        // Fail-safe watchdog: dismiss spinner after 4s if reload takes time or is slow
         setTimeout(() => {
           if (isRefreshing) {
             isRefreshing = false;
             if (ptrEl) {
               ptrEl.classList.remove('is-refreshing');
-              cancelPull();
             }
+            cancelPull();
           }
-        }, 4500);
+        }, 4000);
       } else {
         cancelPull();
       }
 
-      isTracking = false;
-      isPulling = false;
-    }, { passive: true });
+      setTimeout(() => {
+        wasPulling = false;
+      }, 350);
+    }
 
-    window.addEventListener('touchcancel', cancelPull, { passive: true });
+    function onTouchCancel() {
+      cancelPull();
+      setTimeout(() => {
+        wasPulling = false;
+      }, 100);
+    }
+
+    // Suppress accidental click events right after a pull gesture
+    window.addEventListener('click', function (e) {
+      if (wasPulling) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }, true);
+
+    // Event listeners with capture: true to guarantee we never miss events due to child stopPropagation()
+    window.addEventListener('touchstart', onTouchStart, { passive: true, capture: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false, capture: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true, capture: true });
+    window.addEventListener('touchcancel', onTouchCancel, { passive: true, capture: true });
+    window.addEventListener('blur', cancelPull);
 
     document.addEventListener('DOMContentLoaded', injectPtrStylesAndDom);
   })();
