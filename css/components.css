@@ -1705,6 +1705,17 @@ textarea.form-input {
     margin-bottom: 16px !important;
   }
 
+  /* Exact height match with Real Mobile UI (.mymeal-mobile-hero-wrapper) */
+  .shimmer-view-home .mshimmer-hero-banner {
+    min-height: 310px;
+    box-sizing: border-box;
+  }
+
+  .shimmer-view-dining .mshimmer-hero-banner {
+    min-height: 348px;
+    box-sizing: border-box;
+  }
+
   .mshimmer-user-topbar {
     display: flex;
     align-items: center;
