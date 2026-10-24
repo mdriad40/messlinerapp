@@ -1703,17 +1703,8 @@ textarea.form-input {
     display: flex;
     flex-direction: column;
     margin-bottom: 16px !important;
-  }
-
-  /* Exact height match with Real Mobile UI (.mymeal-mobile-hero-wrapper) */
-  .shimmer-view-home .mshimmer-hero-banner {
-    min-height: 310px;
-    box-sizing: border-box;
-  }
-
-  .shimmer-view-dining .mshimmer-hero-banner {
-    min-height: 348px;
-    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
   }
 
   .mshimmer-user-topbar {
@@ -1724,15 +1715,21 @@ textarea.form-input {
     margin-bottom: 14px;
     padding: 2px 0;
     box-sizing: border-box;
+    position: relative;
+    z-index: 3;
   }
 
   .mshimmer-hero-inner-card {
-    background: rgba(255, 255, 255, 0.055);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.055) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border-radius: 20px !important;
     padding: 16px 16px 14px 16px !important;
-    width: 100%;
-    box-sizing: border-box;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    position: relative;
+    z-index: 3;
   }
 
   .mshimmer-hero-banner .mshimmer-bar,
