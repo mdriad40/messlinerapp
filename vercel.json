@@ -1,0 +1,27 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/dashboard/(.*)",
+      "destination": "/dashboard"
+    },
+    {
+      "source": "/dashboard/:path*",
+      "destination": "/dashboard"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard"
+    },
+    {
+      "source": "/login",
+      "destination": "/login"
+    },
+    {
+      "source": "/register",
+      "destination": "/login"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+# Editor/IDE configs
+.gemini/
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build and cache
+.vite/
+node_modules/
