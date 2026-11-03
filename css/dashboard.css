@@ -26380,3 +26380,270 @@ body.dark-theme .mess-rules-banner-sub,
     font-size: 0.84rem !important;
   }
 }
+
+
+/* ============================================================ */
+/* CHANGE PASSWORD MODAL (Desktop & Shared Styles)              */
+/* ============================================================ */
+.change-password-modal-dialog {
+  max-width: 440px;
+  width: 92%;
+  border-radius: 22px;
+  background: #ffffff;
+  padding: 24px 22px 20px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.18);
+  position: relative;
+  box-sizing: border-box;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.change-password-drag-indicator {
+  display: none;
+}
+
+.change-password-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #F1F5F9;
+  border: none;
+  color: #64748B;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  z-index: 5;
+}
+
+.change-password-close-btn:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+  transform: rotate(90deg);
+}
+
+.change-password-header-area {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.change-password-icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  color: #059669;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+}
+
+.change-password-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+}
+
+.change-password-subtitle {
+  font-size: 0.83rem;
+  color: #64748B;
+  margin: 0;
+}
+
+.change-password-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.change-password-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.change-password-input {
+  width: 100% !important;
+  height: 44px !important;
+  font-size: 0.9rem !important;
+  border-radius: 12px !important;
+  border: 1.5px solid #CBD5E1 !important;
+  padding: 0 14px !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.change-password-input:focus {
+  border-color: #059669 !important;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15) !important;
+  outline: none;
+}
+
+.change-password-actions-row {
+  display: flex;
+  gap: 10px;
+}
+
+.change-password-btn-cancel {
+  flex: 1;
+  height: 42px;
+  border-radius: 12px;
+  background: #F1F5F9;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.88rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.change-password-btn-cancel:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+.change-password-btn-save {
+  flex: 1.4;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.88rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.change-password-btn-save:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.change-password-btn-save:active {
+  transform: scale(0.98);
+}
+
+/* ============================================================ */
+/* MOBILE BOTTOM POPUP SHEET (Change Password) - LIKE SUPPORT   */
+/* ============================================================ */
+@media (max-width: 768px) {
+  #changePasswordModal.modal-overlay {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: rgba(15, 23, 42, 0.55) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    z-index: 10010 !important;
+  }
+
+  .change-password-modal-dialog {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 22px 22px 0 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    padding: 8px 18px max(18px, env(safe-area-inset-bottom, 18px)) 18px !important;
+    margin: 0 !important;
+    box-shadow: 0 -12px 36px rgba(15, 23, 42, 0.18) !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    transform: translateY(100%) !important;
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    will-change: transform;
+    background: #ffffff !important;
+  }
+
+  #changePasswordModal.modal-overlay.active .change-password-modal-dialog {
+    transform: translateY(0) !important;
+  }
+
+  .change-password-drag-indicator {
+    display: block !important;
+    width: 38px !important;
+    height: 4px !important;
+    background: #CBD5E1 !important;
+    border-radius: 99px !important;
+    margin: 4px auto 14px auto !important;
+  }
+
+  .change-password-close-btn {
+    top: 12px !important;
+    right: 14px !important;
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.80rem !important;
+  }
+
+  .change-password-header-area {
+    margin-bottom: 14px !important;
+  }
+
+  .change-password-icon-box {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    margin: 0 auto 6px !important;
+  }
+
+  .change-password-icon-box svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .change-password-title {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    margin: 0 0 2px !important;
+  }
+
+  .change-password-subtitle {
+    font-size: 0.78rem !important;
+    color: #64748B !important;
+  }
+
+  .change-password-form-body {
+    gap: 12px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .change-password-label {
+    font-size: 0.80rem !important;
+    margin-bottom: 5px !important;
+  }
+
+  .change-password-input {
+    height: 40px !important;
+    font-size: 0.90rem !important;
+  }
+
+  .change-password-actions-row {
+    gap: 8px !important;
+  }
+
+  .change-password-btn-cancel,
+  .change-password-btn-save {
+    height: 38px !important;
+    font-size: 0.84rem !important;
+  }
+}

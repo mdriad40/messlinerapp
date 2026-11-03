@@ -7,12 +7,18 @@
         }
 
         body:has(#page-prayer.active) .content-area {
+          height: 100vh !important;
+          height: 100dvh !important;
+          max-height: 100dvh !important;
           padding: 0 !important;
           margin: 0 !important;
           max-width: 100% !important;
           width: 100% !important;
           background: #FFFFFF !important;
           padding-bottom: calc(var(--bottom-nav-height, 64px) + 24px + env(safe-area-inset-bottom, 14px)) !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          box-sizing: border-box !important;
         }
 
         body:has(#page-prayer.active) {

@@ -154,7 +154,10 @@
         }
 
         if (activeSection.id === 'page-profile' || activeSection.id === 'page-settings') {
-          return '#F5F5F5';
+          return '#F9FAFC';
+        }
+        if (activeSection.id === 'page-prayer') {
+          return '#042721';
         }
 
         const heroBanner = activeSection.querySelector('.mymeal-mobile-hero-wrapper, .fp-hero-banner');
