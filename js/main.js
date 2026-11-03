@@ -1,3 +1,34 @@
+/* ==========================================
+   Live Server & Localhost Clean URL Adapter
+   (Zero effect on production, preserves clean URLs on Vercel/Netlify)
+   ========================================== */
+(function () {
+  try {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+    if (isLocal) {
+      const normalizeLinks = () => {
+        document.querySelectorAll('a[href="/dashboard"], a[href="/dashboard/"]').forEach(a => a.setAttribute('href', 'dashboard.html'));
+        document.querySelectorAll('a[href="/login"], a[href="/login/"]').forEach(a => a.setAttribute('href', 'login.html'));
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', normalizeLinks);
+      } else {
+        normalizeLinks();
+      }
+      document.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (!link) return;
+        const href = link.getAttribute('href');
+        if (href === '/dashboard' || href === '/dashboard/') {
+          link.setAttribute('href', 'dashboard.html');
+        } else if (href === '/login' || href === '/login/') {
+          link.setAttribute('href', 'login.html');
+        }
+      }, true);
+    }
+  } catch (_) {}
+})();
+
 /**
  * Messliner Official Landing Page & Web/Native App Portal JavaScript
  * Handles Interactivity, Modals, Dynamic Bazar Ratio Calculator, FAQs, & Download Handlers

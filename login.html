@@ -34,11 +34,13 @@
   <script>
     (function () {
       try {
+        var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+        var dashboardUrl = isLocal ? 'dashboard.html' : '/dashboard';
         var sbToken = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
         if (sbToken) {
           var parsed = JSON.parse(sbToken);
           if (parsed && parsed.user && parsed.refresh_token) {
-            window.location.replace(window.location.protocol === 'file:' ? 'dashboard.html' : '/dashboard');
+            window.location.replace(dashboardUrl);
             return;
           } else if (!parsed || !parsed.user) {
             localStorage.removeItem('sb-pgnjvtmofglkjplotrha-auth-token');

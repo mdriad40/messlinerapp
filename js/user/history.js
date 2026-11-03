@@ -124,7 +124,23 @@ const HistoryModule = {
     const actualRole = Messliner.state.actualRole || (Messliner.state.user && user.role) || 'user';
     const switchArea = document.getElementById('profileViewSwitchArea');
     if (switchArea) {
-      if (actualRole === 'admin') {
+      const isImpersonating = (Messliner.state && Messliner.state.isImpersonating) || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ml_impersonate_user_id'));
+      if (isImpersonating) {
+        switchArea.style.display = 'flex';
+        switchArea.innerHTML = `
+          <button type="button" onclick="Messliner.exitImpersonation()" class="profile-switch-card mode-to-manager" title="Exit Impersonation & Return to Manager">
+            <div class="profile-switch-icon-plate">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 3l4 4-4 4" />
+                <path d="M20 7H4" />
+                <path d="M8 21l-4-4 4-4" />
+                <path d="M4 17h16" />
+              </svg>
+            </div>
+            <span class="profile-switch-card-label">Return to Admin</span>
+          </button>
+        `;
+      } else if (actualRole === 'admin') {
         const isCurrentlyAdminMode = currentViewRole === 'admin';
         switchArea.style.display = 'flex';
         switchArea.innerHTML = `

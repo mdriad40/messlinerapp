@@ -8,6 +8,24 @@
   <meta name="description"
     content="Learn how Messliner works step-by-step for Mess Managers and Members. Set up your mess in less than 2 minutes.">
 
+  <!-- Live Server & Localhost Clean URL Adapter (0ms Immediate Interceptor) -->
+  <script>
+    (function () {
+      try {
+        var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+        if (isLocal) {
+          document.addEventListener('click', function (e) {
+            var a = e.target.closest('a');
+            if (a) {
+              var h = a.getAttribute('href');
+              if (h === '/dashboard' || h === '/dashboard/') a.setAttribute('href', 'dashboard.html');
+              if (h === '/login' || h === '/login/') a.setAttribute('href', 'login.html');
+            }
+          }, true);
+        }
+      } catch (_) {}
+    })();
+  </script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

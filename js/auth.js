@@ -83,7 +83,7 @@ const Auth = {
           return;
         }
         // Redirect to dashboard (dashboard.html will decide if they need onboarding)
-        window.location.replace(window.location.protocol === 'file:' ? 'dashboard.html' : '/dashboard');
+        window.location.replace((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'dashboard.html' : '/dashboard');
       } else {
         // Not signed in — show auth page
         if (loader) loader.style.display = 'none';
@@ -433,7 +433,7 @@ const Auth = {
       if (btnText) btnText.textContent = 'Opening Dashboard...';
 
       // Immediate navigation to dashboard with zero delay
-      window.location.replace(window.location.protocol === 'file:' ? 'dashboard.html' : '/dashboard');
+      window.location.replace((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'dashboard.html' : '/dashboard');
       return;
 
     } catch (error) {
@@ -828,7 +828,7 @@ const Auth = {
 
       Auth.isRegistering = false;
       setTimeout(() => {
-        window.location.href = (window.location.protocol === 'file:' ? 'dashboard.html' : '/dashboard');
+        window.location.href = ((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'dashboard.html' : '/dashboard');
       }, 800);
 
     } catch (error) {
@@ -928,7 +928,7 @@ const Auth = {
       } catch (_) {}
 
       await auth.signOut();
-      window.location.href = (window.location.protocol === 'file:' ? 'login.html' : '/login');
+      window.location.href = ((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'login.html' : '/login');
     } catch (error) {
       console.error('Logout error:', error);
       if (typeof Notifications !== 'undefined') {

@@ -39,9 +39,19 @@ const Router = {
    */
   updateUrl(page, replace = false) {
     try {
-      if (window.location.protocol.startsWith('http')) {
-        const targetPath = (page === 'dashboard' || !page) ? '/dashboard' : `/dashboard/${page}`;
-        if (window.location.pathname !== targetPath || window.location.hash) {
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+
+      // Preserve search query params (especially ?impersonate=xyz)
+      const urlParams = new URLSearchParams(window.location.search);
+      const impId = urlParams.get('impersonate') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('ml_impersonate_user_id') : null);
+      if (impId) {
+        urlParams.set('impersonate', impId);
+      }
+      const searchStr = urlParams.toString() ? ('?' + urlParams.toString()) : '';
+
+      if (!isLocal && window.location.protocol.startsWith('http')) {
+        const targetPath = ((page === 'dashboard' || !page) ? '/dashboard' : `/dashboard/${page}`) + searchStr;
+        if (window.location.pathname + window.location.search !== targetPath || window.location.hash) {
           if (replace) {
             window.history.replaceState({ page }, '', targetPath);
           } else {
@@ -49,8 +59,16 @@ const Router = {
           }
         }
       } else {
-        // file:// protocol fallback
-        location.hash = page;
+        // file:// or localhost / Live Server fallback (keeps dashboard.html in URL so reload F5 works)
+        const hash = (!page || page === 'dashboard' || page === 'overview') ? '' : '#' + page;
+        const targetUrl = window.location.pathname + searchStr + hash;
+        if (window.location.pathname + window.location.search + window.location.hash !== targetUrl) {
+          if (replace) {
+            window.history.replaceState({ page }, '', targetUrl);
+          } else {
+            window.history.pushState({ page }, '', targetUrl);
+          }
+        }
       }
     } catch (_) {
       try { location.hash = page; } catch (_) {}
@@ -134,7 +152,7 @@ const Router = {
       this.navigate(this.previousPage === 'overview' ? 'overview' : 'dashboard');
     } else if (['mealhistory', 'bazarroster', 'tasks', 'notices'].includes(this.currentPage)) {
       this.navigate(this.getRole() === 'admin' ? 'mymeal' : 'dashboard');
-    } else if (['bazar', 'mealchart', 'summary', 'history', 'fridaymeal'].includes(this.currentPage)) {
+    } else if (['bazar', 'mealchart', 'summary', 'history', 'fridaymeal', 'prayer'].includes(this.currentPage)) {
       if (this.previousPage === 'overview' || this.getRole() !== 'admin') {
         this.navigate('overview');
       } else if (this.previousPage && this.previousPage !== this.currentPage && this.previousPage !== 'notifications') {
@@ -285,7 +303,7 @@ const Router = {
     }
 
     // Subpage entries always glide forward
-    const subpages = ['mealchart', 'bazar', 'summary', 'fridaymeal', 'mealhistory', 'bazarroster', 'tasks', 'notices', 'export-slip'];
+    const subpages = ['mealchart', 'bazar', 'summary', 'fridaymeal', 'mealhistory', 'bazarroster', 'tasks', 'notices', 'export-slip', 'prayer'];
     if (subpages.includes(newPage)) {
       return 'slide-forward';
     }
@@ -405,8 +423,8 @@ const Router = {
       }
     }
 
-    // Toggle active class on body for dining subpages (Meal Chart, Bazar, Summary, Friday's Meal)
-    const isDiningSubpage = ['mealchart', 'bazar', 'summary', 'fridaymeal'].includes(page);
+    // Toggle active class on body for dining subpages (Meal Chart, Bazar, Summary, Friday's Meal, Prayer)
+    const isDiningSubpage = ['mealchart', 'bazar', 'summary', 'fridaymeal', 'prayer'].includes(page);
     document.body.classList.toggle('dining-subpage-active', isDiningSubpage);
     document.body.classList.toggle('user-bills-active', page === 'user-bills');
 
@@ -427,6 +445,7 @@ const Router = {
       history: 'History',
       notifications: 'Notifications',
       fridaymeal: "Friday Meal's",
+      prayer: 'Prayer',
       'export-slip': 'Export Member Statistics',
       more: 'More Menu',
       aiassistant: 'Messliner AI',
@@ -510,7 +529,7 @@ const Router = {
     // Toggle header back button and mobile menu button visibility
     const backBtn = document.getElementById('headerBackBtn');
     if (backBtn) {
-      const showBack = (this.navigatedFromDesktopPopover || this.navigatedFromMobileNotifScreen || this.navigatedFromNotifications || page === 'mealchart' || page === 'bazar' || page === 'summary' || page === 'history' || page === 'notifications' || page === 'export-slip' || page === 'fridaymeal' || page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices' || page === 'finance' || page === 'ledger');
+      const showBack = (this.navigatedFromDesktopPopover || this.navigatedFromMobileNotifScreen || this.navigatedFromNotifications || page === 'mealchart' || page === 'bazar' || page === 'summary' || page === 'history' || page === 'notifications' || page === 'export-slip' || page === 'fridaymeal' || page === 'prayer' || page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices' || page === 'finance' || page === 'ledger');
       backBtn.style.display = showBack ? 'inline-flex' : 'none';
 
       // Set onclick dynamically to handle navigation flow

@@ -24,11 +24,17 @@ window.Messliner = window.DineDesk = {
   auth: {
     async logout() {
       try {
+        if (sessionStorage.getItem('ml_impersonate_user_id')) {
+          sessionStorage.removeItem('ml_impersonate_user_id');
+          const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+          window.location.href = isLocal ? 'dashboard.html' : '/dashboard';
+          return;
+        }
         if (window.Messliner && typeof window.Messliner._clearUserCache === 'function') {
           window.Messliner._clearUserCache();
         }
         await auth.signOut();
-        window.location.href = (window.location.protocol === 'file:' ? 'login.html' : '/login');
+        window.location.href = ((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'login.html' : '/login');
       } catch (error) {
         console.error('Logout error:', error);
         Notifications.toast('error', 'Error', 'Failed to sign out.');
@@ -57,6 +63,12 @@ window.Messliner = window.DineDesk = {
   /**
    * Dynamically update top header with dynamic greeting & user display name on Home
    */
+  exitImpersonation() {
+    try { sessionStorage.removeItem('ml_impersonate_user_id'); } catch (_) { }
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+    window.location.href = isLocal ? 'dashboard.html' : '/dashboard';
+  },
+
   updateHomeHeaderGreeting(userName) {
     const greetingEl = document.getElementById('headerGreeting');
     const titleEl = document.getElementById('headerTitle');
@@ -190,7 +202,7 @@ window.Messliner = window.DineDesk = {
         // Truly not authenticated — clean up cached data and redirect to login
         console.log('[Messliner] Auth session null. Cleaning up cached user data...');
         this._clearUserCache();
-        window.location.replace(window.location.protocol === 'file:' ? 'login.html' : '/login');
+        window.location.replace((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'login.html' : '/login');
         return;
       }
       this._bootForUser(user);
@@ -213,7 +225,12 @@ window.Messliner = window.DineDesk = {
 
     const emailKey = Utils.encodeEmail(user.email);
     const urlParams = new URLSearchParams(window.location.search);
-    const impersonateUserId = urlParams.get('impersonate');
+    let impersonateUserId = urlParams.get('impersonate');
+    if (impersonateUserId) {
+      try { sessionStorage.setItem('ml_impersonate_user_id', impersonateUserId); } catch (_) { }
+    } else {
+      try { impersonateUserId = sessionStorage.getItem('ml_impersonate_user_id'); } catch (_) { }
+    }
     const cacheKey = impersonateUserId ? `ml_cache_v2_imp_${impersonateUserId}` : `ml_cache_v2_${emailKey}`;
 
     // ── Check if session is active before hydrating cache ──
@@ -316,6 +333,9 @@ window.Messliner = window.DineDesk = {
         if (targetSnap.exists()) {
           activeUserId = impersonateUserId;
           console.log('[Messliner] Impersonating member:', impersonateUserId);
+        } else {
+          try { sessionStorage.removeItem('ml_impersonate_user_id'); } catch (_) { }
+          impersonateUserId = null;
         }
       }
 
@@ -536,10 +556,17 @@ window.Messliner = window.DineDesk = {
     const userData = data.userData;
     this.state.actualRole = userData.role || 'user';
     const viewMode = localStorage.getItem('viewMode') || sessionStorage.getItem('viewMode');
-    if (this.state.actualRole === 'admin' && viewMode === 'user') {
+    const impActive = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ml_impersonate_user_id')) || new URLSearchParams(window.location.search).get('impersonate');
+    if (impActive) {
+      this.state.role = userData.role || 'user';
+      this.state.isImpersonating = true;
+      this.state.impersonatedUserId = impActive;
+    } else if (this.state.actualRole === 'admin' && viewMode === 'user') {
       this.state.role = 'user';
+      this.state.isImpersonating = false;
     } else {
       this.state.role = this.state.actualRole;
+      this.state.isImpersonating = false;
     }
     if (window.Router && typeof Router.setRole === 'function') {
       Router.setRole(this.state.role);

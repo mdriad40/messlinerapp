@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bKash Payment Confirmation — Messliner</title>
+  <link rel="icon" type="image/png" href="assets/img/messLiner-logo.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Firebase SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      background: radial-gradient(circle at top, #fdf2f8 0%, #f8fafc 100%);
+      min-height: 100vh;
+    }
+    .bkash-pink {
+      color: #E2136E;
+    }
+    .bg-bkash {
+      background: linear-gradient(135deg, #E2136E 0%, #D12053 100%);
+    }
+    .shadow-bkash {
+      box-shadow: 0 10px 25px -5px rgba(226, 19, 110, 0.3);
+    }
+    @keyframes checkBounce {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-bounce-in {
+      animation: checkBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+  </style>
+</head>
+
+<body class="flex items-center justify-center p-4 selection:bg-pink-500 selection:text-white">
+
+  <!-- Card Container -->
+  <div class="w-full max-w-lg bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden relative" id="mainCard">
+    
+    <!-- Top Decorative Bar -->
+    <div class="h-2 bg-bkash w-full"></div>
+
+    <div class="p-6 sm:p-8" id="cardContent">
+      <!-- Loading State -->
+      <div id="stateLoading" class="flex flex-col items-center justify-center py-10 space-y-4">
+        <div class="w-14 h-14 rounded-full border-4 border-pink-100 border-t-[#E2136E] animate-spin"></div>
+        <div class="text-center">
+          <h3 class="text-base font-bold text-slate-900">Verifying bKash Transaction...</h3>
+          <p class="text-xs text-slate-500 mt-1">Please wait while your SMS balance is updated.</p>
+        </div>
+      </div>
+
+      <!-- Success State (Rendered Dynamically) -->
+      <div id="stateSuccess" class="hidden"></div>
+
+      <!-- Failure / Cancelled State (Rendered Dynamically) -->
+      <div id="stateFailure" class="hidden"></div>
+    </div>
+
+    <!-- Footer Security Badge -->
+    <div class="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+      <div class="flex items-center gap-1.5 font-medium">
+        <i data-lucide="shield-check" class="h-3.5 w-3.5 text-emerald-600"></i>
+        <span>Encrypted 256-Bit bKash Gateway</span>
+      </div>
+      <span class="font-bold tracking-wider text-slate-500">MESSLINER</span>
+    </div>
+  </div>
+
+  <script>
+    (async function () {
+      const params = new URLSearchParams(window.location.search);
+      const paymentStatus = (params.get("status") || "").toLowerCase(); // "success" | "failure" | "cancel"
+      const paymentID = params.get("paymentID") || "";
+      const trxID = params.get("trxID") || "";
+
+      const stateLoading = document.getElementById("stateLoading");
+      const stateSuccess = document.getElementById("stateSuccess");
+      const stateFailure = document.getElementById("stateFailure");
+
+      // Retrieve pending transaction details from localStorage
+      let pending = {};
+      try {
+        pending = JSON.parse(localStorage.getItem("ml_pending_bkash_recharge") || "{}");
+      } catch (_) {}
+
+      const diningId = pending.diningId || localStorage.getItem("currentDiningId") || "";
+      const rechargeAmount = parseFloat(pending.amount) || 0;
+      const customerPhone = pending.phone || "";
+
+      function renderIcons() {
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      // ─── 1. SUCCESS FLOW ──────────────────────────────────────────
+      if (paymentStatus === "success") {
+        let updatedBalance = 0;
+        let perSmsRate = 0.30;
+        const dedupeKey = "ml_bkash_done_" + (paymentID || trxID);
+
+        try {
+          if (diningId && rechargeAmount > 0) {
+            // Double-credit protection check
+            const alreadyProcessed = localStorage.getItem(dedupeKey);
+
+            // Fetch current balance from Firebase
+            const snap = await db.ref(`dinings/${diningId}/smsConfig`).once("value");
+            const cfg = snap.val() || {};
+            const oldBalance = parseFloat(cfg.smsBalance) || 0;
+            perSmsRate = parseFloat(cfg.smsRate) || 0.30;
+
+            if (!alreadyProcessed) {
+              updatedBalance = oldBalance + rechargeAmount;
+
+              // 1. Update SMS Balance in Firebase
+              await db.ref(`dinings/${diningId}/smsConfig/smsBalance`).set(updatedBalance);
+
+              // 2. Append to SMS Balance & Recharge History
+              await db.ref(`dinings/${diningId}/smsBalanceHistory`).push({
+                amount: rechargeAmount,
+                type: "recharge",
+                gateway: "bkash",
+                balance: updatedBalance,
+                rate: perSmsRate,
+                trxID: trxID || ("BKASH_" + Date.now()),
+                paymentID: paymentID || "",
+                phone: customerPhone,
+                note: `bKash Instant Auto Recharge of ৳${rechargeAmount.toFixed(2)} (TrxID: ${trxID || 'N/A'})`,
+                timestamp: firebase.database.ServerValue.TIMESTAMP || Date.now()
+              });
+
+              // Mark processed
+              localStorage.setItem(dedupeKey, "1");
+              localStorage.removeItem("ml_pending_bkash_recharge");
+            } else {
+              updatedBalance = oldBalance;
+            }
+          }
+        } catch (dbErr) {
+          console.error("[bKash Callback] DB update error:", dbErr);
+        }
+
+        const estCredits = perSmsRate > 0 ? Math.floor(rechargeAmount / perSmsRate) : 0;
+        const now = new Date();
+        const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${now.toLocaleTimeString()}`;
+
+        stateLoading.classList.add("hidden");
+        stateSuccess.classList.remove("hidden");
+        stateSuccess.innerHTML = `
+          <div class="flex flex-col items-center text-center">
+            <!-- Animated Success Icon -->
+            <div class="w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-200 text-emerald-600 flex items-center justify-center mb-4 animate-bounce-in shadow-lg">
+              <i data-lucide="check" class="h-9 w-9 stroke-[3]"></i>
+            </div>
+
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 border border-pink-200 text-[#E2136E] text-xs font-bold mb-2">
+              <i data-lucide="zap" class="h-3.5 w-3.5"></i>
+              <span>bKash Auto Checkout</span>
+            </div>
+
+            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Payment Successful!</h2>
+            <p class="text-xs text-slate-500 mt-1">Your mess SMS balance has been credited instantly.</p>
+
+            <!-- Recharged Amount Display -->
+            <div class="w-full bg-gradient-to-r from-pink-50/50 via-white to-pink-50/50 border border-pink-100 rounded-2xl p-4 my-5 text-center">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Recharged Amount</span>
+              <div class="text-3xl font-black text-[#E2136E] mt-0.5">৳${rechargeAmount.toFixed(2)}</div>
+              ${estCredits > 0 ? `<span class="inline-block mt-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">≈ +${estCredits} Estimated SMS Added</span>` : ''}
+            </div>
+
+            <!-- Receipt Breakdown Table -->
+            <div class="w-full rounded-2xl bg-slate-50 border border-slate-200/80 p-4 space-y-2.5 text-xs text-left">
+              <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                <span class="text-slate-500 font-medium">Transaction ID (TrxID)</span>
+                <span class="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">${trxID || 'BKASH_CONFIRMED'}</span>
+              </div>
+              <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                <span class="text-slate-500 font-medium">bKash Payment ID</span>
+                <span class="font-mono text-slate-700">${paymentID || 'N/A'}</span>
+              </div>
+              ${updatedBalance > 0 ? `
+              <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                <span class="text-slate-500 font-medium">New SMS Balance</span>
+                <span class="font-bold text-emerald-700 font-mono text-sm">৳${updatedBalance.toFixed(2)}</span>
+              </div>` : ''}
+              <div class="flex justify-between items-center">
+                <span class="text-slate-500 font-medium">Timestamp</span>
+                <span class="text-slate-700 font-medium">${dateStr}</span>
+              </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="w-full mt-6 space-y-2">
+              <a href="dashboard.html#more" class="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl text-white font-bold text-sm bg-bkash hover:opacity-95 shadow-bkash transition-all transform active:scale-[0.98]">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                <span>Return to SMS Dashboard &amp; Logs</span>
+              </a>
+            </div>
+          </div>
+        `;
+        renderIcons();
+        return;
+      }
+
+      // ─── 2. CANCELLED / FAILED FLOW ──────────────────────────────
+      stateLoading.classList.add("hidden");
+      stateFailure.classList.remove("hidden");
+
+      const isCancelled = paymentStatus === "cancel";
+      const title = isCancelled ? "Payment Cancelled" : "Payment Incomplete";
+      const desc = isCancelled 
+        ? "You cancelled the bKash checkout process. No amount was deducted."
+        : "The bKash gateway was unable to complete the payment transaction. Please try again.";
+
+      stateFailure.innerHTML = `
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 rounded-full ${isCancelled ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-rose-50 border-rose-200 text-rose-600'} border-2 flex items-center justify-center mb-4 shadow-md">
+            <i data-lucide="${isCancelled ? 'alert-triangle' : 'x'}" class="h-8 w-8 stroke-[2.5]"></i>
+          </div>
+
+          <span class="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${isCancelled ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'} mb-2">
+            ${isCancelled ? 'TRANSACTION CANCELLED' : 'PAYMENT FAILED'}
+          </span>
+
+          <h2 class="text-xl font-extrabold text-slate-900">${title}</h2>
+          <p class="text-xs text-slate-500 mt-1 max-w-sm">${desc}</p>
+
+          ${paymentID ? `
+          <div class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 my-5 text-xs text-left">
+            <div class="flex justify-between items-center text-slate-600">
+              <span>Reference Payment ID:</span>
+              <span class="font-mono font-bold text-slate-800">${paymentID}</span>
+            </div>
+          </div>` : '<div class="my-3"></div>'}
+
+          <div class="w-full mt-4 space-y-2">
+            <a href="dashboard.html#more" class="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-white font-bold text-xs bg-slate-900 hover:bg-slate-800 transition-all shadow-md">
+              <i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i>
+              <span>Try Again from SMS Dashboard</span>
+            </a>
+          </div>
+        </div>
+      `;
+      renderIcons();
+    })();
+  </script>
+
+</body>
+</html>
+

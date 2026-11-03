@@ -11,3 +11,7 @@ desktop.ini
 # Build and cache
 .vite/
 node_modules/
+
+# Admin console (separate repo/deployment)
+Messliner_Admin/
+

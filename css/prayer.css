@@ -1,0 +1,1420 @@
+        /* ====================================================
+       ISLAMIC PRAYER PAGE STYLES (Professional & Minimal)
+       ==================================================== */
+        /* Complete edge-to-edge flush layout for Prayer page */
+        body:has(#page-prayer.active) .top-header {
+          display: none !important;
+        }
+
+        body:has(#page-prayer.active) .content-area {
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: 100% !important;
+          width: 100% !important;
+          background: #FFFFFF !important;
+          padding-bottom: calc(var(--bottom-nav-height, 64px) + 24px + env(safe-area-inset-bottom, 14px)) !important;
+        }
+
+        body:has(#page-prayer.active) {
+          background: #FFFFFF !important;
+        }
+
+        body:has(#page-prayer.active:has(.prayer-fullview-container.active)) .content-area,
+        body:has(.prayer-fullview-container.active) .content-area {
+          background: #F8FAFC !important;
+        }
+
+        #page-prayer.page-section {
+          padding: 0 !important;
+          margin: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+        }
+
+        .prayer-main-view {
+          width: 100%;
+          margin: 0;
+          padding: 0;
+        }
+
+        .prayer-container {
+          width: 100%;
+          max-width: 100%;
+          margin: 0;
+          padding: 0;
+          position: relative;
+          box-sizing: border-box;
+        }
+
+        /* Top Hero Section (Deep dark teal/green background matching screenshot) */
+        .prayer-hero-section {
+          background: linear-gradient(180deg, #042720 0%, #06382E 70%, #074237 100%);
+          padding: 12px 14px 14px 14px;
+          position: relative;
+          box-sizing: border-box;
+          width: 100%;
+        }
+
+        /* Top Navigation Bar: iOS Back Button + Centered Title */
+        .prayer-top-navbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 4px 2px 16px 2px;
+          box-sizing: border-box;
+        }
+
+        .prayer-ios-back-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.14) !important;
+          border: 1px solid rgba(255, 255, 255, 0.24) !important;
+          color: #FFFFFF !important;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+          padding: 0;
+          outline: none !important;
+          -webkit-tap-highlight-color: transparent;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .prayer-ios-back-btn svg {
+          stroke: #FFFFFF !important;
+          color: #FFFFFF !important;
+        }
+
+        .prayer-ios-back-btn:hover {
+          background: rgba(255, 255, 255, 0.24) !important;
+          color: #FFFFFF !important;
+          transform: scale(1.04);
+        }
+
+        .prayer-ios-back-btn:focus,
+        .prayer-ios-back-btn:focus-visible,
+        .prayer-ios-back-btn:active {
+          background: rgba(255, 255, 255, 0.28) !important;
+          color: #FFFFFF !important;
+          outline: none !important;
+          box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25) !important;
+        }
+
+        .prayer-top-title {
+          font-size: 1.18rem;
+          font-weight: 700;
+          color: #FFFFFF;
+          margin: 0;
+          text-align: center;
+          letter-spacing: -0.01em;
+          flex: 1;
+        }
+
+        .prayer-top-spacer {
+          width: 38px;
+          height: 38px;
+        }
+
+        /* Hero Carousel Slider (Responsive compact height, uniform color) */
+        .prayer-slider-wrap {
+          position: relative;
+          width: 100%;
+          border-radius: 22px;
+          overflow: hidden;
+          margin: 0 auto;
+          box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.4);
+          touch-action: pan-y;
+          user-select: none;
+          -webkit-user-select: none;
+        }
+
+        .prayer-slider-track {
+          display: flex;
+          width: 100%;
+          transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+          cursor: grab;
+        }
+
+        .prayer-slider-track:active {
+          cursor: grabbing;
+        }
+
+        .prayer-slide {
+          min-width: 100%;
+          width: 100%;
+          min-height: 125px;
+          padding: 16px 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          position: relative;
+          color: #FFFFFF;
+          box-sizing: border-box;
+        }
+
+        .prayer-slide-amber {
+          background: linear-gradient(135deg, #F59E0B 0%, #EA580C 100%);
+        }
+
+        .prayer-slide-emerald {
+          background: linear-gradient(135deg, #059669 0%, #047857 50%, #064E3B 100%);
+        }
+
+        .prayer-slide-teal {
+          background: linear-gradient(135deg, #0D9488 0%, #0F766E 50%, #115E59 100%);
+        }
+
+        .prayer-slide-content {
+          flex: 1;
+          z-index: 2;
+          max-width: 65%;
+        }
+
+        .prayer-slide-sub {
+          font-size: 0.72rem;
+          font-weight: 600;
+          letter-spacing: 0.06em;
+          opacity: 0.95;
+          display: block;
+          margin-bottom: 4px;
+          color: #FEF3C7;
+        }
+
+        .prayer-slide-heading {
+          font-size: 1.15rem;
+          font-weight: 800;
+          line-height: 1.15;
+          margin: 0 0 10px;
+          color: #FFFFFF;
+          letter-spacing: -0.01em;
+        }
+
+        .prayer-slide-cta {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 14px;
+          background: #FFFFFF;
+          color: #0F172A;
+          border: none;
+          border-radius: 9999px;
+          font-size: 0.76rem;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+          transition: all 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+          font-family: inherit;
+        }
+
+        .prayer-slide-cta:hover {
+          transform: translateY(-1.5px);
+          background: #FFFBEB;
+        }
+
+        .prayer-slide-art {
+          width: 80px;
+          height: 80px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1;
+          opacity: 0.95;
+          flex-shrink: 0;
+        }
+
+        .tasbih-art-svg {
+          width: 100%;
+          height: 100%;
+          filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.15));
+        }
+
+        /* Pagination Dots Outside below card */
+        .prayer-slider-dots {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          margin-top: 10px;
+          margin-bottom: 8px;
+        }
+
+        .prayer-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.35);
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          transition: all 0.25s cubic-bezier(0.2, 0, 0.2, 1);
+        }
+
+        .prayer-dot.active {
+          width: 22px;
+          background: #FFFFFF;
+          box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Curved Bottom Sheet (White background curving up from hero, matching screenshot) */
+        .prayer-body-curved {
+          background: #FFFFFF;
+          border-radius: 28px 28px 0 0;
+          margin-top: -12px;
+          position: relative;
+          z-index: 2;
+          padding: 16px 14px 28px 14px;
+          box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.06);
+          box-sizing: border-box;
+        }
+
+        /* 2. Menu Items (Tasbih, Dua, Qibla) */
+        .prayer-menu-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+          margin-bottom: 16px;
+        }
+
+        .prayer-menu-item {
+          background: #FFFFFF;
+          border: 1px solid rgba(226, 232, 240, 0.9);
+          border-radius: 16px;
+          padding: 10px 6px 9px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+          box-shadow: 0 3px 12px -2px rgba(15, 23, 42, 0.05);
+          position: relative;
+        }
+
+        .prayer-menu-item:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px -3px rgba(15, 23, 42, 0.1);
+          border-color: rgba(16, 185, 129, 0.4);
+        }
+
+        .prayer-menu-item:active {
+          transform: scale(0.97);
+        }
+
+        .prayer-menu-icon-wrap {
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 5px;
+          transition: transform 0.2s ease;
+        }
+
+        .prayer-menu-item:hover .prayer-menu-icon-wrap {
+          transform: scale(1.06);
+        }
+
+        .icon-tasbih {
+          background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+          color: #D97706;
+          box-shadow: 0 3px 8px -2px rgba(217, 119, 6, 0.22);
+        }
+
+        .icon-dua {
+          background: linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%);
+          color: #7C3AED;
+          box-shadow: 0 3px 8px -2px rgba(124, 58, 237, 0.22);
+        }
+
+        .icon-qibla {
+          background: linear-gradient(135deg, #CCFBF1 0%, #99F6E4 100%);
+          color: #0D9488;
+          box-shadow: 0 3px 8px -2px rgba(13, 148, 136, 0.22);
+        }
+
+        .prayer-menu-name {
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: #1E293B;
+          margin-top: 1px;
+          margin-bottom: 1px;
+          line-height: 1.2;
+        }
+
+        .prayer-menu-hint {
+          font-size: 0.7rem;
+          color: #64748B;
+          font-weight: 500;
+        }
+
+        /* 3. Namaz Timings Main Card (Deep Emerald Islamic Theme) */
+        .prayer-timings-card {
+          background: linear-gradient(160deg, #07382E 0%, #042821 60%, #021B16 100%);
+          border-radius: 24px;
+          padding: 22px 16px 20px;
+          color: #FFFFFF;
+          position: relative;
+          overflow: hidden;
+          box-shadow: 0 14px 32px -8px rgba(2, 27, 22, 0.45);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-sizing: border-box;
+        }
+
+        .prayer-timings-card::before {
+          content: '';
+          position: absolute;
+          top: -60px;
+          right: -60px;
+          width: 180px;
+          height: 180px;
+          border-radius: 9999px;
+          background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+          pointer-events: none;
+        }
+
+        .prayer-lantern {
+          position: absolute;
+          top: 0;
+          opacity: 0.9;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .prayer-lantern-left {
+          left: 14px;
+        }
+
+        .prayer-lantern-right {
+          right: 14px;
+        }
+
+        /* Custom City Dropdown */
+        .prayer-location-wrap {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 14px;
+          position: relative;
+          z-index: 5;
+        }
+
+        .prayer-city-dropdown {
+          position: relative;
+          display: inline-block;
+        }
+
+        .prayer-city-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          background: rgba(0, 0, 0, 0.28) !important;
+          border: 1px solid rgba(255, 255, 255, 0.2) !important;
+          color: #FFFFFF !important;
+          padding: 7px 16px;
+          border-radius: 9999px;
+          font-size: 0.83rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-family: inherit;
+          outline: none !important;
+          -webkit-tap-highlight-color: transparent;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .prayer-city-pill svg {
+          stroke: #FFFFFF !important;
+          color: #FFFFFF !important;
+        }
+
+        .prayer-city-pill span {
+          color: #FFFFFF !important;
+        }
+
+        .prayer-city-pill:hover {
+          background: rgba(0, 0, 0, 0.4) !important;
+          border-color: rgba(245, 158, 11, 0.6) !important;
+          color: #FFFFFF !important;
+        }
+
+        .prayer-city-pill:focus,
+        .prayer-city-pill:focus-visible,
+        .prayer-city-pill:active,
+        .prayer-city-dropdown.active .prayer-city-pill {
+          background: rgba(0, 0, 0, 0.45) !important;
+          border-color: #F59E0B !important;
+          color: #FFFFFF !important;
+          outline: none !important;
+          box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35) !important;
+        }
+
+        .prayer-dropdown-chevron {
+          display: flex;
+          align-items: center;
+          transition: transform 0.2s ease;
+        }
+
+        .prayer-city-dropdown.active .prayer-dropdown-chevron {
+          transform: rotate(180deg);
+        }
+
+        .prayer-city-menu {
+          position: absolute;
+          top: calc(100% + 8px);
+          left: 50%;
+          transform: translateX(-50%);
+          background: #0B332A;
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          border-radius: 16px;
+          min-width: 210px;
+          max-height: 250px;
+          overflow-y: auto;
+          padding: 6px;
+          box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+          z-index: 100;
+          display: none;
+        }
+
+        .prayer-city-dropdown.active .prayer-city-menu {
+          display: block;
+          animation: prayerDropIn 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+        }
+
+        @keyframes prayerDropIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -8px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translate(-50%, 0);
+          }
+        }
+
+        .prayer-city-item {
+          padding: 8px 14px;
+          border-radius: 10px;
+          color: #E2E8F0;
+          font-size: 0.82rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .prayer-city-item:hover {
+          background: rgba(16, 185, 129, 0.25);
+          color: #FFFFFF;
+        }
+
+        .prayer-city-item.active {
+          background: #059669;
+          color: #FFFFFF;
+          font-weight: 700;
+        }
+
+        /* Timings Header */
+        .prayer-timings-header {
+          text-align: center;
+          margin-bottom: 16px;
+        }
+
+        .prayer-timings-title {
+          font-size: 1.3rem;
+          font-weight: 800;
+          color: #FFFFFF;
+          margin: 0 0 4px;
+          letter-spacing: -0.01em;
+        }
+
+        .prayer-timings-dates {
+          font-size: 0.76rem;
+          color: #A7F3D0;
+          margin: 0;
+          font-weight: 500;
+          opacity: 0.95;
+        }
+
+        /* 4. Warm Golden Remaining Namaz Card (Screenshot 3) */
+        .prayer-countdown-banner {
+          background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #F59E0B 100%);
+          border-radius: 18px;
+          padding: 14px 18px;
+          color: #1E293B;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          position: relative;
+          overflow: hidden;
+          margin-bottom: 18px;
+          box-shadow: 0 8px 22px -4px rgba(245, 158, 11, 0.35);
+          border: 1px solid rgba(254, 243, 199, 0.8);
+        }
+
+        .prayer-countdown-bg-dome {
+          position: absolute;
+          right: 0;
+          bottom: 0;
+          width: 140px;
+          height: 100%;
+          background: radial-gradient(circle at 100% 100%, rgba(217, 119, 6, 0.18) 0%, transparent 70%);
+          pointer-events: none;
+        }
+
+        .prayer-countdown-col {
+          z-index: 2;
+        }
+
+        .prayer-countdown-left {
+          flex: 1.2;
+        }
+
+        .prayer-countdown-right {
+          flex: 1;
+          text-align: right;
+        }
+
+        .prayer-cd-label {
+          font-size: 0.7rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          color: #78350F;
+          display: block;
+          margin-bottom: 2px;
+          text-transform: uppercase;
+        }
+
+        .prayer-cd-main {
+          display: flex;
+          align-items: baseline;
+          gap: 6px;
+        }
+
+        .prayer-cd-name {
+          font-size: 1.18rem;
+          font-weight: 800;
+          color: #0F172A;
+          letter-spacing: -0.01em;
+        }
+
+        .prayer-cd-timer {
+          font-size: 1.18rem;
+          font-weight: 800;
+          color: #0F172A;
+          font-variant-numeric: tabular-nums;
+          font-family: monospace, system-ui, sans-serif;
+        }
+
+        .prayer-countdown-divider {
+          width: 1.5px;
+          height: 36px;
+          background: rgba(180, 83, 9, 0.28);
+          margin: 0 12px;
+          z-index: 2;
+        }
+
+        .prayer-cd-date {
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: #1E293B;
+          display: block;
+          letter-spacing: -0.01em;
+          text-transform: uppercase;
+        }
+
+        .prayer-cd-city {
+          font-size: 0.74rem;
+          font-weight: 600;
+          color: #78350F;
+          display: block;
+          margin-top: 2px;
+        }
+
+        /* 5. 5 Wakto Horizontal Cards (Screenshot 2 & 1) */
+        .prayer-waqt-cards-container {
+          width: 100%;
+          margin-bottom: 12px;
+        }
+
+        .prayer-waqt-cards-scroll {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          gap: 6px;
+          width: 100%;
+        }
+
+        @media (max-width: 640px) {
+          .prayer-waqt-cards-scroll {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            padding-bottom: 6px;
+            -webkit-overflow-scrolling: touch;
+          }
+
+          .prayer-waqt-card {
+            flex: 0 0 90px;
+            scroll-snap-align: start;
+          }
+        }
+
+        .prayer-waqt-card {
+          background: #FFFDF9;
+          border-radius: 16px;
+          padding: 14px 6px 12px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          color: #1E293B;
+          position: relative;
+          border: 1.5px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+          transition: all 0.24s cubic-bezier(0.2, 0, 0.2, 1);
+        }
+
+        .prayer-waqt-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+        }
+
+        .prayer-waqt-card.active {
+          background: #FFFFFF;
+          border: 2px solid #F59E0B;
+          box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.28), 0 6px 20px rgba(245, 158, 11, 0.22);
+          transform: translateY(-2px);
+        }
+
+        .waqt-icon-box {
+          width: 38px;
+          height: 38px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 6px;
+          transition: transform 0.2s ease;
+        }
+
+        .prayer-waqt-card:hover .waqt-icon-box {
+          transform: scale(1.08);
+        }
+
+        .waqt-icon-fajr {
+          background: #FEF3C7;
+        }
+
+        .waqt-icon-dhuhr {
+          background: #FEF9C3;
+        }
+
+        .waqt-icon-asr {
+          background: #FFEDD5;
+        }
+
+        .waqt-icon-maghrib {
+          background: #FEE2E2;
+        }
+
+        .waqt-icon-isha {
+          background: #E0E7FF;
+        }
+
+        .waqt-name {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #475569;
+          margin-bottom: 3px;
+        }
+
+        .prayer-waqt-card.active .waqt-name {
+          color: #B45309;
+          font-weight: 700;
+        }
+
+        .waqt-time {
+          font-size: 0.88rem;
+          font-weight: 800;
+          color: #0F172A;
+          font-family: inherit;
+        }
+
+        .prayer-waqt-card.active .waqt-time {
+          color: #92400E;
+        }
+
+        .waqt-active-badge {
+          display: none;
+          font-size: 0.6rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          background: #F59E0B;
+          color: #FFFFFF;
+          padding: 2px 6px;
+          border-radius: 9999px;
+          margin-top: 4px;
+        }
+
+        .prayer-waqt-card.active .waqt-active-badge {
+          display: inline-block;
+        }
+
+        /* Secondary Strip (Sunrise, Sunset, Imsak) */
+        .prayer-secondary-strip {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 12px;
+          padding-top: 10px;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .prayer-secondary-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: rgba(255, 255, 255, 0.07);
+          padding: 4px 10px;
+          border-radius: 9999px;
+          font-size: 0.74rem;
+          color: #D1FAE5;
+        }
+
+        .sec-label {
+          opacity: 0.75;
+        }
+
+        .sec-time {
+          font-weight: 700;
+          color: #FEF3C7;
+        }
+
+        /* ====================================================
+       FULL-PAGE OVERLAY VIEWS (TASBIH, DUA, QIBLA)
+       ==================================================== */
+        .prayer-fullview-container {
+          width: 100%;
+          min-height: calc(100vh - 64px);
+          min-height: calc(100dvh - 64px);
+          background: #F8FAFC;
+          display: none;
+          flex-direction: column;
+          box-sizing: border-box;
+          padding-bottom: 40px;
+        }
+
+        .prayer-fullview-container.active {
+          display: flex;
+          animation: fullViewFadeIn 0.2s ease-out;
+        }
+
+        @keyframes fullViewFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .fullview-top-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 16px;
+          background: #FFFFFF;
+          border-bottom: 1px solid #E2E8F0;
+          position: sticky;
+          top: 0;
+          z-index: 10;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .prayer-fullview-ios-back-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          background: #F1F5F9;
+          border: 1px solid #E2E8F0;
+          color: #0F172A;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+          padding: 0;
+          outline: none;
+          flex-shrink: 0;
+        }
+
+        .prayer-fullview-ios-back-btn:hover {
+          background: #E2E8F0;
+          transform: scale(1.05);
+        }
+
+        .prayer-fullview-ios-back-btn:active {
+          transform: scale(0.95);
+        }
+
+        .prayer-fullview-center-title {
+          font-size: 1.15rem;
+          font-weight: 700;
+          color: #0F172A;
+          margin: 0;
+          text-align: center;
+          flex: 1;
+          letter-spacing: -0.01em;
+        }
+
+        .prayer-fullview-top-spacer {
+          width: 38px;
+          height: 38px;
+          flex-shrink: 0;
+        }
+
+        .fullview-back-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 14px;
+          background: #F1F5F9;
+          border: none;
+          border-radius: 9999px;
+          color: #0F172A;
+          font-size: 0.85rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-family: inherit;
+        }
+
+        .fullview-back-btn:hover {
+          background: #E2E8F0;
+          transform: translateX(-2px);
+        }
+
+        .fullview-title {
+          font-size: 1.1rem;
+          font-weight: 800;
+          color: #0F172A;
+          margin: 0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .fullview-content {
+          width: 100%;
+          max-width: 580px;
+          margin: 0 auto;
+          padding: 20px 16px 40px;
+          box-sizing: border-box;
+          flex: 1;
+        }
+
+        /* Fullview Tasbih Elements */
+        .tasbih-fullview-card {
+          background: #FFFFFF;
+          border-radius: 24px;
+          border: 1px solid #E2E8F0;
+          padding: 24px 20px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+          text-align: center;
+        }
+
+        .tasbih-dhikr-pills {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          padding-bottom: 8px;
+          margin-bottom: 16px;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .tasbih-dhikr-pill {
+          flex-shrink: 0;
+          padding: 7px 15px;
+          border-radius: 9999px;
+          background: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          color: #475569;
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          font-family: inherit;
+        }
+
+        .tasbih-dhikr-pill.active {
+          background: #065F46;
+          border-color: #065F46;
+          color: #FFFFFF;
+        }
+
+        .tasbih-arabic-display {
+          font-size: 1.75rem;
+          font-weight: 700;
+          color: #065F46;
+          margin: 10px 0 4px;
+          min-height: 44px;
+          font-family: 'Amiri', 'Traditional Arabic', serif;
+        }
+
+        .tasbih-meaning-display {
+          font-size: 0.88rem;
+          color: #64748B;
+          margin-bottom: 22px;
+        }
+
+        .tasbih-dial-wrap {
+          position: relative;
+          width: 240px;
+          height: 240px;
+          margin: 0 auto 24px;
+          cursor: pointer;
+          user-select: none;
+          -webkit-user-select: none;
+          touch-action: manipulation;
+        }
+
+        .tasbih-progress-svg {
+          width: 100%;
+          height: 100%;
+          transform: rotate(-90deg);
+        }
+
+        .tasbih-dial-btn {
+          position: absolute;
+          inset: 16px;
+          border-radius: 50%;
+          background: linear-gradient(145deg, #FFFFFF, #F8FAFC);
+          box-shadow: 0 10px 30px rgba(6, 95, 70, 0.15), inset 0 2px 4px rgba(255, 255, 255, 0.9);
+          border: 2px solid rgba(6, 95, 70, 0.12);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.1s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.1s ease;
+        }
+
+        .tasbih-dial-wrap:active .tasbih-dial-btn {
+          transform: scale(0.93);
+          box-shadow: 0 4px 14px rgba(6, 95, 70, 0.12);
+        }
+
+        .tasbih-count-num {
+          font-size: 3.8rem;
+          font-weight: 900;
+          color: #064E3B;
+          line-height: 1;
+          font-family: monospace, system-ui, sans-serif;
+        }
+
+        .tasbih-target-hint {
+          font-size: 0.85rem;
+          color: #94A3B8;
+          font-weight: 700;
+          margin-top: 4px;
+        }
+
+        .tasbih-tap-instruction {
+          font-size: 0.74rem;
+          font-weight: 700;
+          color: #10B981;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin-top: 4px;
+        }
+
+        .tasbih-controls-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 8px;
+          margin-top: 8px;
+        }
+
+        .tasbih-stat-item {
+          text-align: left;
+        }
+
+        .tasbih-stat-val {
+          font-size: 1.15rem;
+          font-weight: 800;
+          color: #0F172A;
+        }
+
+        .tasbih-stat-label {
+          font-size: 0.7rem;
+          color: #64748B;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+
+        .tasbih-action-buttons {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .tasbih-round-btn {
+          padding: 9px 16px;
+          border-radius: 9999px;
+          border: 1px solid #E2E8F0;
+          background: #FFFFFF;
+          color: #475569;
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 0.15s ease;
+          font-family: inherit;
+        }
+
+        .tasbih-round-btn:hover {
+          background: #F1F5F9;
+          color: #0F172A;
+        }
+
+        .tasbih-round-btn.danger:hover {
+          background: #FEE2E2;
+          color: #DC2626;
+          border-color: #FCA5A5;
+        }
+        /* Fullview Dua Elements */
+        .dua-category-chips {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          padding-bottom: 8px;
+          margin-bottom: 16px;
+          -webkit-overflow-scrolling: touch;
+        }
+        .dua-chip {
+          flex-shrink: 0;
+          padding: 7px 15px;
+          border-radius: 9999px;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          color: #475569;
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          font-family: inherit;
+        }
+        .dua-chip.active {
+          background: #7C3AED;
+          border-color: #7C3AED;
+          color: #FFFFFF;
+        }
+        .dua-cards-list {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+        .dua-item-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 20px;
+          padding: 18px 20px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+          transition: all 0.2s ease;
+        }
+        .dua-item-card:hover {
+          border-color: rgba(124, 58, 237, 0.4);
+          box-shadow: 0 6px 20px rgba(124, 58, 237, 0.08);
+        }
+        .dua-card-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+        }
+        .dua-card-title {
+          font-size: 1rem;
+          font-weight: 700;
+          color: #1E293B;
+        }
+        .dua-copy-btn {
+          background: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          color: #64748B;
+          cursor: pointer;
+          padding: 5px 10px;
+          border-radius: 8px;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 0.78rem;
+          font-weight: 600;
+          transition: all 0.15s ease;
+          font-family: inherit;
+        }
+        .dua-copy-btn:hover {
+          background: #EDE9FE;
+          color: #7C3AED;
+          border-color: #DDD6FE;
+        }
+        .dua-arabic {
+          font-size: 1.35rem;
+          line-height: 1.85;
+          font-weight: 700;
+          color: #065F46;
+          text-align: right;
+          direction: rtl;
+          margin-bottom: 10px;
+          font-family: 'Amiri', 'Traditional Arabic', serif;
+        }
+        .dua-transliteration {
+          font-size: 0.85rem;
+          color: #475569;
+          font-style: italic;
+          margin-bottom: 8px;
+          line-height: 1.45;
+        }
+        .dua-translation-bn {
+          font-size: 0.88rem;
+          color: #0F172A;
+          font-weight: 500;
+          margin-bottom: 8px;
+          line-height: 1.5;
+        }
+        .dua-reference {
+          font-size: 0.74rem;
+          color: #94A3B8;
+          font-weight: 600;
+        }
+        /* Fullview Qibla Elements (Matching Image 1 in Islamic Emerald & Gold Theme) */
+        .qibla-fullview-card {
+          background: #FFFFFF;
+          border-radius: 28px;
+          border: 1px solid #E2E8F0;
+          padding: 24px 20px 28px;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+          text-align: center;
+        }
+        .qibla-top-pointer {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 8px;
+        }
+        .qibla-compass-housing {
+          position: relative;
+          width: 270px;
+          height: 270px;
+          margin: 0 auto 22px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: radial-gradient(circle at center, rgba(254, 243, 199, 0.35) 0%, rgba(255, 255, 255, 0.95) 75%);
+          border: 2.5px solid #FDE68A;
+          box-shadow: 0 10px 35px -5px rgba(217, 119, 6, 0.15), inset 0 0 20px rgba(254, 243, 199, 0.4);
+        }
+        .qibla-dial-face {
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          transition: transform 0.25s cubic-bezier(0.15, 0.9, 0.35, 1);
+        }
+        .qibla-cardinal {
+          position: absolute;
+          font-weight: 800;
+          font-size: 1.05rem;
+          color: #1E293B;
+        }
+        .cardinal-n {
+          top: 22px;
+          left: 50%;
+          transform: translateX(-50%);
+          color: #047857;
+        }
+        .cardinal-s {
+          bottom: 22px;
+          left: 50%;
+          transform: translateX(-50%);
+        }
+        .cardinal-e {
+          right: 24px;
+          top: 50%;
+          transform: translateY(-50%);
+        }
+        .cardinal-w {
+          left: 24px;
+          top: 50%;
+          transform: translateY(-50%);
+        }
+        .qibla-dial-dot {
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #D97706;
+          opacity: 0.65;
+        }
+        .dot-ne {
+          top: 25%;
+          right: 25%;
+          transform: translate(50%, -50%);
+        }
+        .dot-nw {
+          top: 25%;
+          left: 25%;
+          transform: translate(-50%, -50%);
+        }
+        .dot-se {
+          bottom: 25%;
+          right: 25%;
+          transform: translate(50%, 50%);
+        }
+        .dot-sw {
+          bottom: 25%;
+          left: 25%;
+          transform: translate(-50%, 50%);
+        }
+        .qibla-kaaba-marker {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          margin-top: -19px;
+          margin-left: -19px;
+          width: 38px;
+          height: 38px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 5;
+          pointer-events: none;
+        }
+        .kaaba-badge-inner {
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          background: #FFFFFF;
+          border: 2px solid #F59E0B;
+          box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .qibla-center-needle-wrap {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 24px;
+          height: 180px;
+          pointer-events: none;
+          z-index: 4;
+        }
+        .qibla-needle-blade {
+          position: absolute;
+          bottom: 50%;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 9px solid transparent;
+          border-right: 9px solid transparent;
+          border-bottom: 74px solid #F59E0B;
+          filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.45));
+        }
+        .qibla-needle-blade::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 0;
+          height: 0;
+          border-right: 9px solid transparent;
+          border-bottom: 74px solid #D97706;
+        }
+        .qibla-needle-pivot {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #F59E0B 0%, #EA580C 100%);
+          border: 3px solid #FFFFFF;
+          box-shadow: 0 2px 10px rgba(234, 88, 12, 0.4);
+          z-index: 6;
+        }
+        .qibla-reading-wrap {
+          margin-bottom: 16px;
+        }
+        .qibla-angle-val {
+          font-size: 2.1rem;
+          font-weight: 800;
+          color: #0F172A;
+          line-height: 1.1;
+          letter-spacing: -0.02em;
+        }
+        .qibla-angle-sub {
+          font-size: 0.88rem;
+          color: #64748B;
+          font-weight: 500;
+          margin-top: 4px;
+        }
+        .qibla-info-strip {
+          display: flex;
+          justify-content: space-around;
+          background: #F8FAFC;
+          border-radius: 16px;
+          padding: 12px 14px;
+          margin-top: 14px;
+          border: 1px solid #E2E8F0;
+        }
+        .qibla-info-col {
+          text-align: center;
+        }
+        .qibla-info-num {
+          font-size: 1.05rem;
+          font-weight: 800;
+          color: #065F46;
+          display: block;
+        }
+        .qibla-info-lbl {
+          font-size: 0.72rem;
+          color: #64748B;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+        .qibla-calib-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 9px 20px;
+          background: #047857;
+          color: #FFFFFF;
+          border: none;
+          border-radius: 9999px;
+          font-size: 0.82rem;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: 0 3px 12px rgba(4, 120, 87, 0.25);
+          transition: all 0.2s ease;
+          font-family: inherit;
+        }
+        .qibla-calib-btn:hover {
+          background: #065F46;
+          transform: translateY(-1px);
+        }

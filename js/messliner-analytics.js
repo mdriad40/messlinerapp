@@ -248,14 +248,14 @@
           if (window.Messliner && window.Messliner.auth && typeof window.Messliner.auth.logout === 'function') {
             window.Messliner.auth.logout();
           } else if (window.auth && typeof window.auth.signOut === 'function') {
-            window.auth.signOut().then(() => window.location.replace(window.location.protocol === 'file:' ? 'login.html' : '/login'));
+            window.auth.signOut().then(() => window.location.replace((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'login.html' : '/login'));
           } else {
             localStorage.clear();
             sessionStorage.clear();
-            window.location.replace(window.location.protocol === 'file:' ? 'login.html' : '/login');
+            window.location.replace((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'login.html' : '/login');
           }
         } catch (_) {
-          window.location.replace(window.location.protocol === 'file:' ? 'login.html' : '/login');
+          window.location.replace((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'login.html' : '/login');
         }
       });
 

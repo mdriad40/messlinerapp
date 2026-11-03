@@ -39,7 +39,6 @@ const SMSAlertModule = {
   /** Called by Router when navigating to 'more' page */
   refresh() {
     this._loadConfig();
-    this._loadFormat();
     this.refreshLog();
     this.refreshBalanceHistory();
     this._dirty = false;
@@ -77,30 +76,143 @@ const SMSAlertModule = {
       const snap = await db.ref(`dinings/${this.diningId}/smsConfig`).once('value');
       const cfg = snap.val() || {};
 
-      const apiKeyEl = document.getElementById('smsApiKey');
-      const senderIdEl = document.getElementById('smsSenderId');
       const toggleEl = document.getElementById('smsAlertToggle');
-
-      if (apiKeyEl) apiKeyEl.value = cfg.apiKey || '';
-      if (senderIdEl) senderIdEl.value = cfg.senderId || '';
       if (toggleEl) toggleEl.checked = !!cfg.enabled;
 
-      // Load balance and rate
+      // Load universal rate from Super Admin
+      const universalCfg = await this.getUniversalConfig();
+      const rate = Utils.num(universalCfg.rate || cfg.smsRate || 0.30);
       const balance = Utils.num(cfg.smsBalance);
-      const rate = Utils.num(cfg.smsRate || 0.30);
       const remaining = rate > 0 ? Math.floor(balance / rate) : 0;
-
-      const balanceEl = document.getElementById('smsBalanceInput');
-      const rateEl = document.getElementById('smsRateInput');
-
-      if (balanceEl) balanceEl.value = balance;
-      if (rateEl) rateEl.value = rate;
 
       Utils.setText('smsBalanceDisplay', `৳${balance.toFixed(2)}`);
       Utils.setText('smsRateDisplay', `৳${rate.toFixed(2)}`);
       Utils.setText('smsRemainingDisplay', remaining);
+
+      this.calcBkashEstimatedSms(document.getElementById('bkashRechargeAmount')?.value || 100, rate);
     } catch (e) {
       console.error('[SMSAlert] loadConfig error:', e);
+    }
+  },
+
+  selectBkashAmount(amt) {
+    const input = document.getElementById('bkashRechargeAmount');
+    if (input) {
+      input.value = amt;
+      this.calcBkashEstimatedSms(amt);
+    }
+  },
+
+  async calcBkashEstimatedSms(amountVal, currentRate) {
+    const rawStr = (amountVal !== undefined && amountVal !== null) ? String(amountVal).trim() : '';
+    const amt = parseFloat(rawStr) || 0;
+
+    // Synchronize chips: if current input exactly equals a chip's number, highlight it; otherwise deselect all
+    const chips = document.querySelectorAll('#bkashQuickAmountChips .btn-chip');
+    chips.forEach(btn => {
+      const chipNumber = btn.textContent.replace(/[^\d]/g, '');
+      const isMatch = rawStr !== '' && chipNumber === String(amt);
+      btn.style.borderColor = isMatch ? '#E2136E' : '#cbd5e1';
+      btn.style.background = isMatch ? '#FDF2F8' : '#fff';
+      btn.style.color = isMatch ? '#E2136E' : '#334155';
+    });
+
+    let rate = currentRate;
+    if (!rate) {
+      const universalCfg = await this.getUniversalConfig();
+      rate = universalCfg.rate || 0.30;
+    }
+    const count = rate > 0 ? Math.floor(amt / rate) : 0;
+    const el = document.getElementById('bkashEstSmsCount');
+    if (el) el.textContent = `≈ ${count} SMS Credits`;
+  },
+
+  async initiateBkashRecharge() {
+    if (!this.diningId) {
+      Notifications.toast('warning', 'Session Missing', 'Please select a dining mess first.');
+      return;
+    }
+
+    const amountInput = document.getElementById('bkashRechargeAmount');
+    const amountVal = parseFloat(amountInput?.value);
+
+    if (isNaN(amountVal) || amountVal < 10) {
+      Notifications.toast('warning', 'Invalid Amount', 'Minimum recharge amount is ৳10.');
+      return;
+    }
+
+    const customerPhone = Messliner.state?.diningInfo?.phone || Messliner.state?.user?.phone || '01700000000';
+
+    const btn = document.getElementById('bkashPayBtn');
+    const defaultBtnHtml = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+        <line x1="1" y1="10" x2="23" y2="10"/>
+      </svg>
+      <span>Pay with bKash</span>
+    `;
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `
+        <div class="spinner" style="width:18px;height:18px;border:2.5px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <span>Redirecting to payment page...</span>
+      `;
+    }
+
+    // Save pending recharge in localStorage so callback page can complete transaction
+    const pendingData = {
+      diningId: this.diningId,
+      amount: amountVal,
+      timestamp: Date.now(),
+      phone: customerPhone
+    };
+    try {
+      localStorage.setItem('ml_pending_bkash_recharge', JSON.stringify(pendingData));
+    } catch (_) {}
+
+    // Determine callback URL
+    let callbackURL = window.location.origin + '/callback.html';
+    try {
+      callbackURL = new URL('callback.html', window.location.href).href;
+    } catch (_) {}
+
+    const GATEWAY_URL = "https://mygateway.netlify.app";
+    const LICENSE_KEY = "bklc_6bnDy4ZuSb0ERQPMlzq2LhH1N7Q11ttV";
+
+    try {
+      const res = await fetch(`${GATEWAY_URL}/api/gateway/create-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "License-Key": LICENSE_KEY
+        },
+        body: JSON.stringify({
+          amount: amountVal.toFixed(2),
+          customerPhone: customerPhone,
+          merchantInvoiceNumber: "INV-" + Date.now(),
+          callbackURL: callbackURL
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.bkashURL) {
+        window.location.href = data.bkashURL;
+      } else {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = defaultBtnHtml;
+        }
+        Notifications.toast('error', 'bKash Gateway Notice', data.statusMessage || 'Unable to initiate bKash payment.');
+      }
+    } catch (err) {
+      console.error('[bKash] Gateway Error:', err);
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = defaultBtnHtml;
+      }
+      Notifications.toast('error', 'Connection Error', 'Could not reach bKash payment gateway. Please check your internet connection.');
     }
   },
 
@@ -465,6 +577,93 @@ const SMSAlertModule = {
     }
   },
 
+  // ─── Universal Super Admin SMS Gateway Configuration ─────────
+
+  /**
+   * Fetches universal BulkSMSBD credentials & deposit template managed universally by Super Admin.
+   * Priority: Admin Firebase RTDB -> REST fallback -> mainDb sync fallback -> hardcoded defaults.
+   */
+  async getUniversalConfig() {
+    const defaults = {
+      apiKey: 'bYrAXuJRj42cIVvZRMnW',
+      senderId: '8809648907383',
+      rate: 0.30,
+      format: 'Dear {name}, your deposit of {amount} BDT has been received. Current balance: {balance} BDT. Note: {note}. Date: {datetime}'
+    };
+
+    // 1. Try Firebase Admin App RTDB
+    try {
+      if (typeof firebase !== 'undefined') {
+        const apps = firebase.apps || [];
+        let adminApp = apps.find(a => a.name === 'MesslinerAdminPresence' || a.name === 'AdminApp');
+        if (!adminApp) {
+          const ADMIN_CONFIG = {
+            apiKey: 'AIzaSyA0cRmgOZuAVjsGBtfBKN1GORD_BHWBAss',
+            authDomain: 'meiner-admin.firebaseapp.com',
+            databaseURL: 'https://meiner-admin-default-rtdb.firebaseio.com',
+            projectId: 'meiner-admin',
+            storageBucket: 'meiner-admin.firebasestorage.app',
+            messagingSenderId: '62196998163',
+            appId: '1:62196998163:web:b60256d994a0c674d95fe6'
+          };
+          adminApp = firebase.initializeApp(ADMIN_CONFIG, 'AdminApp');
+        }
+        if (adminApp) {
+          const snap = await adminApp.database().ref('adminSystem/systemSettings').once('value');
+          if (snap.exists()) {
+            const data = snap.val() || {};
+            return {
+              apiKey: data.smsApiKey || defaults.apiKey,
+              senderId: data.smsSenderId || defaults.senderId,
+              rate: data.smsRate !== undefined ? parseFloat(data.smsRate) : defaults.rate,
+              format: data.smsFormat || defaults.format
+            };
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[SMSAlert] Admin Firebase RTDB lookup notice:', e.message);
+    }
+
+    // 2. Direct REST endpoint fallback to Admin RTDB
+    try {
+      const res = await fetch('https://meiner-admin-default-rtdb.firebaseio.com/adminSystem/systemSettings.json');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && (data.smsApiKey || data.smsSenderId)) {
+          return {
+            apiKey: data.smsApiKey || defaults.apiKey,
+            senderId: data.smsSenderId || defaults.senderId,
+            rate: data.smsRate !== undefined ? parseFloat(data.smsRate) : defaults.rate,
+            format: data.smsFormat || defaults.format
+          };
+        }
+      }
+    } catch (restErr) {
+      console.warn('[SMSAlert] REST fallback lookup notice:', restErr.message);
+    }
+
+    // 3. Main DB sync check
+    try {
+      if (typeof db !== 'undefined') {
+        const snap = await db.ref('adminSystem/systemSettings').once('value');
+        if (snap.exists()) {
+          const data = snap.val() || {};
+          return {
+            apiKey: data.smsApiKey || defaults.apiKey,
+            senderId: data.smsSenderId || defaults.senderId,
+            rate: data.smsRate !== undefined ? parseFloat(data.smsRate) : defaults.rate,
+            format: data.smsFormat || defaults.format
+          };
+        }
+      }
+    } catch (mainErr) {
+      console.warn('[SMSAlert] Main DB check notice:', mainErr.message);
+    }
+
+    return defaults;
+  },
+
   // ─── Main SMS sender (called after deposit) ───────────
 
   /**
@@ -482,11 +681,21 @@ const SMSAlertModule = {
       const cfg = snap.val() || {};
 
       if (!cfg.enabled) return;
-      if (!cfg.apiKey || !cfg.senderId || !cfg.format) return;
 
-      // Check SMS Balance and Rate
+      // Fetch universal gateway credentials & template from Super Admin database
+      const universalCfg = await this.getUniversalConfig();
+      const apiKey = universalCfg.apiKey;
+      const senderId = universalCfg.senderId;
+      const format = universalCfg.format;
+
+      if (!apiKey || !senderId || !format) {
+        console.warn('[SMSAlert] Universal SMS credentials or template missing.');
+        return;
+      }
+
+      // Check SMS Balance and Universal Rate from Admin
       const balance = Utils.num(cfg.smsBalance);
-      const rate = Utils.num(cfg.smsRate || 0.30);
+      const rate = Utils.num(universalCfg.rate || cfg.smsRate || 0.30);
 
       // Get user's phone number from database
       const userSnap = await db.ref(`dinings/${this.diningId}/users/${params.userId}`).once('value');
@@ -581,7 +790,7 @@ const SMSAlertModule = {
       const fmtAmount = (parseFloat(params.amount) || 0).toFixed(2);
       const fmtBalance = actualBalance.toFixed(2);
 
-      const message = cfg.format
+      const message = format
         .replace(/{name}/g, user.name || params.userName || 'Member')
         .replace(/{email}/g, user.email || '')
         .replace(/{phone}/g, rawPhone)
@@ -590,7 +799,7 @@ const SMSAlertModule = {
         .replace(/{note}/g, params.note || 'Deposit')
         .replace(/{datetime}/g, datetime);
 
-      const result = await this._sendSMS(cfg.apiKey, cfg.senderId, formattedNumber, message);
+      const result = await this._sendSMS(apiKey, senderId, formattedNumber, message);
 
       // Save to log
       await this._logSMS({
