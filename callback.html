@@ -98,6 +98,10 @@
       try {
         pending = JSON.parse(localStorage.getItem("ml_pending_bkash_recharge") || "{}");
       } catch (_) {}
+      let pendingPreorder = {};
+      try {
+        pendingPreorder = JSON.parse(localStorage.getItem("ml_pending_pro_preorder") || "{}");
+      } catch (_) {}
 
       const diningId = pending.diningId || localStorage.getItem("currentDiningId") || "";
       const rechargeAmount = parseFloat(pending.amount) || 0;
@@ -109,9 +113,108 @@
 
       // ─── 1. SUCCESS FLOW ──────────────────────────────────────────
       if (paymentStatus === "success") {
+        const dedupeKey = "ml_bkash_done_" + (paymentID || trxID);
+
+        // A. PRO PRE-ORDER FLOW
+        if (pendingPreorder.type === 'pro_preorder' || pending.type === 'pro_preorder') {
+          const preData = pendingPreorder.type === 'pro_preorder' ? pendingPreorder : pending;
+          const preorderAmount = parseFloat(preData.amount) || 499;
+          const custName = preData.name || 'Valued Customer';
+          const custMess = preData.messName || 'Your Mess';
+          const custPhone = preData.phone || customerPhone || 'N/A';
+          const custEmail = preData.email || 'N/A';
+
+          try {
+            const alreadyProcessed = localStorage.getItem(dedupeKey);
+            if (!alreadyProcessed) {
+              await db.ref("preorders").push({
+                plan: "Messliner Pro Annual (Pre-Order)",
+                amount: preorderAmount,
+                name: custName,
+                phone: custPhone,
+                email: custEmail,
+                messName: custMess,
+                trxID: trxID || ("BKASH_" + Date.now()),
+                paymentID: paymentID || "",
+                status: "paid",
+                createdAt: firebase.database.ServerValue.TIMESTAMP || Date.now()
+              });
+
+              localStorage.setItem(dedupeKey, "1");
+              localStorage.removeItem("ml_pending_pro_preorder");
+              localStorage.removeItem("ml_pending_bkash_recharge");
+            }
+          } catch (dbErr) {
+            console.error("[bKash Callback] Preorder DB save error:", dbErr);
+          }
+
+          const now = new Date();
+          const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${now.toLocaleTimeString()}`;
+
+          stateLoading.classList.add("hidden");
+          stateSuccess.classList.remove("hidden");
+          stateSuccess.innerHTML = `
+            <div class="flex flex-col items-center text-center">
+              <div class="w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-200 text-emerald-600 flex items-center justify-center mb-4 animate-bounce-in shadow-lg">
+                <i data-lucide="check" class="h-9 w-9 stroke-[3]"></i>
+              </div>
+
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold mb-2">
+                <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
+                <span>Pre-Order Confirmed</span>
+              </div>
+
+              <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Messliner Pro Pre-Order Successful!</h2>
+              <p class="text-xs text-slate-500 mt-1">Thank you for securing your 1-Year VIP license. Your account will automatically activate with Pro features upon launch.</p>
+
+              <div class="w-full bg-gradient-to-r from-pink-50/50 via-white to-pink-50/50 border border-pink-100 rounded-2xl p-4 my-5 text-center">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Pre-Order Amount Paid (bKash)</span>
+                <div class="text-3xl font-black text-[#E2136E] mt-0.5">৳${preorderAmount.toFixed(2)}</div>
+                <span class="inline-block mt-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">1 Year Annual License Secured</span>
+              </div>
+
+              <div class="w-full rounded-2xl bg-slate-50 border border-slate-200/80 p-4 space-y-2.5 text-xs text-left">
+                <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span class="text-slate-500 font-medium">Customer Name</span>
+                  <span class="font-bold text-slate-900">${custName}</span>
+                </div>
+                <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span class="text-slate-500 font-medium">Dining Mess Name</span>
+                  <span class="font-bold text-slate-900">${custMess}</span>
+                </div>
+                <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span class="text-slate-500 font-medium">bKash Mobile</span>
+                  <span class="font-mono text-slate-700">${custPhone}</span>
+                </div>
+                <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span class="text-slate-500 font-medium">Transaction ID (TrxID)</span>
+                  <span class="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">${trxID || 'BKASH_CONFIRMED'}</span>
+                </div>
+                <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span class="text-slate-500 font-medium">Payment ID</span>
+                  <span class="font-mono text-slate-700">${paymentID || 'N/A'}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-500 font-medium">Date &amp; Time</span>
+                  <span class="text-slate-700 font-medium">${dateStr}</span>
+                </div>
+              </div>
+
+              <div class="w-full mt-6 space-y-2">
+                <a href="index.html" class="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl text-white font-bold text-sm bg-bkash hover:opacity-95 shadow-bkash transition-all transform active:scale-[0.98]">
+                  <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                  <span>Return to Messliner Home</span>
+                </a>
+              </div>
+            </div>
+          `;
+          renderIcons();
+          return;
+        }
+
+        // B. STANDARD SMS TOP-UP FLOW
         let updatedBalance = 0;
         let perSmsRate = 0.30;
-        const dedupeKey = "ml_bkash_done_" + (paymentID || trxID);
 
         try {
           if (diningId && rechargeAmount > 0) {

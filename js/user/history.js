@@ -1213,6 +1213,17 @@ const HistoryModule = {
     }
   },
 
+  _formatBotMessage(text) {
+    if (!text || typeof text !== 'string') return text || '';
+    if (/<(div|button|table|span\s+class=)/i.test(text)) {
+      return text;
+    }
+    let formatted = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>');
+    return formatted;
+  },
+
   appendBotMessage(text) {
     const win = document.getElementById('aiChatWindow');
     if (!win) return;
@@ -1227,7 +1238,7 @@ const HistoryModule = {
     el.className = 'ai-msg-row';
     el.innerHTML = `
       <div style="max-width: 85%;">
-        <div class="ai-chat-bubble-bot">${text}</div>
+        <div class="ai-chat-bubble-bot">${this._formatBotMessage ? this._formatBotMessage(text) : text}</div>
         <div class="ai-msg-time">${timeStr}</div>
       </div>
     `;
@@ -1236,7 +1247,8 @@ const HistoryModule = {
 
     // Save message to current session
     if (window._aiChatManager) {
-      window._aiChatManager.saveMessage('bot', text, timeStr);
+      const savedBotText = this._formatBotMessage ? this._formatBotMessage(text) : text;
+      window._aiChatManager.saveMessage('bot', savedBotText, timeStr);
     }
   },
 
@@ -1257,7 +1269,7 @@ const HistoryModule = {
     const el = document.createElement('div');
     el.className = 'ai-msg-row user-row';
     el.innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:flex-end;max-width: 85%;">
+      <div style="display:flex; flex-direction:column; align-items:flex-end; max-width: 85%;">
         <div class="ai-chat-bubble-user">${text}</div>
         <div class="ai-msg-time">${timeStr}</div>
       </div>
@@ -1279,18 +1291,883 @@ const HistoryModule = {
     el.id = 'aiChatLoader';
     el.innerHTML = `
       <div style="max-width: 85%;">
-        <div class="ai-chat-bubble-bot" style="display:flex;align-items:center;gap:6px;">
+        <div class="ai-chat-bubble-bot" style="display:flex; align-items:center; gap:6px;">
           <span class="ai-loading-dots">
             <span class="ai-loading-dot"></span>
             <span class="ai-loading-dot"></span>
             <span class="ai-loading-dot"></span>
           </span>
-          <span style="font-size:0.75rem;color:#6B7280;">Messliner AI is typing…</span>
+          <span style="font-size:0.75rem; color:#6B7280;">Messliner AI is typing…</span>
         </div>
       </div>
     `;
     win.appendChild(el);
     requestAnimationFrame(() => { win.scrollTop = win.scrollHeight; });
+  },
+
+  async triggerMessAnalysis(customQuery = null, isUserMessageAlreadyAppended = false) {
+    if (this.isAiProcessing && !isUserMessageAlreadyAppended) return;
+    this.isAiProcessing = true;
+
+    const input = document.getElementById('aiChatInput');
+    if (input) {
+      input.readOnly = true;
+      input.value = '';
+    }
+    const btnSend = document.querySelector('.ai-send-btn');
+    if (btnSend) btnSend.disabled = true;
+
+    const uploadLabel = document.getElementById('aiRoutineUploadLabel');
+    if (uploadLabel) {
+      uploadLabel.style.pointerEvents = 'none';
+      uploadLabel.style.opacity = '0.5';
+    }
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const monthMap = {
+      january: 1, jan: 1,
+      february: 2, feb: 2,
+      march: 3, mar: 3,
+      april: 4, apr: 4,
+      may: 5,
+      june: 6, jun: 6,
+      july: 7, jul: 7,
+      august: 8, aug: 8, agust: 8, agost: 8,
+      september: 9, sep: 9, sept: 9,
+      october: 10, oct: 10, okt: 10,
+      november: 11, nov: 11,
+      december: 12, dec: 12,
+      'জানুয়ারি': 1, 'জানুয়ারি': 1, 'ফেব্রুয়ারি': 2, 'ফেব্রুয়ারি': 2, 'মার্চ': 3, 'এপ্রিল': 4,
+      'মে': 5, 'জুন': 6, 'জুলাই': 7, 'আগস্ট': 8, 'সেপ্টেম্বর': 9, 'অক্টোবর': 10, 'নভেম্বর': 11, 'ডিসেম্বর': 12
+    };
+
+    let targetMonth = currentMonth;
+    let targetYear = currentYear;
+
+    if (customQuery && typeof customQuery === 'string') {
+      const cleanQ = customQuery.toLowerCase();
+      for (const [mKey, mVal] of Object.entries(monthMap)) {
+        if (cleanQ.includes(mKey)) {
+          targetMonth = mVal;
+          break;
+        }
+      }
+      const yearMatch = cleanQ.match(/\b(202\d)\b/);
+      if (yearMatch) {
+        targetYear = parseInt(yearMatch[1], 10);
+      }
+    }
+
+    const targetMonthName = monthNames[targetMonth - 1];
+    const formattedMonth = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
+
+    if (!isUserMessageAlreadyAppended) {
+      this.appendUserMessage(`Analyze Mess (${targetMonthName})`);
+      this.showChatLoading();
+    }
+
+    const loaderText = document.querySelector('#aiChatLoader span[style*="color:#6B7280"]');
+    if (loaderText) {
+      loaderText.textContent = `${targetMonthName} ${targetYear} মেসের হিসাব ও ডেটা বিশ্লেষণ করা হচ্ছে...`;
+    }
+
+    try {
+      this.diningId = this.diningId || (window.Messliner && Messliner.state && Messliner.state.diningId) || localStorage.getItem('dining_id');
+      this.userId = this.userId || (window.Messliner && Messliner.state && Messliner.state.userId) || localStorage.getItem('user_id') || 'admin';
+
+      if (!this.diningId) {
+        throw new Error("মেস আইডি পাওয়া যায়নি। দয়া করে পেজটি রিফ্রেশ করুন।");
+      }
+
+      // Fetch all required data in parallel
+      const [usersSnap, mealsSnap, bazarSnap, depositsSnap, settingsSnap, diningInfoSnap] = await Promise.all([
+        db.ref(`dinings/${this.diningId}/users`).once('value'),
+        db.ref(`dinings/${this.diningId}/meals/${formattedMonth}`).once('value'),
+        db.ref(`dinings/${this.diningId}/bazar`).once('value'),
+        db.ref(`dinings/${this.diningId}/deposits`).once('value'),
+        db.ref(`dinings/${this.diningId}/settings`).once('value'),
+        db.ref(`dinings/${this.diningId}/info`).once('value')
+      ]);
+
+      const users = usersSnap.val() || {};
+      const meals = mealsSnap.val() || {};
+      const allBazar = bazarSnap.val() || {};
+      const allDeposits = depositsSnap.val() || {};
+      const settings = settingsSnap.val() || {};
+      const diningInfo = diningInfoSnap.val() || {};
+
+      const memberEntries = Object.entries(users);
+      const totalMembersCount = memberEntries.length;
+      const isManagerMealEnabled = !!settings.managerMealEnabled;
+      const rateMode = settings.rateMode || 'market';
+      const fixedRates = settings.fixedRates || null;
+      const trackedMeals = settings.trackedMeals || { breakfast: true, lunch: true, dinner: true };
+
+      // 1. Process Monthly Bazar & Detect Repeated/Duplicate Entries
+      let monthBazarTotal = 0;
+      const monthBazarList = [];
+
+      Object.entries(allBazar).forEach(([id, b]) => {
+        if (!b) return;
+        const bDate = b.date || '';
+        if (bDate.startsWith(formattedMonth)) {
+          const amt = parseFloat(b.amount) || 0;
+          monthBazarTotal += amt;
+
+          let itemName = b.item || '';
+          if (!itemName && Array.isArray(b.items) && b.items.length > 0) {
+            itemName = b.items.map(i => `${i.name || i.item || 'Item'} (${i.qty || i.quantity || ''} ${i.unit || ''})`).join(', ');
+          }
+          if (!itemName) itemName = 'Bazar Expense';
+
+          const shopperName = b.shopper || b.shopperName || b.addedBy || 'N/A';
+
+          monthBazarList.push({
+            id,
+            date: bDate,
+            amount: amt,
+            item: itemName,
+            shopper: shopperName
+          });
+        }
+      });
+
+      // Sort bazar by date descending
+      monthBazarList.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+      // Check for duplicate / repeated bazar entries (same date + same amount, or same date + identical item)
+      const potentialDuplicates = [];
+      for (let i = 0; i < monthBazarList.length; i++) {
+        for (let j = i + 1; j < monthBazarList.length; j++) {
+          const item1 = monthBazarList[i];
+          const item2 = monthBazarList[j];
+          if (item1.date === item2.date) {
+            const sameAmt = item1.amount > 0 && Math.abs(item1.amount - item2.amount) < 0.01;
+            const item1Clean = item1.item.trim().toLowerCase();
+            const item2Clean = item2.item.trim().toLowerCase();
+            const sameName = item1Clean.length > 3 && item1Clean === item2Clean;
+            if (sameAmt || sameName) {
+              potentialDuplicates.push({
+                date: item1.date,
+                amount: item1.amount,
+                itemA: item1.item,
+                itemB: item2.item,
+                shopperA: item1.shopper,
+                shopperB: item2.shopper,
+                reason: sameAmt && sameName ? "একই দিনে একই নামের এবং একই টাকার বাজার" : (sameAmt ? "একই দিনে হুবহু একই টাকার দুটি বাজার" : "একই দিনে একই নামের আইটেম")
+              });
+            }
+          }
+        }
+      }
+
+      // 2. Process Monthly Meals
+      let totalMealsCount = 0;
+      let totalBreakfast = 0;
+      let totalLunch = 0;
+      let totalDinner = 0;
+      const userMealCounts = {};
+
+      Object.entries(meals).forEach(([day, dayData]) => {
+        if (!dayData || typeof dayData !== 'object') return;
+        ['breakfast', 'lunch', 'dinner'].forEach(mType => {
+          const mData = dayData[mType];
+          if (mData && typeof mData === 'object') {
+            Object.entries(mData).forEach(([uId, countVal]) => {
+              const count = parseFloat(countVal) || 0;
+              if (count > 0) {
+                totalMealsCount += count;
+                if (mType === 'breakfast') totalBreakfast += count;
+                if (mType === 'lunch') totalLunch += count;
+                if (mType === 'dinner') totalDinner += count;
+
+                userMealCounts[uId] = (userMealCounts[uId] || 0) + count;
+              }
+            });
+          }
+        });
+      });
+
+      // 3. Process Deposits for the Month
+      let monthDepositsTotal = 0;
+      Object.entries(allDeposits).forEach(([id, d]) => {
+        if (!d) return;
+        const dDate = d.date || (d.timestamp ? new Date(d.timestamp).toISOString().slice(0, 10) : '');
+        if (dDate.startsWith(formattedMonth) && (d.type === 'deposit' || !d.type)) {
+          const amt = parseFloat(d.amount) || 0;
+          monthDepositsTotal += amt;
+        }
+      });
+
+      // 4. Calculate Meal Rate & Finances
+      let calculatedMealRate = 0;
+      if (totalMealsCount > 0) {
+        calculatedMealRate = monthBazarTotal / totalMealsCount;
+      }
+      const netCashBalance = monthDepositsTotal - monthBazarTotal;
+
+      // Extract top 5 expense drivers from bazar to explain why meal rate is what it is
+      const sortedByAmount = [...monthBazarList].sort((a, b) => b.amount - a.amount);
+      const topExpenses = sortedByAmount.slice(0, 5).map(e => `${e.item} (৳${e.amount}) on ${e.date}`);
+
+      // Check system settings anomalies
+      const systemIssues = [];
+      if (trackedMeals.lunch === false && trackedMeals.dinner === false) {
+        systemIssues.push("সিস্টেমে লাঞ্চ ও ডিনার উভয় মিলই বন্ধ রয়েছে।");
+      }
+      if (totalMembersCount > 0 && totalMealsCount === 0 && monthBazarList.length > 0) {
+        systemIssues.push("মেসে বাজার এন্ট্রি করা হয়েছে কিন্তু কোনো সদস্যের মিল এন্ট্রি করা হয়নি।");
+      }
+      if (netCashBalance < -500) {
+        systemIssues.push(`মোট জমার চেয়ে বাজার খরচ ৳${Math.abs(netCashBalance).toFixed(2)} বেশি, ফলে মেস ফান্ডে ঘাটতি রয়েছে।`);
+      }
+
+      // Build structured context for Gemini AI
+      const auditPayload = {
+        month: targetMonthName,
+        year: targetYear,
+        messName: diningInfo.name || "আমাদের মেস",
+        membersCount: totalMembersCount,
+        totalMeals: totalMealsCount,
+        mealsBreakdown: { breakfast: totalBreakfast, lunch: totalLunch, dinner: totalDinner },
+        totalBazarExpense: monthBazarTotal,
+        totalDeposits: monthDepositsTotal,
+        netBalance: netCashBalance,
+        calculatedMealRate: calculatedMealRate.toFixed(2),
+        rateMode: rateMode,
+        isManagerMealEnabled: isManagerMealEnabled,
+        potentialDuplicates: potentialDuplicates,
+        topExpenses: topExpenses,
+        systemIssues: systemIssues,
+        recentBazarCount: monthBazarList.length
+      };
+
+      const systemInstruction = `You are "Messliner AI", the official intelligent mess assistant and auditor of Messliner WebApp.
+CRITICAL FORMATTING & PERSONA RULES:
+1. STRICT INTRO: You MUST begin your response with:
+"আমি Messliner AI। ${targetMonthName} ${targetYear}-এর ডেটাবেজ বিশ্লেষণ করে ${auditPayload.messName}-এর অডিট রিপোর্ট পেশ করছি:"
+Do NOT say "আসসালামু আলাইকুম", do NOT say "আমি মেসলাইনার মাস্টার অডিটর এআই", do NOT use flowery poetry.
+2. STRICT OUTRO: You MUST end the entire report strictly with:
+"— Messliner AI"
+Never write "মেসলাইনার মাস্টার অডিটর এআই দ্বারা সত্যায়িত" or similar.
+3. LANGUAGE: Pure, professional, elegant Bengali (বাংলা).
+4. STRUCTURE OF THE REPORT:
+### 📊 ১. সার্বিক মেস পরিসংখ্যান (Overview)
+- মোট সক্রিয় সদস্য: X জন
+- মোট মিল সংখ্যা: Y টি (সকাল: ..., দুপুর: ..., রাত: ...)
+- মোট বাজার খরচ: ৳...
+- মোট জমা (Deposit): ৳...
+- মেস ক্যাশ স্থিতি: [উদ্বৃত্ত / ঘাটতি] ৳...
+
+### 🍽️ ২. মিল রেট বিশ্লেষণ ও পর্যালোচনা
+- বর্তমান কার্যকর মিল রেট: ৳...
+- মিল রেট এমন হওয়ার পেছনের কারণ সংক্ষেপে বুঝিয়ে বলুন (বাজারের প্রধান ব্যয়বহুল আইটেম যেমন তেল, মাংস, গ্যাস সিলিন্ডার ইত্যাদির সাথে মিল সংখ্যার অনুপাত বিশ্লেষণ করে)।
+
+### 🔍 ৩. বাজার হিসাব ও ডুপ্লিকেট/রিপিট যাচাই
+- কোনো ডুপ্লিকেট বা বারবার একই এন্ট্রি আছে কিনা বিস্তারিত লিখুন (যদি থাকে তাহলে তারিখ ও টাকার পরিমাণ উল্লেখ করে বলুন যে ম্যানেজারকে এটি যাচাই করতে হবে। আর যদি না থাকে, লিখুন: "কোনো ডুপ্লিকেট বা রিপিটেড বাজার পাওয়া যায়নি, প্রতিটি খরচের এন্ট্রি স্বাভাবিক।")।
+
+### ⚙️ ৪. সিস্টেম ও মেস ম্যানেজার হিসাব যাচাই
+- সিস্টেমে বা ম্যানেজারের এন্ট্রিতে কোনো গরমিল আছে কিনা (যেমন: মিল ছাড়া বাজার, ফান্ডের ঘাটতি, কোনো অসঙ্গতি আছে কি নেই তা স্পষ্ট করে বলুন)।
+
+### 💡 ৫. সাশ্রয়ী পরামর্শ ও অডিট সিদ্ধান্ত
+- অডিট স্ট্যাটাস: [✅ স্বচ্ছ ও নির্ভুল / ⚠️ কিছু অমিল রয়েছে - ম্যানেজারের দৃষ্টি আকর্ষণ করা হচ্ছে]
+- খরচ নিয়ন্ত্রণ ও সাশ্রয়ী মেস পরিচালনার জন্য ১-২ টি কার্যকরী পরামর্শ দিন।
+
+5. Keep it concise, punchy, professional, and well formatted so members and managers can read it in 30 seconds.`;
+
+      const prompt = `
+AUDIT CONTEXT DATA FOR ${targetMonthName} ${targetYear}:
+${JSON.stringify(auditPayload, null, 2)}
+
+Please generate the professional Bengali Audit Report adhering strictly to all persona rules and structural guidelines.`;
+
+      let auditResponse = "";
+
+      const aiHandler = (Messliner && Messliner.aiControl && typeof Messliner.aiControl._callGemini === 'function')
+        ? Messliner.aiControl
+        : (typeof AIControlModule !== 'undefined' ? AIControlModule : null);
+
+      if (aiHandler) {
+        try {
+          const res = await aiHandler._callGemini(prompt, systemInstruction);
+          auditResponse = (res && res.responseMessage) ? res.responseMessage : (typeof res === 'string' ? res : '');
+        } catch (apiErr) {
+          console.warn("[AI] Gemini direct call error, falling back to candidate models:", apiErr);
+        }
+      }
+
+      if (!auditResponse) {
+        // Fallback to fetch with candidateModels if aiHandler failed
+        const preferredModel = typeof GEMINI_MODEL !== 'undefined' ? GEMINI_MODEL : 'gemini-3-flash-preview';
+        const apiKey = (typeof GEMINI_API_KEY !== 'undefined' && GEMINI_API_KEY) ? GEMINI_API_KEY : (window.GEMINI_API_KEY || localStorage.getItem('gemini_api_key') || '');
+        const candidateModels = [
+          preferredModel,
+          'gemini-3-flash-preview',
+          'gemini-3.5-flash',
+          'gemini-3.5-flash-lite'
+        ].filter((m, idx, arr) => arr.indexOf(m) === idx);
+
+        for (const model of candidateModels) {
+          try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const reqBody = {
+              contents: [{ parts: [{ text: `${systemInstruction}\n\n${prompt}` }] }],
+              generationConfig: { temperature: 0.2 }
+            };
+            const response = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(reqBody)
+            });
+            if (response.ok) {
+              const data = await response.json();
+              const candidate = data && data.candidates && data.candidates[0];
+              if (candidate && candidate.content && candidate.content.parts) {
+                auditResponse = candidate.content.parts.filter(p => !p.thought && typeof p.text === 'string').map(p => p.text).join('') || candidate.content.parts[0]?.text || '';
+                if (auditResponse) break;
+              }
+            }
+          } catch (_) { }
+        }
+      }
+
+      // If AI service is still empty (e.g. offline or quota exceeded), generate a rich programmatic fallback report
+      if (!auditResponse) {
+        const dupText = potentialDuplicates.length > 0
+          ? potentialDuplicates.map(d => `• ${d.date}: ৳${d.amount} (${d.reason})`).join('\n')
+          : "কোনো ডুপ্লিকেট বা রিপিটেড বাজার পাওয়া যায়নি, প্রতিটি খরচের এন্ট্রি স্বাভাবিক।";
+
+        const balanceStatus = netCashBalance >= 0 ? `উদ্বৃত্ত (Surplus): ৳${netCashBalance.toFixed(2)}` : `ঘাটতি (Deficit): ৳${Math.abs(netCashBalance).toFixed(2)}`;
+        const auditStatus = potentialDuplicates.length === 0 && systemIssues.length === 0 ? "✅ স্বচ্ছ ও নির্ভুল" : "⚠️ কিছু অসঙ্গতি রয়েছে";
+
+        auditResponse = `আমি Messliner AI। ${targetMonthName} ${targetYear}-এর ডেটাবেজ বিশ্লেষণ করে ${auditPayload.messName}-এর অডিট রিপোর্ট পেশ করছি:
+
+### 📊 ১. সার্বিক মেস পরিসংখ্যান (Overview)
+* **মোট সদস্য:** ${totalMembersCount} জন
+* **মোট মিল সংখ্যা:** ${totalMealsCount} টি (সকাল: ${totalBreakfast}, দুপুর: ${totalLunch}, রাত: ${totalDinner})
+* **মোট বাজার খরচ:** ৳${monthBazarTotal.toFixed(2)}
+* **মোট জমা (Deposit):** ৳${monthDepositsTotal.toFixed(2)}
+* **মেস ফান্ড স্থিতি:** ${balanceStatus}
+
+### 🍽️ ২. মিল রেট বিশ্লেষণ ও পর্যালোচনা
+* **কার্যকর মিল রেট:** ৳${calculatedMealRate.toFixed(2)}
+* **পর্যালোচনা:** ${totalMealsCount > 0 ? `মোট ৳${monthBazarTotal.toFixed(2)} খরচকে ${totalMealsCount} টি মিলের সাথে সমন্বয় করে এই মিল রেট নির্ধারিত হয়েছে।` : 'এই মাসে এখনো কোনো মিল গণনা শুরু হয়নি।'}
+
+### 🔍 ৩. বাজার হিসাব ও ডুপ্লিকেট/রিপিট যাচাই
+${dupText}
+
+### ⚙️ ৪. সিস্টেম ও মেস ম্যানেজার হিসাব যাচাই
+${systemIssues.length > 0 ? systemIssues.map(s => `• ${s}`).join('\n') : "• মেস ডাটাবেজ ও ম্যানেজারের আর্থিক হিসাবে কোনো ত্রুটি বা অসঙ্গতি পরিলক্ষিত হয়নি।"}
+
+### 💡 ৫. সাশ্রয়ী পরামর্শ ও অডিট সিদ্ধান্ত
+* **অডিট স্ট্যাটাস:** ${auditStatus}
+* সময়মতো বাজার তালিকা ও সদস্যদের জমার রসিদ হালনাগাদ রাখুন যাতে মিল রেট সবসময় স্থিতিশীল থাকে।
+
+— Messliner AI`;
+      }
+
+      // Final post-processing to ensure STRICT adherence to persona
+      let cleanedReport = auditResponse
+        .replace(/^.*?(আসসালামু\s*আলাইকুম[।,!]?\s*)?(আমি\s+)?(মেসলাইনার\s+)?(মাস্টার\s+অডিটর\s+এআই|অডিটর\s+এআই|এআই\s+অডিটর)[।,!]?\s*/gi, `আমি Messliner AI। ${targetMonthName} ${targetYear}-এর ডেটাবেজ বিশ্লেষণ করে ${diningInfo.name || 'মেস'}-এর অডিট রিপোর্ট পেশ করছি:\n\n`)
+        .replace(/মেসলাইনার\s+মাস্টার\s+অডিটর\s*(এআই)?/gi, 'Messliner AI')
+        .replace(/মাস্টার\s+অডিটর\s*(এআই)?/gi, 'Messliner AI')
+        .replace(/---\s*মেসলাইনার\s+মাস্টার\s+অডিটর.*?$/gi, '— Messliner AI')
+        .replace(/মেসলাইনার\s+মাস্টার\s+অডিটর\s*এআই\s*দ্বারা\s*সত্যায়িত.*?$/gi, '— Messliner AI')
+        .trim();
+
+      if (!cleanedReport.endsWith('— Messliner AI')) {
+        // Strip any trailing signoffs and append standard one
+        cleanedReport = cleanedReport.replace(/—\s*Messliner\s*AI\s*$/i, '').trim();
+        cleanedReport += '\n\n— Messliner AI';
+      }
+
+      this.appendBotMessage(cleanedReport);
+
+    } catch (err) {
+      console.error(err);
+      this.appendBotMessage(`⚠️ অডিট রিপোর্ট তৈরিতে সমস্যা হয়েছে: ${err.message || 'অনুগ্রহ করে ইন্টারনেট সংযোগ বা ডেটাবেজ চেক করুন।'}\n\n— Messliner AI`);
+    } finally {
+      this.isAiProcessing = false;
+      const loader = document.getElementById('aiChatLoader');
+      if (loader) loader.remove();
+
+      if (input) input.readOnly = false;
+      if (btnSend) btnSend.disabled = false;
+      if (uploadLabel) {
+        uploadLabel.style.pointerEvents = '';
+        uploadLabel.style.opacity = '';
+      }
+
+      const win = document.getElementById('aiChatWindow');
+      if (win) requestAnimationFrame(() => { win.scrollTop = win.scrollHeight; });
+      if (input) input.focus();
+    }
+  },
+
+  async showMessRules() {
+    try {
+      this.diningId = this.diningId || (window.Messliner && Messliner.state && Messliner.state.diningId) || localStorage.getItem('dining_id');
+      if (!this.diningId) {
+        throw new Error("মেস আইডি পাওয়া যায়নি।");
+      }
+
+      // Fetch rules and dining info from database
+      const [rulesSnap, diningInfoSnap, settingsSnap] = await Promise.all([
+        db.ref(`dinings/${this.diningId}/rules`).once('value'),
+        db.ref(`dinings/${this.diningId}/info/name`).once('value'),
+        db.ref(`dinings/${this.diningId}/settings`).once('value')
+      ]);
+
+      let rulesData = rulesSnap.val();
+      const settings = settingsSnap.val() || {};
+      const diningName = diningInfoSnap.val() || (this.diningInfo && this.diningInfo.name) || 'মেস';
+
+      // Fallback to settings.rules if rules node is empty
+      if ((!rulesData || (Array.isArray(rulesData) && rulesData.length === 0)) && settings.rules) {
+        rulesData = settings.rules;
+      }
+
+      let rulesList = [];
+      if (Array.isArray(rulesData)) {
+        rulesList = rulesData.map(r => String(r).trim()).filter(Boolean);
+      } else if (typeof rulesData === 'object' && rulesData !== null) {
+        rulesList = Object.values(rulesData).map(r => String(r).trim()).filter(Boolean);
+      } else if (typeof rulesData === 'string' && rulesData.trim()) {
+        rulesList = rulesData.split('\n').map(r => r.trim()).filter(Boolean);
+      }
+
+      let reply = "";
+      if (rulesList.length > 0) {
+        reply = `📋 **${diningName}-এর মেস রুলস ও নিয়মাবলী:**\n\n`;
+        rulesList.forEach((rule, idx) => {
+          reply += `${idx + 1}. ${rule}\n`;
+        });
+        reply += `\n📌 *মেসের শৃঙ্খলা ও সুন্দর পরিবেশ রক্ষার্থে সকল সদস্যকে মেস ম্যানেজারের দেওয়া এই নিয়মগুলো মেনে চলার জন্য বিশেষভাবে অনুরোধ করা হচ্ছে।*\n\n— Messliner AI`;
+      } else {
+        reply = `📋 **${diningName}-এর নিয়মাবলী (Mess Rules):**\n\nম্যানেজার কর্তৃক এখনো এই মেসে কোনো নিয়মাবলী (Rules) যুক্ত করা হয়নি।\n\n💡 *মেস ম্যানেজার সেটিংস প্যানেল (Settings > Mess Rules) থেকে মেসের নিয়মাবলী যুক্ত করতে পারবেন।*\n\n— Messliner AI`;
+      }
+
+      this.appendBotMessage(reply);
+
+    } catch (err) {
+      console.error(err);
+      this.appendBotMessage(`⚠️ মেসের নিয়মাবলী লোড করতে সমস্যা হয়েছে: ${err.message || 'দয়া করে পেজটি রিফ্রেশ করে আবার চেষ্টা করুন।'}\n\n— Messliner AI`);
+    } finally {
+      this.isAiProcessing = false;
+      const loader = document.getElementById('aiChatLoader');
+      if (loader) loader.remove();
+
+      const input = document.getElementById('aiChatInput');
+      if (input) input.readOnly = false;
+      const btnSend = document.querySelector('.ai-send-btn');
+      if (btnSend) btnSend.disabled = false;
+      const uploadLabel = document.getElementById('aiRoutineUploadLabel');
+      if (uploadLabel) {
+        uploadLabel.style.pointerEvents = '';
+        uploadLabel.style.opacity = '';
+      }
+
+      const win = document.getElementById('aiChatWindow');
+      if (win) requestAnimationFrame(() => { win.scrollTop = win.scrollHeight; });
+      if (input) input.focus();
+    }
+  },
+
+  async triggerMealRateOptimization(query) {
+    try {
+      this.diningId = this.diningId || (window.Messliner && Messliner.state && Messliner.state.diningId) || localStorage.getItem('dining_id');
+      if (!this.diningId) throw new Error("মেস আইডি পাওয়া যায়নি।");
+
+      const now = new Date();
+      const curYear = now.getFullYear();
+      const curMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const curMonthKey = `${curYear}-${curMonth}`;
+
+      // Fetch Bazar, Meals, Users, Info, Settings in parallel
+      const [bazarSnap, mealsSnap, usersSnap, diningInfoSnap, settingsSnap] = await Promise.all([
+        db.ref(`dinings/${this.diningId}/bazar`).once('value'),
+        db.ref(`dinings/${this.diningId}/meals/${curMonthKey}`).once('value'),
+        db.ref(`dinings/${this.diningId}/users`).once('value'),
+        db.ref(`dinings/${this.diningId}/info`).once('value'),
+        db.ref(`dinings/${this.diningId}/settings`).once('value')
+      ]);
+
+      const allBazar = bazarSnap.val() || {};
+      const meals = mealsSnap.val() || {};
+      const users = usersSnap.val() || {};
+      const diningInfo = diningInfoSnap.val() || {};
+      const settings = settingsSnap.val() || {};
+
+      const memberCount = Object.keys(users).length || 1;
+      const messName = diningInfo.name || "আমাদের মেস";
+
+      // 1. Calculate Bazar Breakdown
+      let totalBazarAmt = 0;
+      let meatFishExpense = 0;
+      let oilSpicesExpense = 0;
+      let essentialsExpense = 0;
+      const allMonthBazarList = [];
+
+      Object.values(allBazar).forEach(b => {
+        if (!b) return;
+        const bDate = b.date || '';
+        if (bDate.startsWith(curMonthKey)) {
+          const amt = parseFloat(b.amount) || 0;
+          totalBazarAmt += amt;
+
+          let itemName = b.item || (Array.isArray(b.items) ? b.items.map(i => i.name || i.item || '').join(', ') : '') || '';
+          const lowerItem = itemName.toLowerCase();
+
+          if (/(মাংস|গরু|খাসি|মুরগি|চিকেন|মাছ|রুই|ইলিশ|কাতলা|পাঙ্গাশ|তেলাপিয়া|ডিম|meat|beef|chicken|fish|egg)/i.test(lowerItem)) {
+            meatFishExpense += amt;
+          } else if (/(তেল|সয়াবিন|সরিষা|পেঁয়াজ|রসুন|আদা|মশলা|তেজপাতা|জিরা|ধনে|মরিচ|oil|onion|garlic|ginger|spice)/i.test(lowerItem)) {
+            oilSpicesExpense += amt;
+          } else if (/(চাল|ডাল|আলু|লবণ|সবজি|rice|dal|potato|vegetable)/i.test(lowerItem)) {
+            essentialsExpense += amt;
+          }
+
+          allMonthBazarList.push({ date: bDate, item: itemName || 'বাজার খরচ', amount: amt });
+        }
+      });
+
+      // Sort by amount descending to find top costly items
+      allMonthBazarList.sort((a, b) => b.amount - a.amount);
+      const topCostlyPurchases = allMonthBazarList.slice(0, 5);
+
+      // 2. Calculate Total Meals
+      let totalMealsCount = 0;
+      let lunchCount = 0;
+      let dinnerCount = 0;
+      Object.values(meals).forEach(dayData => {
+        if (!dayData || typeof dayData !== 'object') return;
+        ['lunch', 'dinner'].forEach(mType => {
+          const mData = dayData[mType];
+          if (mData && typeof mData === 'object') {
+            Object.values(mData).forEach(cnt => {
+              const c = parseFloat(cnt) || 0;
+              totalMealsCount += c;
+              if (mType === 'lunch') lunchCount += c;
+              if (mType === 'dinner') dinnerCount += c;
+            });
+          }
+        });
+      });
+
+      const currentMealRate = totalMealsCount > 0 ? (totalBazarAmt / totalMealsCount) : 0;
+      const estimatedActiveEaters = Math.max(1, Math.round((lunchCount + dinnerCount) / Math.max(1, (new Date().getDate() * 2))));
+
+      const prompt = `
+Context Data:
+- Mess Name: ${messName}
+- Total Active Members: ${memberCount}
+- Estimated Daily Eaters: ${estimatedActiveEaters}
+- Current Month Total Bazar: ৳${totalBazarAmt.toFixed(2)}
+- Meat, Fish & Egg Expense: ৳${meatFishExpense.toFixed(2)} (${totalBazarAmt > 0 ? ((meatFishExpense / totalBazarAmt) * 100).toFixed(1) : 0}% of total bazar)
+- Oil & Spices Expense: ৳${oilSpicesExpense.toFixed(2)} (${totalBazarAmt > 0 ? ((oilSpicesExpense / totalBazarAmt) * 100).toFixed(1) : 0}% of total)
+- Rice, Dal & Vegetables: ৳${essentialsExpense.toFixed(2)}
+- Current Effective Meal Rate: ৳${currentMealRate.toFixed(2)}
+- Top 5 Most Expensive Bazar Entries: ${JSON.stringify(topCostlyPurchases)}
+
+User/Manager Query: "${query}"
+
+INSTRUCTIONS FOR GEMINI (Messliner AI):
+Generate a comprehensive, expert, high-level nutritional and financial audit advice in professional Bengali (বাংলা).
+Persona rules:
+1. STRICT INTRO: You MUST begin with:
+"আমি Messliner AI। আপনার মেসের সাম্প্রতিক বাজার ও মিল হিসেব বিশ্লেষণ করে মিল রেট সাশ্রয় ও পুষ্টি পর্যালোচনার একটি পূর্ণাঙ্গ রূপরেখা পেশ করছি:"
+2. STRICT OUTRO: End strictly with:
+"— Messliner AI"
+3. STRUCTURE:
+### 📊 ১. বর্তমান বাজার ও ব্যয়বহুল আইটেম পর্যালোচনা
+- কোন কোন খাতে সবচেয়ে বেশি খরচ হচ্ছে (যেমন: মোট বাজারের সিংহভাগ খরচ হচ্ছে মাছ/মাংসে অথবা অতিরিক্ত তেল/মশলায়)।
+- বর্তমান মিল রেট (৳...) বৃদ্ধির প্রধান কারণগুলো নির্দিষ্ট করুন।
+
+### 🥗 ২. পুষ্টি ও আমিষ-শর্করা ব্যালেন্স (Nutrition & Protein Analysis)
+- দুপুরের ও রাতের খাবারে সদস্যরা মাথাপিছু কতটুকু আমিষ (প্রোটিন) ও শর্করা (কার্বোহাইড্রেট) পাচ্ছেন তার নিখুঁত বৈজ্ঞানিক পর্যালোচনা দিন।
+- সাধারণত একজন প্রাপ্তবয়স্ক মানুষের দৈনিক ৫০-৬০ গ্রাম প্রোটিন প্রয়োজন। দুপুরে ও রাতে ৮০-১০০ গ্রাম মাছ বা মুরগির মাংস থেকে প্রায় ২০-২৫ গ্রাম আমিষ এবং ঘন ডাল থেকে ৫-৮ গ্রাম আমিষ পাওয়া যায়।
+- ভাতের মাধ্যমে পর্যাপ্ত শর্করা (কার্বোহাইড্রেট) পাওয়া গেলেও আমিষ বা শাকসবজির কোনো ঘাটতি আছে কি না তা স্পষ্ট করে বলুন।
+
+### 💡 ৩. মিল রেট কমানোর বাস্তবসম্মত কৌশল ও বিকল্প খাদ্যতালিকা
+- মাছের দাম বেশি হলে সাশ্রয়ী ব্রয়লার/সোনালী মুরগি, রুই/পাঙ্গাশ বা ডিম ও ডালের সুষম অল্টারনেটিভ মেনু কীভাবে মিল রেট ৫-১৫ টাকা পর্যন্ত কমিয়ে দিতে পারে।
+- তেল ও মসলা সাশ্রয়ের কৌশল (যেমন: প্রয়োজনের অতিরিক্ত সয়াবিন তেল ব্যবহার না করে স্বাস্থ্যকর পরিমিত ব্যবহার)।
+- সপ্তাহে ১-২ দিন ডিম ভুনা + ঘন ডাল + আলু ভর্তা বা নিরামিষ/সবজি মেনু রাখার পরামর্শ।
+
+### 💰 ৪. সম্ভাব্য সাশ্রয় ও সিদ্ধান্ত
+- এই পরামর্শগুলো মেনে চললে প্রতি মিলে আনুমানিক কত টাকা সাশ্রয় হবে এবং মেসের সার্বিক সঞ্চয় কেমন হবে।`;
+
+      const systemInstruction = "You are Messliner AI, an expert dining nutritionist and mess finance consultant. Provide sharp, professional, realistic Bengali advice with exact nutritional and financial metrics.";
+
+      let reply = "";
+      const aiHandler = (Messliner && Messliner.aiControl && typeof Messliner.aiControl._callGemini === 'function')
+        ? Messliner.aiControl
+        : (typeof AIControlModule !== 'undefined' ? AIControlModule : null);
+
+      if (aiHandler) {
+        try {
+          const res = await aiHandler._callGemini(prompt, systemInstruction);
+          reply = (res && res.responseMessage) ? res.responseMessage : (typeof res === 'string' ? res : '');
+        } catch (_) {}
+      }
+
+      if (!reply) {
+        // Programmatic Fallback
+        const meatPercent = totalBazarAmt > 0 ? ((meatFishExpense / totalBazarAmt) * 100).toFixed(1) : "৬০";
+        reply = `আমি Messliner AI। আপনার মেসের সাম্প্রতিক বাজার ও মিল হিসেব বিশ্লেষণ করে মিল রেট সাশ্রয় ও পুষ্টি পর্যালোচনার একটি পূর্ণাঙ্গ রূপরেখা পেশ করছি:
+
+### 📊 ১. বর্তমান বাজার ও ব্যয়বহুল আইটেম পর্যালোচনা
+* **বর্তমান কার্যকর মিল রেট:** ৳${currentMealRate.toFixed(2)}
+* **মাছ, মাংস ও ডিমের খরচ:** মোট বাজারের প্রায় ${meatPercent}% অর্থ ব্যয় হয়েছে আমিষ জাতীয় খাবারে।
+* **ব্যয়বহুল পণ্য:** ${topCostlyPurchases.length > 0 ? topCostlyPurchases.map(p => `${p.item} (৳${p.amount})`).join(', ') : 'বড় মাছ, গরুর মাংস ও বোতলজাত সয়াবিন তেল'}।
+
+### 🥗 ২. পুষ্টি ও আমিষ-শর্করা ব্যালেন্স (Nutrition Analysis)
+* **আমিষ (প্রোটিন):** দুপুরের ও রাতের খাবারে জনপ্রতি গড়ে ১০০-১২০ গ্রাম মুরগি বা মাছ থাকলে প্রায় ২০-২৫ গ্রাম প্রথম শ্রেণির প্রোটিন পাওয়া যায়। ডালসহ প্রতি মিলে মোট আমিষ দাঁড়ায় প্রায় ২৭-৩০ গ্রাম, যা মেম্বারদের জন্য আদর্শ। তবে মাছের দাম অতিরিক্ত হলে আমিষের ঘাটতি না ঘটিয়ে সাশ্রয়ী হতে হবে।
+* **শর্করা (কার্বোহাইড্রেট):** সাদা ভাতে পর্যাপ্ত শর্করা ও ক্যালোরি বজায় রয়েছে।
+* **ঘাটতি পর্যবেক্ষণ:** অনেক সময় তরকারিতে রঙিন শাকসবজি ও সালাদের কমতি থাকে, যা সামান্য খরচে যুক্ত করে পুষ্টি বহুগুণ বাড়ানো সম্ভব।
+
+### 💡 ৩. মিল রেট কমানোর বাস্তবসম্মত কৌশল ও বিকল্প মেনু
+* **মাছ/মাংসের সাশ্রয়ী বিকল্প:** বড় ইলিশ বা খাসির চেয়ে সোনালী/ব্রয়লার মুরগি, মাঝারি রুই, তেলাপিয়া এবং সপ্তাহে ১-২ দিন স্পেশাল ডিম ভুনা ও ঘন মসুর ডাল দিলে মিল রেট প্রতি মিলে ৮ থেকে ১২ টাকা পর্যন্ত সরাসরি হ্রাস পাবে।
+* **তেল ও মশলা নিয়ন্ত্রণ:** তরকারিতে অতিরিক্ত তেল না দিয়ে পরিমিত তেল (মাথাপিছু ২৫-৩০ মিলি) ব্যবহার করলে স্বাস্থ্যও ভালো থাকবে এবং তেল বাবদ বড় অঙ্কের টাকা বাঁচবে।
+* **পাইকারি বাজার:** আলু, পেঁয়াজ, চাল ও মশলা সাপ্তাহিক বা পাক্ষিক ভিত্তিতে পাইকারি আড়ত থেকে কিনলে ১৫-২০% পর্যন্ত সাশ্রয় হবে।
+
+### 💰 ৪. আনুমানিক সাশ্রয় ও সুপারিশ
+* প্রস্তাবিত অল্টারনেটিভ খাদ্যতালিকা অনুসরণ করলে গুণগত মান ও পুষ্টি অপরিবর্তিত রেখেই বর্তমান মিল রেট থেকে প্রায় **৳৮ - ৳১৫** পর্যন্ত কমানো সম্ভব।
+
+— Messliner AI`;
+      }
+
+      let cleaned = reply
+        .replace(/^.*?(আমি Messliner AI।)/s, 'আমি Messliner AI।')
+        .replace(/—\s*Messliner\s*AI.*$/s, '— Messliner AI')
+        .trim();
+      if (!cleaned.endsWith('— Messliner AI')) cleaned += '\n\n— Messliner AI';
+
+      this.appendBotMessage(cleaned);
+
+    } catch (err) {
+      console.error(err);
+      this.appendBotMessage(`⚠️ মিল রেট অ্যানালাইসিস করতে সমস্যা হয়েছে: ${err.message}\n\n— Messliner AI`);
+    } finally {
+      this.isAiProcessing = false;
+      const loader = document.getElementById('aiChatLoader');
+      if (loader) loader.remove();
+      const input = document.getElementById('aiChatInput');
+      if (input) input.readOnly = false;
+      const btnSend = document.querySelector('.ai-send-btn');
+      if (btnSend) btnSend.disabled = false;
+      if (input) input.focus();
+    }
+  },
+
+  async triggerBazarListGenerator(query) {
+    try {
+      this.diningId = this.diningId || (window.Messliner && Messliner.state && Messliner.state.diningId) || localStorage.getItem('dining_id');
+      if (!this.diningId) throw new Error("মেস আইডি পাওয়া যায়নি।");
+
+      const [usersSnap, infoSnap, settingsSnap] = await Promise.all([
+        db.ref(`dinings/${this.diningId}/users`).once('value'),
+        db.ref(`dinings/${this.diningId}/info`).once('value'),
+        db.ref(`dinings/${this.diningId}/settings`).once('value')
+      ]);
+
+      const users = usersSnap.val() || {};
+      const diningInfo = infoSnap.val() || {};
+      const messName = diningInfo.name || "আমাদের মেস";
+
+      // 1. Determine Meal Count
+      let targetMealsCount = 0;
+      let countSource = "";
+
+      const numMatch = query.match(/(\d+)\s*(টা\s*মিল|টি\s*মিল|মিল|জন|meals?|persons?)/i) || query.match(/\b(\d+)\b/);
+      if (numMatch && parseInt(numMatch[1], 10) > 0) {
+        targetMealsCount = parseInt(numMatch[1], 10);
+        countSource = `ব্যবহারকারীর নির্ধারিত ${targetMealsCount} টি মিল`;
+      } else {
+        // Calculate today's active meals from database (active lunch + dinner toggles of all members)
+        let activeLunch = 0;
+        let activeDinner = 0;
+        Object.values(users).forEach(u => {
+          if (!u || u.status === 'inactive' || u.status === 'left') return;
+          const ms = u.mealStatus || {};
+          if (ms.lunch === 1 || ms.lunch === true) activeLunch++;
+          if (ms.dinner === 1 || ms.dinner === true) activeDinner++;
+        });
+
+        const activeTotal = activeLunch + activeDinner;
+        if (activeTotal > 0) {
+          targetMealsCount = activeTotal;
+          countSource = `আজকের সক্রিয় ${activeTotal} টি মিল (দুপুর: ${activeLunch}, রাত: ${activeDinner})`;
+        } else {
+          const totalMembers = Object.keys(users).length || 10;
+          targetMealsCount = totalMembers * 2;
+          countSource = `মেসের মোট সদস্য অনুযায়ী ${targetMealsCount} টি মিল`;
+        }
+      }
+
+      // 2. Determine Menu (Admin specified vs AI balanced recommendation)
+      let customMenuSpecified = false;
+      let detectedMenu = "";
+      const lowerQ = query.toLowerCase();
+
+      if (/(মুরগি|চিকেন|chicken)/i.test(lowerQ)) {
+        customMenuSpecified = true;
+        detectedMenu += "মুরগির মাংসের ঝোল / চিকেন কারি, ";
+      }
+      if (/(গরু|বিফ|beef|খাসি|mutton)/i.test(lowerQ)) {
+        customMenuSpecified = true;
+        detectedMenu += "গরুর মাংস ভুনা, ";
+      }
+      if (/(মাছ|রুই|কাতলা|তেলাপিয়া|পাঙ্গাশ|fish)/i.test(lowerQ)) {
+        customMenuSpecified = true;
+        detectedMenu += "মাছের ঝোল / দোপেয়াজা, ";
+      }
+      if (/(ডিম|egg)/i.test(lowerQ)) {
+        customMenuSpecified = true;
+        detectedMenu += "ডিম ভুনা / কারি, ";
+      }
+      if (/(খিচুড়ি|khichuri)/i.test(lowerQ)) {
+        customMenuSpecified = true;
+        detectedMenu += "ভুনা খিচুড়ি, ";
+      }
+      if (/(সবজি|শাক|vegetable)/i.test(lowerQ)) {
+        customMenuSpecified = true;
+        detectedMenu += "পাঁচমিশালি সবজি, ";
+      }
+      if (/(পোলাও|polao)/i.test(lowerQ)) {
+        customMenuSpecified = true;
+        detectedMenu += "সুগন্ধি পোলাও, ";
+      }
+
+      if (customMenuSpecified) {
+        detectedMenu = detectedMenu.replace(/,\s*$/, '') + " এবং সাথে গরম ভাত ও ডাল।";
+      } else {
+        detectedMenu = "দুপুর: সাদা ভাত + মুরগির ঝোল (Chicken Curry) + ঘন মসুর ডাল + লেবু/শসা; রাত: সাদা ভাত + ডিম ভুনা / রুই মাছ + পাঁচমিশালি সবজি + ডাল।";
+      }
+
+      // Standard metric calculations for Bangladeshi dining
+      const riceKg = (targetMealsCount * 0.135).toFixed(1);
+      const dalGram = Math.round(targetMealsCount * 28);
+      const oilMl = Math.round(targetMealsCount * 25);
+      const onionKg = (targetMealsCount * 0.035).toFixed(2);
+      const potatoKg = (targetMealsCount * 0.050).toFixed(1);
+      const meatKg = (targetMealsCount * 0.125).toFixed(2);
+
+      const prompt = `
+Context Data:
+- Mess Name: ${messName}
+- Target Meals Count: ${targetMealsCount}
+- Count Basis: ${countSource}
+- Menu Specified by Admin: ${customMenuSpecified ? "YES" : "NO (Suggest balanced daily menu)"}
+- Selected/Recommended Menu: "${detectedMenu}"
+- User Query: "${query}"
+
+Standard Quantity Guidelines for ${targetMealsCount} meals:
+- চাল (Rice): ~${riceKg} কেজি
+- প্রধান তরকারি (মুরগি/মাছ/ডিম): মাংস হলে ~${meatKg} কেজি, ডিম হলে ${targetMealsCount} টি, মাছ হলে ${targetMealsCount} টুকরা (~${meatKg} কেজি)
+- মসুর ডাল (Dal): ~${dalGram} গ্রাম (${(dalGram/1000).toFixed(2)} কেজি)
+- সয়াবিন তেল (Cooking Oil): ~${oilMl} মিলি (${(oilMl/1000).toFixed(2)} লিটার)
+- আলু (Potatoes): ~${potatoKg} কেজি
+- পেঁয়াজ (Onion): ~${onionKg} কেজি
+- রসুন, আদা, কাঁচামরিচ, হলুদ, জিরা, ধনে, লবণ: পরিমিত
+
+INSTRUCTIONS FOR GEMINI (Messliner AI):
+Generate a crisp, neat, professional, ready-to-use Grocery Shopping List (বাজারের ফর্দ) in Bengali (বাংলা).
+Persona rules:
+1. STRICT INTRO: Begin with:
+"আমি Messliner AI। আপনার ${targetMealsCount} টি মিলের জন্য প্রয়োজনীয় বাজার তালিকা ও আনুমানিক বাজেট নিচে তৈরি করে দেওয়া হলো:"
+2. STRICT OUTRO: End with:
+"— Messliner AI"
+3. FORMAT:
+### 🍽️ ১. খাদ্যতালিকা (Menu)
+- [খাবার তালিকা স্পষ্ট করে লিখুন]
+
+### 🛒 ২. প্রয়োজনীয় বাজার তালিকা (Shopping Checklist)
+একটি পরিষ্কার ও সুন্দর টেবিল অথবা বুলেট পয়েন্ট আকারে প্রতিটি পণ্যের নাম, নিখুঁত পরিমাণ এবং বর্তমান স্থানীয় বাজার অনুযায়ী আনুমানিক মূল্য (Estimated Price in ৳) উল্লেখ করুন:
+- চাল, মূল প্রোটিন (মুরগি/মাছ/ডিম), আলু/সবজি, ডাল, সয়াবিন তেল, পেঁয়াজ, আদা-রসুন, কাঁচামরিচ ও প্রয়োজনীয় মশলা।
+
+### 💰 ৩. মোট আনুমানিক বাজেট
+- মোট আনুমানিক বাজার খরচ: ৳...
+- মিল প্রতি আনুমানিক বাজার খরচ: ৳...
+
+### 👨‍🍳 ৪. বাবুর্চি ও বাজারকারীর জন্য সাশ্রয়ী টিপস
+- রান্নায় তেল ও মশলার পরিমিতি এবং অপচয় রোধের ১-২ টি প্রয়োজনীয় টিপস।`;
+
+      const systemInstruction = "You are Messliner AI, an expert dining and culinary manager. Produce exact, clean, professional grocery calculation checklists in Bengali with realistic local Bangladeshi market prices.";
+
+      let reply = "";
+      const aiHandler = (Messliner && Messliner.aiControl && typeof Messliner.aiControl._callGemini === 'function')
+        ? Messliner.aiControl
+        : (typeof AIControlModule !== 'undefined' ? AIControlModule : null);
+
+      if (aiHandler) {
+        try {
+          const res = await aiHandler._callGemini(prompt, systemInstruction);
+          reply = (res && res.responseMessage) ? res.responseMessage : (typeof res === 'string' ? res : '');
+        } catch (_) {}
+      }
+
+      if (!reply) {
+        // Fallback programmatic generation
+        const estMeatCost = Math.round(meatKg * 210);
+        const estRiceCost = Math.round(riceKg * 65);
+        const estDalCost = Math.round((dalGram / 1000) * 140);
+        const estOilCost = Math.round((oilMl / 1000) * 190);
+        const estPotatoCost = Math.round(potatoKg * 45);
+        const estOnionCost = Math.round(onionKg * 90);
+        const estSpicesCost = Math.round(targetMealsCount * 4);
+        const totalEst = estMeatCost + estRiceCost + estDalCost + estOilCost + estPotatoCost + estOnionCost + estSpicesCost;
+        const perMealEst = (totalEst / targetMealsCount).toFixed(2);
+
+        reply = `আমি Messliner AI। আপনার ${targetMealsCount} টি মিলের জন্য প্রয়োজনীয় বাজার তালিকা ও আনুমানিক বাজেট নিচে তৈরি করে দেওয়া হলো:
+
+### 🍽️ ১. খাদ্যতালিকা (Menu)
+* **মেনু ভিত্তি:** ${countSource}
+* **মেনু আইটেম:** ${detectedMenu}
+
+### 🛒 ২. প্রয়োজনীয় বাজার তালিকা (Shopping Checklist)
+* **চাল (Rice):** ${riceKg} কেজি — আনুমানিক ৳${estRiceCost}
+* **মুরগির মাংস / মাছ:** ${meatKg} কেজি — আনুমানিক ৳${estMeatCost}
+* **আলু (Potato):** ${potatoKg} কেজি — আনুমানিক ৳${estPotatoCost}
+* **মসুর ডাল (Dal):** ${dalGram} গ্রাম — আনুমানিক ৳${estDalCost}
+* **সয়াবিন তেল (Cooking Oil):** ${(oilMl / 1000).toFixed(2)} লিটার — আনুমানিক ৳${estOilCost}
+* **পেঁয়াজ (Onion):** ${onionKg} কেজি — আনুমানিক ৳${estOnionCost}
+* **আদা, রসুন ও কাঁচামরিচ:** পরিমিত (~১৫০ গ্রাম) — আনুমানিক ৳${Math.round(estSpicesCost * 0.6)}
+* **গুঁড়া মশলা, হলুদ ও লবণ:** পরিমিত — আনুমানিক ৳${Math.round(estSpicesCost * 0.4)}
+
+### 💰 ৩. মোট আনুমানিক বাজেট
+* **মোট আনুমানিক বাজার খরচ:** ৳${totalEst}
+* **মিল প্রতি আনুমানিক বাজার রেট:** ৳${perMealEst}
+
+### 👨‍🍳 ৪. বাবুর্চি ও বাজারকারীর জন্য সাশ্রয়ী টিপস
+* মাংস রান্নার সময় প্রতি কেজিতে ৮-৯ টুকরা কাটলে সবাই পরিমিত প্রোটিন পাবেন।
+* তরকারিতে তেলের অতিরিক্ত ব্যবহার পরিহার করুন, এতে স্বাস্থ্য ও বাজেট উভয়ই সুরক্ষিত থাকবে।
+
+— Messliner AI`;
+      }
+
+      let cleaned = reply
+        .replace(/^.*?(আমি Messliner AI।)/s, 'আমি Messliner AI।')
+        .replace(/—\s*Messliner\s*AI.*$/s, '— Messliner AI')
+        .trim();
+      if (!cleaned.endsWith('— Messliner AI')) cleaned += '\n\n— Messliner AI';
+
+      this.appendBotMessage(cleaned);
+
+    } catch (err) {
+      console.error(err);
+      this.appendBotMessage(`⚠️ বাজারের লিস্ট তৈরি করতে সমস্যা হয়েছে: ${err.message}\n\n— Messliner AI`);
+    } finally {
+      this.isAiProcessing = false;
+      const loader = document.getElementById('aiChatLoader');
+      if (loader) loader.remove();
+      const input = document.getElementById('aiChatInput');
+      if (input) input.readOnly = false;
+      const btnSend = document.querySelector('.ai-send-btn');
+      if (btnSend) btnSend.disabled = false;
+      if (input) input.focus();
+    }
   },
 
   async sendAiChatMessage() {
@@ -1319,6 +2196,60 @@ const HistoryModule = {
     this.showChatLoading();
 
     try {
+      const lowerMsg = msg.toLowerCase();
+
+      // ── SECURITY CHECK: Block users from manipulating balance / deposits via AI ──
+      const balanceManipulationRegex = /(টাকা\s*(বাড়|যোগ|দে|এড|অ্যাড|জমা|ট্রান্সফার|পাঠা|বৃদ্ধি)|ব্যালেন্স\s*(বাড়|যোগ|পরিবর্তন|চেঞ্জ|আপডেট|বৃদ্ধি|সেট|এড|অ্যাড)|(add|increase|give|change|update|set|deposit|credit)\s*(me\s*)?(balance|money|taka|tk|deposit)|(balance|money|tk|taka)\s*(increase|add|update|set|change))/i;
+
+      if (balanceManipulationRegex.test(lowerMsg)) {
+        this.appendBotMessage(
+          "⚠️ **নিরাপত্তা সতর্কতা:** এআই (AI) অ্যাসিস্ট্যান্টের মাধ্যমে নিজের বা অন্য কোনো সদস্যের ব্যালেন্স, টাকা জমা (Deposit) বা আর্থিক লেনদেন পরিবর্তন করার কোনো সুযোগ নেই। টাকা-পয়সার যাবতীয় হিসাব ও জমা এন্ট্রি শুধুমাত্র অনুমোদিত মেস ম্যানেজার (Admin) কর্তৃক ফিন্যান্স প্যানেল থেকে নিয়ন্ত্রিত হয়।\n\n— Messliner AI"
+        );
+        return;
+      }
+
+      // ── ROUTE TO AUDIT: If user asked to analyze or audit the mess ──
+      const isAnalyzeReq = /^(analyze|audit|মেস\s*(অডিট|বিশ্লেষণ|এনালাইসিস|যাচাই)|হিসাব\s*(বিশ্লেষণ|অডিট)|মিল\s*রেট\s*অ্যানালাইসিস)/i.test(lowerMsg) ||
+        lowerMsg.startsWith('analyze') ||
+        lowerMsg.includes('analyze mess') ||
+        lowerMsg.includes('মেস অডিট') ||
+        lowerMsg.includes('মেসের হিসাব বিশ্লেষণ');
+
+      if (isAnalyzeReq) {
+        await this.triggerMessAnalysis(msg, true);
+        return;
+      }
+
+      // ── ROUTE TO MEAL RATE OPTIMIZATION & NUTRITION ──
+      const isMealRateOptimizeReq = /(মিল\s*রেট\s*(কীভাবে|কিভাবে|কেমনে)?\s*(কমা|কমাব|কমাবো|কম\s*করা|বেশি|অনেক\s*বেশি)|(reduce|lower|cut|decrease|optimize)\s*meal\s*rate|how\s*to\s*(reduce|cut|lower)\s*meal\s*rate|meal\s*rate\s*(koma|komabo|beshi)|মিল\s*রেট\s*কমানোর\s*(উপায়|কৌশল|পদ্ধতি)|আমিষ\s*ও?\s*শর্করা|পুষ্টি\s*বিশ্লেষণ)/i.test(lowerMsg);
+
+      if (isMealRateOptimizeReq) {
+        await this.triggerMealRateOptimization(msg);
+        return;
+      }
+
+      // ── ROUTE TO SMART BAZAR LIST GENERATOR ──
+      const isBazarListReq = /(বাজারের?\s*(লিস্ট|তালিকা|ফর্দ|হিসাব)|(bazar|bazaar|grocery)\s*list|কতটুকু\s*(বাজার|চাল|মাংস|মুরগি|মাছ|তেল)\s*লাগবে|আজকের\s*বাজার|আগামীকালের\s*বাজার|বাজার\s*লিস্ট)/i.test(lowerMsg);
+
+      if (isBazarListReq) {
+        await this.triggerBazarListGenerator(msg);
+        return;
+      }
+
+      // ── ROUTE TO MESS RULES: Fetch and show rules directly from Firebase database ──
+      const cleanMsg = lowerMsg.replace(/[\?\!\.\,]/g, '').trim();
+      const isRulesReq = /^(mess\s*rules?|what\s*are\s*(the\s*)?mess\s*rules|rules?|dining\s*rules?|show\s*(mess\s*)?rules?|rules\s*of\s*mess|mess\s*er\s*rules(\s*ki)?|rules\s*ki|মেস\s*রুলস?|মেসের\s*(নিয়ম|রুলস?|নিয়মাবলী|নিয়মাবলী)(\s*কি)?|মেসের\s*রুলস\s*কি)$/i.test(cleanMsg) ||
+        cleanMsg === 'mess rules' ||
+        cleanMsg === 'rules' ||
+        cleanMsg === 'what are the mess rules' ||
+        cleanMsg === 'what is the mess rules' ||
+        cleanMsg === 'mess er rules';
+
+      if (isRulesReq) {
+        await this.showMessRules();
+        return;
+      }
+
       this.diningId = this.diningId || (window.Messliner && Messliner.state && Messliner.state.diningId) || localStorage.getItem('dining_id');
       this.userId = this.userId || (window.Messliner && Messliner.state && Messliner.state.userId) || localStorage.getItem('user_id') || 'admin';
 
@@ -1341,10 +2272,24 @@ const HistoryModule = {
 
       const activeMealsStatusText = activeMealTypes.map(m => `${m.charAt(0).toUpperCase() + m.slice(1)}: ${mealStatus[m] ? '1 (ON)' : '0 (OFF)'}`).join(', ');
 
-      // 2. Fetch dining mess context details (rules, finances, bazaar) to answer general questions
-      let rules = "1. Turn off meals before deadline.\n2. Do bazar duties on time.";
-      if (this.settings && this.settings.rules) {
-        rules = this.settings.rules;
+      // 2. Fetch dining mess context details (rules from database, finances, bazaar) to answer general questions
+      let rules = "";
+      try {
+        const rulesSnap = await db.ref(`dinings/${this.diningId}/rules`).once('value');
+        const dbRules = rulesSnap.val();
+        if (Array.isArray(dbRules)) {
+          rules = dbRules.join('\n');
+        } else if (typeof dbRules === 'object' && dbRules !== null) {
+          rules = Object.values(dbRules).join('\n');
+        } else if (typeof dbRules === 'string') {
+          rules = dbRules;
+        }
+      } catch (_) {}
+      if (!rules && this.settings && this.settings.rules) {
+        rules = Array.isArray(this.settings.rules) ? this.settings.rules.join('\n') : String(this.settings.rules);
+      }
+      if (!rules) {
+        rules = "কোনো বিশেষ নিয়ম এখনো ম্যানেজার কর্তৃক যুক্ত করা হয়নি।";
       }
 
       const userDeposit = (Messliner.userDashboard && Messliner.userDashboard.monthlyDeposit) || 0;
@@ -1410,6 +2355,7 @@ const HistoryModule = {
            c. If all requested meals are ALREADY in the user's requested state (e.g., user asks to turn off meals, but all active meals are already 0 / OFF), output intent "general" and state in Bengali that the meals are already in that state.
         2. If the user is asking a general question about their balance, cost, dining rules, recent bazaar purchases, menu, or statistics, answer it accurately using the CONTEXT DATA. Be friendly, concise, and helpful. Output intent "general".
         3. LANGUAGE RULE: Always respond in Bengali (বাংলা) by default, even if the user asks their question in English or any other language. However, if the user explicitly requests you to talk or respond in a different specific language (e.g., "speak in English", "ইংরেজিতে উত্তর দাও", "respond in Arabic"), then you must override the default and reply in that requested language.
+        4. OUTRO RULE: End your general responses neatly with "— Messliner AI".
       `;
 
       const systemInstruction = "You are Messliner AI, a helpful mess chatbot assistant. Always respond in Bengali by default unless the user explicitly requests another language. Reply friendly and structure outputs.";
@@ -2420,4 +3366,3 @@ window.openMessRulesModal = async function () {
 
 window.HistoryPageModule = HistoryPageModule;
 console.log('[Messliner] History module loaded');
-

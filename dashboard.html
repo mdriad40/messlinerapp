@@ -977,6 +977,122 @@
         opacity: 0.8;
       }
     }
+
+    /* ========================================================
+       DINING MANAGER (ADMIN) DESKTOP ONLY GUARD STYLES
+       Enforces minimum 1024px desktop width for Admin Panel
+       ======================================================== */
+    #adminDesktopOnlyModal {
+      display: none !important;
+    }
+
+    @media (max-width: 1023px) {
+      html.ml-is-admin #adminDesktopOnlyModal,
+      body.role-admin #adminDesktopOnlyModal,
+      html.admin-view-active #adminDesktopOnlyModal {
+        display: flex !important;
+      }
+
+      html.ml-is-admin #pageLoader,
+      body.role-admin #pageLoader,
+      html.admin-view-active #pageLoader {
+        display: none !important;
+      }
+
+      html.ml-is-admin,
+      html.ml-is-admin body,
+      body.role-admin,
+      html.admin-view-active body {
+        overflow: hidden !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+      }
+    }
+
+    .admin-desktop-only-gate {
+      position: fixed;
+      inset: 0;
+      width: 100vw !important;
+      width: 100% !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      min-height: 100vh !important;
+      min-height: 100dvh !important;
+      z-index: 99999999;
+      background: #ffffff !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+
+    .admin-desktop-card {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-height: 100vh !important;
+      min-height: 100dvh !important;
+      height: 100% !important;
+      background: #ffffff !important;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      padding: 2.5rem 1.5rem !important;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-sizing: border-box;
+      margin: 0 !important;
+    }
+
+    .admin-desktop-content-wrap {
+      max-width: 440px;
+      width: 100%;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    @keyframes gatePopIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.93) translateY(12px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .gate-device-anim {
+      width: 90px;
+      height: 90px;
+      margin: 0.75rem auto 1.15rem auto;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gate-device-circle {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(5, 150, 105, 0.12), rgba(8, 145, 178, 0.1));
+      border: 1px solid rgba(5, 150, 105, 0.2);
+      animation: gatePulse 2.5s infinite ease-in-out;
+    }
+
+    @keyframes gatePulse {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 0.4; }
+    }
   </style>
 
   <!-- Favicon -->
@@ -984,6 +1100,117 @@
 </head>
 
 <body>
+
+  <!-- ======== DESKTOP-ONLY GUARD FOR DINING MANAGER (ADMIN) ======== -->
+  <div id="adminDesktopOnlyModal" class="admin-desktop-only-gate" style="display:none;">
+    <div class="admin-desktop-card">
+      <div class="admin-desktop-content-wrap">
+        <!-- Brand & Role Header -->
+        <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:6px;">
+          <img src="assets/messLiner-logo.png" alt="Messliner Logo" style="width:32px; height:32px; object-fit:contain; border-radius:8px;">
+          <span style="font-size:1.2rem; font-weight:800; color:#0f172a; letter-spacing:-0.02em;">Messliner</span>
+        </div>
+
+        <div style="display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:9999px; background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:1rem;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          Dining Manager Portal
+        </div>
+
+        <!-- Animated Device Visual (Laptop Illustration) -->
+        <div class="gate-device-anim">
+          <div class="gate-device-circle"></div>
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="position:relative; z-index:2;">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" stroke="#059669" fill="rgba(209, 250, 229, 0.6)"></rect>
+            <line x1="8" y1="21" x2="16" y2="21" stroke="#047857" stroke-width="2"></line>
+            <line x1="12" y1="17" x2="12" y2="21" stroke="#047857" stroke-width="2"></line>
+            <line x1="6" y1="8" x2="10" y2="8" stroke="#059669"></line>
+            <line x1="6" y1="11" x2="14" y2="11" stroke="#059669"></line>
+          </svg>
+        </div>
+
+        <!-- Main Message -->
+        <h2 style="font-size:1.35rem; font-weight:800; color:#0f172a; margin:0 0 0.5rem 0; line-height:1.3;">Desktop Device Required</h2>
+        
+        <p style="font-size:0.9rem; color:#475569; line-height:1.6; margin:0 0 1.25rem 0;">
+          The <strong>Messliner Dining Manager Panel</strong> is strictly optimized for desktop and laptop screens to ensure accurate financial ledger tracking, meal calculations, and multi-column member management.
+        </p>
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:0.75rem 1rem; margin-bottom:1.35rem; display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.8rem; color:#64748b; font-weight:600;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>Please log in on a PC or laptop (min. 1024px width)</span>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex; flex-direction:column; gap:0.65rem; width:100%;">
+          <button onclick="localStorage.setItem('viewMode', 'user'); sessionStorage.setItem('viewMode', 'user'); window.location.reload();"
+            style="width:100%; padding:0.8rem 1.25rem; font-weight:700; border-radius:14px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:0.925rem; cursor:pointer; border:none; background:linear-gradient(135deg, #059669, #0891b2); color:#ffffff; box-shadow:0 4px 14px rgba(5, 150, 105, 0.3); transition:all 0.2s ease;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            Switch to Member Mobile View
+          </button>
+
+          <div style="display:flex; gap:8px; margin-top:2px; width:100%;">
+            <a href="index.html" style="flex:1; padding:0.65rem 0.75rem; border-radius:12px; background:#f1f5f9; border:1px solid #e2e8f0; color:#334155; font-size:0.825rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+              Home
+            </a>
+            <button onclick="if(window.AuthService && AuthService.logout){ AuthService.logout(); } else { try{ localStorage.removeItem('sb-pgnjvtmofglkjplotrha-auth-token'); }catch(_){} window.location.href='/login'; }"
+              style="flex:1; padding:0.65rem 0.75rem; border-radius:12px; background:#fee2e2; border:1px solid #fecaca; color:#dc2626; font-size:0.825rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              Log Out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      function evaluateAdminMobileGate() {
+        try {
+          var isSmall = window.innerWidth < 1024;
+          var viewMode = localStorage.getItem('viewMode') || sessionStorage.getItem('viewMode');
+          var isAdmin = document.documentElement.classList.contains('ml-is-admin') ||
+                        document.body.classList.contains('role-admin') ||
+                        (window.App && window.App.state && window.App.state.role === 'admin');
+
+          if (!isAdmin && viewMode !== 'user') {
+            var token = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
+            if (token) {
+              var p = JSON.parse(token);
+              var email = p && p.user && p.user.email;
+              if (email) {
+                var c = localStorage.getItem('ml_cache_v2_' + email.toLowerCase().replace(/[\.\$#\[\]\/@]/g, '_'));
+                if (c) {
+                  var role = JSON.parse(c)?.userData?.role;
+                  if (role === 'admin' || role === 'manager') isAdmin = true;
+                }
+              }
+            }
+          }
+
+          var modal = document.getElementById('adminDesktopOnlyModal');
+          if (modal) {
+            if (isAdmin && isSmall && viewMode !== 'user') {
+              modal.style.setProperty('display', 'flex', 'important');
+              document.documentElement.classList.add('admin-view-active');
+              var pl = document.getElementById('pageLoader');
+              if (pl) pl.style.setProperty('display', 'none', 'important');
+            } else {
+              modal.style.setProperty('display', 'none', 'important');
+              document.documentElement.classList.remove('admin-view-active');
+            }
+          }
+        } catch (_) {}
+      }
+
+      window.addEventListener('resize', evaluateAdminMobileGate);
+      window.addEventListener('DOMContentLoaded', evaluateAdminMobileGate);
+      evaluateAdminMobileGate();
+      var checkTimer = setInterval(evaluateAdminMobileGate, 350);
+      setTimeout(function () { clearInterval(checkTimer); }, 12000);
+    })();
+  </script>
 
   <!-- ======== PAGE LOADER ======== -->
   <div id="pageLoader" class="page-loader">
@@ -8137,20 +8364,6 @@
                   <p class="mymeal-master-subtitle">Automated deposit SMS alerts, API integration &amp; balance logs</p>
                 </div>
               </div>
-              <div class="mymeal-header-stats-dock">
-                <div class="mymeal-stat-pill"
-                  style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2);">
-                  <div class="mymeal-pill-icon" style="background: #059669; color: #fff;">
-                    <div class="sync-dot"
-                      style="width: 8px; height: 8px; background: #fff; border-radius: 50%; animation: pulse 2s infinite;">
-                    </div>
-                  </div>
-                  <div class="mymeal-pill-text">
-                    <span class="mymeal-pill-label" style="color: #047857;">SMS Gateway</span>
-                    <span class="mymeal-pill-val" style="color: #065f46; font-weight: 700;">BulkSMSBD Connected</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -8275,6 +8488,7 @@
 
                 #bkashRechargeAmount {
                   -moz-appearance: textfield;
+                  appearance: textfield;
                 }
 
                 @media (min-width: 768px) {
@@ -8331,7 +8545,7 @@
                         <input type="number" id="bkashRechargeAmount" class="form-input"
                           placeholder="Enter amount (min ৳10)" min="10" step="1" value="100"
                           oninput="Messliner.smsAlert.calcBkashEstimatedSms(this.value)"
-                          style="font-weight: 700; font-size: 15px; -moz-appearance: textfield;">
+                          style="font-weight: 700; font-size: 15px; -moz-appearance: textfield; appearance: textfield;">
                       </div>
                     </div>
 
@@ -9108,6 +9322,30 @@
               border-color: #7C3AED;
             }
 
+            /* Teal variation (Analyze) */
+            .ai-chip.chip-teal {
+              background: rgba(240, 253, 250, 0.65);
+              border: 1px solid rgba(94, 234, 212, 0.7);
+              color: #0F766E;
+              box-shadow: 0 2px 6px rgba(13, 148, 136, 0.04);
+            }
+
+            .ai-chip.chip-teal:hover {
+              background: #CCFBF1;
+              border-color: #0D9488;
+              box-shadow: 0 4px 10px rgba(13, 148, 136, 0.12);
+            }
+
+            .ai-chip.chip-teal .ai-chip-icon-plate {
+              color: #0D9488;
+            }
+
+            .ai-chip.chip-teal:hover .ai-chip-icon-plate {
+              background: #0D9488;
+              border-color: #0D9488;
+              color: #ffffff;
+            }
+
             /* Message bubbles */
             .ai-msg-row {
               display: flex;
@@ -9156,6 +9394,8 @@
               line-height: 1.55;
               box-shadow: 0 2px 8px rgba(5, 150, 105, 0.07);
               animation: bubbleSlideInLeft 0.22s cubic-bezier(0.1, 0.8, 0.25, 1);
+              white-space: pre-wrap;
+              word-break: break-word;
             }
 
             .ai-chat-bubble-user {
@@ -9522,7 +9762,7 @@
                       Off my meal
                     </span>
                     <span class="ai-chip chip-amber"
-                      onclick="document.getElementById('aiChatInput').value='What are the mess rules?'; document.getElementById('aiChatInput').focus()">
+                      onclick="document.getElementById('aiChatInput').value='Mess rules'; document.getElementById('aiChatInput').focus()">
                       <span class="ai-chip-icon-plate">
                         <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"
                           viewBox="0 0 24 24">
@@ -9531,17 +9771,6 @@
                         </svg>
                       </span>
                       Mess rules
-                    </span>
-                    <span class="ai-chip chip-green"
-                      onclick="document.getElementById('aiChatInput').value='What is my balance?'; document.getElementById('aiChatInput').focus()">
-                      <span class="ai-chip-icon-plate">
-                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"
-                          viewBox="0 0 24 24">
-                          <rect x="2" y="5" width="20" height="14" rx="2" />
-                          <line x1="2" y1="10" x2="22" y2="10" />
-                        </svg>
-                      </span>
-                      My balance
                     </span>
                     <span class="ai-chip chip-purple"
                       onclick="document.getElementById('aiChatInput').value='Meal status of today'; document.getElementById('aiChatInput').focus()">
@@ -9552,6 +9781,18 @@
                         </svg>
                       </span>
                       Today's status
+                    </span>
+                    <span class="ai-chip chip-teal"
+                      onclick="Messliner.history.triggerMessAnalysis()" title="মেস অডিট ও সম্পূর্ণ বিশ্লেষণ">
+                      <span class="ai-chip-icon-plate">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4"
+                          viewBox="0 0 24 24">
+                          <line x1="18" y1="20" x2="18" y2="10" stroke-linecap="round" />
+                          <line x1="12" y1="20" x2="12" y2="4" stroke-linecap="round" />
+                          <line x1="6" y1="20" x2="6" y2="14" stroke-linecap="round" />
+                        </svg>
+                      </span>
+                      Analyze
                     </span>
                   </div>
                 </div>
@@ -13656,7 +13897,7 @@
   <script src="js/admin/ledger.js"></script>
   <script src="js/admin/settings.js"></script>
   <script src="js/user/dashboard.js?v=2.1"></script>
-  <script src="js/user/history.js?v=2.2"></script>
+  <script src="js/user/history.js?v=2.6"></script>
   <script src="js/user/bills.js?v=5.5"></script>
   <script src="js/user/mealchart.js?v=2.2"></script>
   <script src="js/user/bazarHistory.js"></script>

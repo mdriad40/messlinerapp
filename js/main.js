@@ -35,20 +35,29 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  initNavbarScroll();
-  initTypewriter();
-  initBazarCalculator();
-  initPricingToggle();
-  initFaqAccordion();
-  initFaqSearch();
-  initModalSystem();
-  initMobileMenu();
-  initDynamicQrCode();
-  initScrollAnimations();
-  initIosClock();
-  initPinnedDemoScroll();
+  const safeRun = (fn, name) => {
+    try {
+      fn();
+    } catch (err) {
+      console.warn(`[Messliner] Error in ${name}:`, err);
+    }
+  };
+
+  safeRun(initScrollAnimations, 'initScrollAnimations');
+  safeRun(initNavbarScroll, 'initNavbarScroll');
+  safeRun(initTypewriter, 'initTypewriter');
+  safeRun(initBazarCalculator, 'initBazarCalculator');
+  safeRun(initPricingToggle, 'initPricingToggle');
+  safeRun(initFaqAccordion, 'initFaqAccordion');
+  safeRun(initFaqSearch, 'initFaqSearch');
+  safeRun(initModalSystem, 'initModalSystem');
+  safeRun(initMobileMenu, 'initMobileMenu');
+  safeRun(initDynamicQrCode, 'initDynamicQrCode');
+  safeRun(initIosClock, 'initIosClock');
+  safeRun(initPinnedDemoScroll, 'initPinnedDemoScroll');
+
   if (window.innerWidth <= 768) {
-    switchMockupView('mobile');
+    safeRun(() => switchMockupView('mobile'), 'switchMockupView');
   }
 });
 
@@ -386,31 +395,50 @@ function showToast(message) {
    9. DYNAMIC STYLISH QR CODE GENERATOR
    ========================================== */
 function initDynamicQrCode() {
-  const downloadBtn = document.getElementById('ctaDownloadBtn');
-  const qrContainer = document.getElementById('qrCodeContainer');
+  try {
+    const downloadBtn = document.getElementById('ctaDownloadBtn');
+    const qrContainer = document.getElementById('qrCodeContainer');
 
-  if (!qrContainer) return;
+    if (!qrContainer) return;
 
-  // Read target URL from qrContainer data-url or download button href
-  let targetUrl = qrContainer.getAttribute('data-url') || (downloadBtn ? downloadBtn.getAttribute('href') : 'https://www.messliner.com/');
+    // Read target URL from qrContainer data-url or download button href
+    let targetUrl = qrContainer.getAttribute('data-url') || (downloadBtn ? downloadBtn.getAttribute('href') : 'https://github.com/mdriad40/mdriad40/releases/download/messliner/MessLiner.apk');
 
-  // Convert relative URL to full absolute URL for mobile QR scanner compatibility
-  if (targetUrl.startsWith('.')) {
-    try {
-      targetUrl = new URL(targetUrl, window.location.href).href;
-    } catch (e) {
-      targetUrl = window.location.origin + '/Ml_webApp/dashboard.html';
+    // Convert relative URL to full absolute URL for mobile QR scanner compatibility
+    if (targetUrl.startsWith('.')) {
+      try {
+        targetUrl = new URL(targetUrl, window.location.href).href;
+      } catch (e) {
+        targetUrl = window.location.origin + '/Ml_webApp/dashboard.html';
+      }
     }
-  }
 
-  // Generate stylish SVG QR Code with rounded finder patterns and capsule modules
-  if (typeof window.generateStylishQrSvg === 'function') {
-    qrContainer.innerHTML = window.generateStylishQrSvg(targetUrl, '#0f172a');
-  } else {
-    const qrImg = document.getElementById('ctaQrCodeImg');
-    if (qrImg) {
-      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(targetUrl)}&color=0f172a&bgcolor=ffffff`;
+    let renderedSvg = false;
+    // Generate stylish SVG QR Code with rounded finder patterns and capsule modules
+    if (typeof window.generateStylishQrSvg === 'function') {
+      try {
+        const svg = window.generateStylishQrSvg(targetUrl, '#0f172a');
+        if (svg) {
+          qrContainer.innerHTML = svg;
+          renderedSvg = true;
+        }
+      } catch (err) {
+        // Fall back gracefully to high-res image QR
+      }
     }
+
+    if (!renderedSvg) {
+      let qrImg = document.getElementById('ctaQrCodeImg');
+      if (!qrImg) {
+        qrContainer.innerHTML = `<img id="ctaQrCodeImg" class="qr-code-img" alt="Scan QR Code to Download MessLiner.apk" />`;
+        qrImg = document.getElementById('ctaQrCodeImg');
+      }
+      if (qrImg) {
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(targetUrl)}&color=0f172a&bgcolor=ffffff`;
+      }
+    }
+  } catch (err) {
+    console.warn('[Messliner] initDynamicQrCode caught error:', err);
   }
 }
 
@@ -420,6 +448,9 @@ function initDynamicQrCode() {
 function initScrollAnimations() {
   const animatedElements = document.querySelectorAll('[data-animate]');
 
+  // Immediately make elements in the hero or top of the page visible
+  document.querySelectorAll('.hero [data-animate]').forEach(el => el.classList.add('is-visible'));
+
   if (!('IntersectionObserver' in window)) {
     animatedElements.forEach(el => el.classList.add('is-visible'));
     return;
@@ -427,8 +458,8 @@ function initScrollAnimations() {
 
   const observerOptions = {
     root: null,
-    rootMargin: '0px 0px -50px 0px',
-    threshold: 0.1
+    rootMargin: '0px 0px -20px 0px',
+    threshold: 0.05
   };
 
   const observer = new IntersectionObserver((entries, obs) => {
@@ -556,4 +587,114 @@ function initPinnedDemoScroll() {
   // Initial sync
   updateMockupScroll();
 }
+
+/* ==========================================
+   14. MESSLINER PRO PRE-ORDER & BKASH CHECKOUT
+   ========================================== */
+function openProCheckoutModal() {
+  openModal('modalCheckoutPro');
+}
+window.openProCheckoutModal = openProCheckoutModal;
+
+async function initiateProPreorderBkash() {
+  const nameInput = document.getElementById('preorderName');
+  const phoneInput = document.getElementById('preorderPhone');
+  const emailInput = document.getElementById('preorderEmail');
+  const messNameInput = document.getElementById('preorderMessName');
+  const btn = document.getElementById('btnBkashPreorderPay');
+
+  const name = (nameInput?.value || '').trim();
+  const phone = (phoneInput?.value || '').trim();
+  const email = (emailInput?.value || '').trim();
+  const messName = (messNameInput?.value || '').trim();
+
+  if (!name) {
+    showToast('Please enter your full name');
+    nameInput?.focus();
+    return;
+  }
+  if (!phone || !/^01[3-9]\d{8}$/.test(phone)) {
+    showToast('Please enter a valid 11-digit mobile number (01XXXXXXXXX)');
+    phoneInput?.focus();
+    return;
+  }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('Please enter a valid email address');
+    emailInput?.focus();
+    return;
+  }
+  if (!messName) {
+    showToast('Please enter your dining / mess name');
+    messNameInput?.focus();
+    return;
+  }
+
+  const defaultBtnHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `
+      <span class="bkash-btn-spinner"></span>
+      <span>Connecting to bKash...</span>
+    `;
+  }
+
+  const preorderData = {
+    type: 'pro_preorder',
+    plan: 'Messliner Pro Annual (Pre-Order)',
+    amount: 499,
+    name: name,
+    phone: phone,
+    email: email,
+    messName: messName,
+    timestamp: Date.now()
+  };
+
+  try {
+    localStorage.setItem('ml_pending_pro_preorder', JSON.stringify(preorderData));
+    localStorage.setItem('ml_pending_bkash_recharge', JSON.stringify(preorderData));
+  } catch (_) {}
+
+  let callbackURL = window.location.origin + '/preorder-callback.html';
+  try {
+    callbackURL = new URL('preorder-callback.html', window.location.href).href;
+  } catch (_) {}
+
+  const GATEWAY_URL = "https://mygateway.netlify.app";
+  const LICENSE_KEY = "bklc_6bnDy4ZuSb0ERQPMlzq2LhH1N7Q11ttV";
+
+  try {
+    const res = await fetch(`${GATEWAY_URL}/api/gateway/create-payment`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "License-Key": LICENSE_KEY
+      },
+      body: JSON.stringify({
+        amount: "499.00",
+        customerPhone: phone,
+        merchantInvoiceNumber: "PRO-" + Date.now(),
+        callbackURL: callbackURL
+      })
+    });
+
+    const data = await res.json();
+    if (data.bkashURL) {
+      window.location.href = data.bkashURL;
+    } else {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = defaultBtnHtml;
+      }
+      showToast(data.statusMessage || 'Unable to connect to bKash gateway. Please try again.');
+    }
+  } catch (err) {
+    console.error('[bKash Checkout] Gateway Error:', err);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = defaultBtnHtml;
+    }
+    showToast('Could not reach bKash gateway. Please check your internet connection.');
+  }
+}
+window.initiateProPreorderBkash = initiateProPreorderBkash;
 

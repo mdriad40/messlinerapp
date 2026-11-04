@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation · Messliner Pro</title>
+  <link rel="icon" type="image/png" href="assets/img/messLiner-logo.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Firebase SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at 50% 0%, #fef2f2 0%, #f0fdf4 35%, #f8fafc 100%);
+      min-height: 100vh;
+      color: #0f172a;
+    }
+
+    .bkash-gradient {
+      background: linear-gradient(135deg, #E2136E 0%, #C20E5E 100%);
+    }
+
+    .pro-badge-glow {
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.2);
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: scale(0.6);
+        opacity: 0;
+      }
+      70% {
+        transform: scale(1.08);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .animate-pop {
+      animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-shadow-none {
+        box-shadow: none !important;
+        border: 1px solid #e2e8f0 !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="flex items-center justify-center p-3 sm:p-6 selection:bg-pink-500 selection:text-white">
+
+  <!-- Main Container -->
+  <div class="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden relative print-shadow-none" id="mainContainer">
+    
+    <!-- Top Decorative Gradient Header -->
+    <div class="h-2.5 bkash-gradient w-full"></div>
+
+    <div class="p-5 sm:p-8" id="cardBody">
+      
+      <!-- Loading State -->
+      <div id="stateLoading" class="flex flex-col items-center justify-center py-14 space-y-4">
+        <div class="relative flex items-center justify-center">
+          <div class="w-16 h-16 rounded-full border-4 border-slate-100 border-t-[#E2136E] animate-spin"></div>
+          <img src="assets/Bkash-Logo.png" alt="bKash" class="h-5 absolute object-contain" onerror="this.style.display='none'">
+        </div>
+        <div class="text-center">
+          <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Verifying Your bKash Payment...</h3>
+          <p class="text-xs text-slate-500 mt-1">Please wait a few seconds while we register your Messliner Pro pre-order license.</p>
+        </div>
+      </div>
+
+      <!-- Success State (Populated Dynamically) -->
+      <div id="stateSuccess" class="hidden"></div>
+
+      <!-- Failure / Cancel State (Populated Dynamically) -->
+      <div id="stateFailure" class="hidden"></div>
+
+    </div>
+
+    <!-- Security & Brand Footer -->
+    <div class="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 no-print">
+      <div class="flex items-center gap-1.5 font-medium text-slate-500">
+        <i data-lucide="shield-check" class="h-4 w-4 text-emerald-600"></i>
+        <span>bKash Secured · 256-Bit SSL Encrypted</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="font-extrabold tracking-wider text-slate-700">MESSLINER</span>
+        <span class="text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">Pro</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (async function () {
+      const params = new URLSearchParams(window.location.search);
+      const paymentStatus = (params.get("status") || "").toLowerCase();
+      const paymentID = params.get("paymentID") || "";
+      const trxID = params.get("trxID") || "";
+      const errorMessage = params.get("errorMessage") || params.get("message") || "";
+
+      const stateLoading = document.getElementById("stateLoading");
+      const stateSuccess = document.getElementById("stateSuccess");
+      const stateFailure = document.getElementById("stateFailure");
+
+      function initIcons() {
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      // Read stored pre-order payload
+      let preorderData = {};
+      try {
+        preorderData = JSON.parse(localStorage.getItem("ml_pending_pro_preorder") || "{}");
+      } catch (_) {}
+
+      // Fallback to secondary recharge cache if needed
+      if (!preorderData.name) {
+        try {
+          preorderData = JSON.parse(localStorage.getItem("ml_pending_bkash_recharge") || "{}");
+        } catch (_) {}
+      }
+
+      const custName = preorderData.name || "Valued Manager";
+      const custPhone = preorderData.phone || "01XXXXXXXXX";
+      const custEmail = preorderData.email || "support@messliner.com";
+      const custMess = preorderData.messName || "Your Mess / Hostel";
+      const orderAmount = parseFloat(preorderData.amount) || 499.00;
+      const formattedAmount = orderAmount.toFixed(2);
+
+      const now = new Date();
+      const formattedDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${now.toLocaleTimeString()}`;
+      const invoiceNo = "MLP-" + (paymentID ? paymentID.slice(-8) : Date.now().toString().slice(-8)).toUpperCase();
+
+      // ==========================================
+      // 1. SUCCESS STATE
+      // ==========================================
+      if (paymentStatus === "success") {
+        const dedupeKey = "ml_bkash_done_" + (paymentID || trxID || Date.now());
+
+        try {
+          const alreadyProcessed = localStorage.getItem(dedupeKey);
+          if (!alreadyProcessed) {
+            // Save pre-order to Firebase database
+            if (typeof db !== "undefined" && db.ref) {
+              await db.ref("preorders").push({
+                plan: "Messliner Pro Annual (Pre-Order)",
+                amount: orderAmount,
+                name: custName,
+                phone: custPhone,
+                email: custEmail,
+                messName: custMess,
+                trxID: trxID || ("BKASH_" + Date.now()),
+                paymentID: paymentID || "",
+                invoiceNo: invoiceNo,
+                status: "paid",
+                createdAt: (typeof firebase !== "undefined" && firebase.database && firebase.database.ServerValue) 
+                  ? firebase.database.ServerValue.TIMESTAMP 
+                  : Date.now()
+              });
+            }
+
+            localStorage.setItem(dedupeKey, "1");
+            localStorage.removeItem("ml_pending_pro_preorder");
+            localStorage.removeItem("ml_pending_bkash_recharge");
+          }
+        } catch (err) {
+          console.warn("[Messliner Pro Callback] Preorder DB save error:", err);
+        }
+
+        stateLoading.classList.add("hidden");
+        stateSuccess.classList.remove("hidden");
+
+        stateSuccess.innerHTML = `
+          <div class="flex flex-col items-center text-center">
+            
+            <!-- Success Animated Check -->
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-50 border-2 border-emerald-300 text-emerald-600 flex items-center justify-center mb-4 animate-pop shadow-lg">
+              <i data-lucide="check" class="h-10 w-10 sm:h-12 sm:w-12 stroke-[3]"></i>
+            </div>
+
+            <!-- Pre-Order VIP Badge -->
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold mb-2">
+              <i data-lucide="sparkles" class="h-3.5 w-3.5 text-emerald-600"></i>
+              <span>Pre-Order Confirmed · 1 Year License</span>
+            </div>
+
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Messliner Pro Confirmed!</h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-md">Thank you, <strong class="text-slate-800">${custName}</strong>. Your payment was verified and your VIP Annual License is securely registered.</p>
+
+            <!-- Price & Plan Highlight Card -->
+            <div class="w-full bg-slate-50 border border-slate-200/90 rounded-2xl p-4 my-5 flex items-center justify-between">
+              <div class="text-left">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Official Receipt</span>
+                <div class="text-base font-extrabold text-slate-900">Messliner Pro (1 Year)</div>
+                <span class="text-xs text-emerald-700 font-bold bg-emerald-100/70 px-2 py-0.5 rounded-full inline-block mt-0.5">VIP Pre-Order Rate</span>
+              </div>
+              <div class="text-right">
+                <div class="text-2xl sm:text-3xl font-black text-[#E2136E]">৳${formattedAmount}</div>
+                <span class="text-[11px] text-slate-500 font-semibold block">Paid via bKash</span>
+              </div>
+            </div>
+
+            <!-- Receipt Breakdown Table -->
+            <div class="w-full rounded-2xl bg-white border border-slate-200 p-4 sm:p-5 space-y-2.5 text-xs text-left shadow-sm">
+              <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                <span class="text-slate-500 font-medium">Invoice Number</span>
+                <span class="font-mono font-bold text-slate-900">${invoiceNo}</span>
+              </div>
+
+              <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                <span class="text-slate-500 font-medium">bKash TrxID</span>
+                <span class="font-mono font-black text-slate-900 bg-pink-50 text-[#E2136E] px-2 py-0.5 rounded border border-pink-100">${trxID || 'BKASH_VERIFIED'}</span>
+              </div>
+
+              <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                <span class="text-slate-500 font-medium">Customer Name</span>
+                <span class="font-bold text-slate-900">${custName}</span>
+              </div>
+
+              <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                <span class="text-slate-500 font-medium">Mess / Hostel</span>
+                <span class="font-bold text-slate-900">${custMess}</span>
+              </div>
+
+              <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                <span class="text-slate-500 font-medium">Mobile Number</span>
+                <span class="font-mono text-slate-700 font-semibold">${custPhone}</span>
+              </div>
+
+              <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                <span class="text-slate-500 font-medium">Email Address</span>
+                <span class="text-slate-700 font-semibold">${custEmail}</span>
+              </div>
+
+              <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                <span class="text-slate-500 font-medium">Payment Method</span>
+                <span class="font-bold text-slate-900 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-[#E2136E]"></span>
+                  <span>bKash Online Payment</span>
+                </span>
+              </div>
+
+              <div class="flex justify-between items-center">
+                <span class="text-slate-500 font-medium">Date &amp; Time</span>
+                <span class="text-slate-700 font-medium">${formattedDate}</span>
+              </div>
+            </div>
+
+            <!-- What's Included Preview -->
+            <div class="w-full mt-4 bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-3.5 text-left text-xs">
+              <div class="font-bold text-emerald-950 flex items-center gap-1.5 mb-2">
+                <i data-lucide="check-circle-2" class="h-4 w-4 text-emerald-600"></i>
+                <span>Your Pro License Includes:</span>
+              </div>
+              <div class="grid grid-cols-2 gap-1.5 text-slate-700 font-medium text-[11px]">
+                <div>✓ 50 Dining Members</div>
+                <div>✓ Multi-Mess Control</div>
+                <div>✓ Instant SMS &amp; Push Alerts</div>
+                <div>✓ Priority 24/7 Support</div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="w-full mt-6 flex flex-col sm:flex-row gap-3 no-print">
+              <button onclick="window.print()" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-slate-700 font-bold text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all">
+                <i data-lucide="printer" class="h-4 w-4"></i>
+                <span>Print / Save Receipt</span>
+              </button>
+
+              <a href="index.html" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-white font-bold text-xs bkash-gradient hover:opacity-95 shadow-lg shadow-pink-500/20 transition-all transform active:scale-95">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                <span>Back to Home</span>
+              </a>
+            </div>
+
+          </div>
+        `;
+
+        initIcons();
+        return;
+      }
+
+      // ==========================================
+      // 2. FAILURE / CANCELLED STATE
+      // ==========================================
+      stateLoading.classList.add("hidden");
+      stateFailure.classList.remove("hidden");
+
+      const isCancelled = paymentStatus === "cancel";
+      const failureTitle = isCancelled ? "Payment Cancelled" : "Payment Not Completed";
+      const failureDesc = isCancelled
+        ? "You have cancelled the bKash payment process. No money was charged from your bKash account."
+        : (errorMessage || "We could not complete your bKash transaction. Please verify your bKash balance or try again.");
+
+      stateFailure.innerHTML = `
+        <div class="flex flex-col items-center text-center">
+          
+          <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full ${isCancelled ? 'bg-amber-50 border-2 border-amber-300 text-amber-600' : 'bg-rose-50 border-2 border-rose-300 text-rose-600'} flex items-center justify-center mb-4 animate-pop shadow-lg">
+            <i data-lucide="${isCancelled ? 'alert-triangle' : 'x'}" class="h-10 w-10 sm:h-12 sm:w-12 stroke-[3]"></i>
+          </div>
+
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${isCancelled ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-rose-50 border border-rose-200 text-rose-800'} text-xs font-bold mb-2">
+            <span>Status: ${isCancelled ? 'Cancelled by User' : 'Payment Failed'}</span>
+          </div>
+
+          <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">${failureTitle}</h1>
+          <p class="text-xs sm:text-sm text-slate-500 mt-2 max-w-md">${failureDesc}</p>
+
+          <!-- Order Summary Card -->
+          <div class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 my-5 text-left text-xs space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Plan</span>
+              <span class="font-bold text-slate-800">Messliner Pro (1 Year)</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Intended Amount</span>
+              <span class="font-bold text-slate-800">৳${formattedAmount}</span>
+            </div>
+            ${custName ? `
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Name</span>
+              <span class="font-semibold text-slate-800">${custName}</span>
+            </div>` : ''}
+            ${paymentID ? `
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500">Payment ID</span>
+              <span class="font-mono text-slate-700">${paymentID}</span>
+            </div>` : ''}
+          </div>
+
+          <!-- Actions -->
+          <div class="w-full flex flex-col sm:flex-row gap-3">
+            <a href="index.html" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-white font-bold text-xs bkash-gradient hover:opacity-95 shadow-lg shadow-pink-500/20 transition-all transform active:scale-95">
+              <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+              <span>Try Again</span>
+            </a>
+
+            <a href="index.html" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-slate-700 font-bold text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all">
+              <i data-lucide="home" class="h-4 w-4"></i>
+              <span>Back to Home</span>
+            </a>
+          </div>
+
+        </div>
+      `;
+
+      initIcons();
+    })();
+  </script>
+
+</body>
+
+</html>
+
