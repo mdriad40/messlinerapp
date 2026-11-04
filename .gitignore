@@ -15,3 +15,12 @@ node_modules/
 # Admin console (separate repo/deployment)
 Messliner_Admin/
 
+# Environment Variables & Secrets (Prevent GitHub Push)
+.env
+.env.*
+.env.local
+!.env.example
+js/env.js
+js/*.env.js
+!js/env.example.js
+

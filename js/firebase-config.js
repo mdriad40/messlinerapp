@@ -13,9 +13,14 @@ const firebaseConfig = {
   measurementId: "G-L4RDDY6VRG"
 };
 
-// Gemini API Key for Smart Campus AI Features
-const GEMINI_API_KEY = window.GEMINI_API_KEY || localStorage.getItem('gemini_api_key') || "AQ.Ab8RN6JuVbCr70tle91XQxPZfSBUuhG9J4HxE-hDRNxjoYbtfw";
-const GEMINI_MODEL = window.GEMINI_MODEL || "gemini-3-flash-preview";
+// Gemini API Key for Smart Campus AI Features (Loaded dynamically from environment config js/env.js)
+const GEMINI_API_KEY = (window.__ENV__ && window.__ENV__.GEMINI_API_KEY)
+  || window.GEMINI_API_KEY
+  || localStorage.getItem('gemini_api_key')
+  || "";
+const GEMINI_MODEL = (window.__ENV__ && window.__ENV__.GEMINI_MODEL)
+  || window.GEMINI_MODEL
+  || "gemini-3-flash-preview";
 
 // Initialize Firebase (Realtime Database & Gemini API)
 const firebaseApp = firebase.initializeApp(firebaseConfig);

@@ -391,8 +391,8 @@ function initDynamicQrCode() {
 
   if (!qrContainer) return;
 
-  // Read target URL from download button href
-  let targetUrl = downloadBtn ? downloadBtn.getAttribute('href') : 'Ml_webApp/dashboard.html';
+  // Read target URL from qrContainer data-url or download button href
+  let targetUrl = qrContainer.getAttribute('data-url') || (downloadBtn ? downloadBtn.getAttribute('href') : 'https://www.messliner.com/');
 
   // Convert relative URL to full absolute URL for mobile QR scanner compatibility
   if (targetUrl.startsWith('.')) {
