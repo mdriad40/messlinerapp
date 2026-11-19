@@ -2729,8 +2729,19 @@ body:has(#page-pro.active) #headerSubtitle {
     box-sizing: border-box !important;
   }
 
-  .overview-mobile-stats .mymeal-user-topbar,
-  .overview-mobile-stats .overview-user-topbar {
+  body.role-admin .overview-mobile-stats .mymeal-user-topbar,
+  body.role-admin .overview-mobile-stats .overview-user-topbar {
+    display: flex !important;
+    margin-bottom: 14px !important;
+    padding: 2px 0 !important;
+  }
+
+  body:not(.role-admin) .overview-mobile-stats .mymeal-user-topbar,
+  body:not(.role-admin) .overview-mobile-stats .overview-user-topbar {
+    display: none !important;
+  }
+
+  body.role-admin .overview-mobile-stats .overview-hero-top-title {
     display: none !important;
   }
 

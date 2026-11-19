@@ -433,7 +433,9 @@ const OverviewModule = {
       (window.UserDashboard && UserDashboard.userData && UserDashboard.userData.role === 'admin') ||
       (typeof Auth !== 'undefined' && Auth.isAdmin && Auth.isAdmin()) ||
       document.documentElement.classList.contains('ml-is-admin') ||
-      document.body.classList.contains('role-admin');
+      document.body.classList.contains('role-admin') ||
+      (typeof Router !== 'undefined' && Router.getRole && Router.getRole() === 'admin') ||
+      (localStorage.getItem('ml_user_role') === 'admin');
     const userName = isManager ? 'Manager' : (u.name || 'Member');
     const userAvatar = isManager ? 'M' : ((window.Utils && typeof Utils.initials === 'function') ? Utils.initials(userName) : userName.charAt(0).toUpperCase());
     const diningName = (Messliner.state && Messliner.state.diningName) ||
@@ -558,7 +560,38 @@ const OverviewModule = {
           <div class="mymeal-ambient-circle circle-1"></div>
           <div class="mymeal-ambient-circle circle-2"></div>
 
-          <!-- Dining Overview Header (Icon + Title) matching reference design -->
+          ${isManager ? `
+          <!-- Admin / Manager Topbar on Home (Avatar, Mess Name, Hi Greeting, Pro Icon, Notification Bell) -->
+          <div class="mymeal-user-topbar overview-user-topbar" id="overviewUserTopBar">
+            <div class="mymeal-user-profile-block" onclick="Messliner.router.navigate('profile')" title="View Profile">
+              <div class="mymeal-user-avatar" id="overviewUserAvatar">${userAvatar}</div>
+              <div class="mymeal-user-meta">
+                <div class="mymeal-mess-name" id="overviewMessInfo">${messInfoText}</div>
+                <div class="mymeal-user-greeting">
+                  <span>Hi, <strong id="overviewUserName">${userName}</strong></span>
+                  <svg class="mymeal-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="mymeal-topbar-actions" style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" class="mymeal-icon-btn overview-pro-btn" onclick="Messliner.router.navigate('pro')" aria-label="Messliner Pro" title="Messliner Pro" style="display: inline-flex; align-items: center; justify-content: center; background: rgba(245, 158, 11, 0.16); border: 1px solid rgba(245, 158, 11, 0.4); cursor: pointer;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #fbbf24;">
+                  <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
+                </svg>
+              </button>
+              <button type="button" class="mymeal-icon-btn" onclick="Messliner.router.navigate('notifications')" aria-label="Notifications" title="Notifications">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span id="overviewNotifBadge" class="mymeal-notif-badge ${unreadCount > 0 ? '' : 'hidden'}" style="${unreadCount > 0 ? 'display:inline-flex !important;' : 'display:none !important;'}">${unreadCount > 9 ? '9+' : (unreadCount || '')}</span>
+              </button>
+            </div>
+          </div>
+          ` : `
+          <!-- Dining Overview Header for Member Panel (Icon + Title) -->
           <div class="overview-hero-top-title" style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding: 2px 2px 4px 2px;">
             <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: rgba(5, 150, 105, 0.22); border: 1px solid rgba(16, 185, 129, 0.45); flex-shrink: 0;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -570,6 +603,7 @@ const OverviewModule = {
             </div>
             <span style="font-size: 1.15rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em;">Dining Overview</span>
           </div>
+          `}
 
           <div class="mymeal-hero-card">
             <!-- Card Top Header -->
