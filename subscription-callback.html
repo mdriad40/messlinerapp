@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Status · Messliner Subscription</title>
+  <link rel="icon" type="image/png" href="assets/messLiner-logo.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Environment Variables & Firebase SDK Compat -->
+  <script src="js/env.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/shared/payment.js?v=3.5.4"></script>
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at 50% 0%, #fef2f2 0%, #f0fdf4 35%, #f8fafc 100%);
+      color: #0f172a;
+    }
+
+    .bkash-gradient {
+      background: linear-gradient(135deg, #E2136E 0%, #C20E5E 100%);
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: scale(0.6);
+        opacity: 0;
+      }
+      70% {
+        transform: scale(1.08);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .animate-pop {
+      animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-shadow-none {
+        box-shadow: none !important;
+        border: 1px solid #e2e8f0 !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="h-screen w-screen flex items-center justify-center p-3 sm:p-5 selection:bg-pink-500 selection:text-white">
+
+  <!-- Main Container (Viewport Fitted, No Scrolling Required) -->
+  <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden relative flex flex-col max-h-[96vh] print-shadow-none" id="mainContainer">
+    
+    <!-- Top Decorative Gradient Header -->
+    <div class="h-2 bkash-gradient w-full flex-shrink-0"></div>
+
+    <div class="p-4 sm:p-6 flex-1 flex flex-col justify-center" id="cardBody">
+      
+      <!-- Loading State -->
+      <div id="stateLoading" class="flex flex-col items-center justify-center py-10 space-y-3">
+        <div class="relative flex items-center justify-center">
+          <div class="w-12 h-12 rounded-full border-4 border-slate-100 border-t-[#E2136E] animate-spin"></div>
+          <img src="assets/Bkash-Logo.png" alt="bKash" class="h-4 absolute object-contain" onerror="this.style.display='none'">
+        </div>
+        <div class="text-center">
+          <h3 class="text-base font-extrabold text-slate-900 tracking-tight">Verifying Subscription Payment...</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Please wait while we confirm your bKash transaction status.</p>
+        </div>
+      </div>
+
+      <!-- Failure / Cancel State (Populated Dynamically) -->
+      <div id="stateFailure" class="hidden"></div>
+
+    </div>
+
+    <!-- Security & Brand Footer -->
+    <div class="bg-slate-50 px-5 py-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 no-print flex-shrink-0">
+      <div class="flex items-center gap-1.5 font-medium text-slate-500">
+        <i data-lucide="shield-check" class="h-3.5 w-3.5 text-emerald-600"></i>
+        <span>bKash Secured · 256-Bit SSL Encrypted</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="font-extrabold tracking-wider text-slate-700">MESSLINER</span>
+        <span class="text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">Billing</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (async function () {
+      const params = new URLSearchParams(window.location.search);
+      const paymentStatus = (params.get("status") || "").toLowerCase();
+      const paymentID = params.get("paymentID") || "";
+      const trxID = params.get("trxID") || "";
+      const errorMessage = params.get("errorMessage") || params.get("message") || "";
+
+      const stateLoading = document.getElementById("stateLoading");
+      const stateFailure = document.getElementById("stateFailure");
+
+      function initIcons() {
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      // Retrieve pending subscription transaction payload from localStorage
+      let subData = {};
+      try {
+        subData = JSON.parse(localStorage.getItem("ml_pending_subscription") || "{}");
+      } catch (_) {}
+      if (!subData.amount) {
+        try {
+          subData = JSON.parse(localStorage.getItem("ml_pending_universal_payment") || "{}");
+        } catch (_) {}
+      }
+      if (!subData.amount) {
+        try {
+          subData = JSON.parse(localStorage.getItem("ml_pending_bkash_recharge") || "{}");
+        } catch (_) {}
+      }
+
+      const meta = subData.metadata || {};
+      const plan = meta.plan || subData.plan || "pro";
+      const planName = meta.planName || (plan === 'pay_as_you_go' ? 'Pay As You Go' : 'Messliner Pro');
+      const billingCycle = meta.billingCycle || 'monthly';
+      const cycleLabel = meta.cycleLabel || (billingCycle === 'yearly' ? 'Annual Billing (1 Year)' : 'Monthly Billing (1 Month)');
+      const membersCount = meta.membersCount || 25;
+
+      const custName = meta.name || subData.name || "Mess Manager";
+      const custPhone = meta.phone || subData.phone || "01XXXXXXXXX";
+      const custEmail = meta.email || subData.email || "";
+      const custMess = meta.messName || subData.messName || "Your Mess Group";
+      const custAddress = meta.messAddress || subData.messAddress || "";
+      const orderAmount = parseFloat(subData.amount) || 60.00;
+      const formattedAmount = orderAmount.toFixed(2);
+
+      const retryUrl = `checkout.html?plan=${encodeURIComponent(plan)}&cycle=${encodeURIComponent(billingCycle)}${plan === 'pay_as_you_go' ? `&members=${membersCount}` : ''}`;
+
+      // ==========================================
+      // 1. SUCCESS STATE: Official bKash Server Execution & Instant Redirect
+      // ==========================================
+      if (paymentStatus === "success") {
+        let verifiedTrx = trxID || paymentID || "BKASH_CONFIRMED";
+        let verifiedAmount = orderAmount;
+
+        const completedPayload = {
+          plan: plan,
+          planName: planName,
+          billingCycle: billingCycle,
+          cycleLabel: cycleLabel,
+          amount: verifiedAmount,
+          trxID: verifiedTrx,
+          paymentID: paymentID,
+          name: custName,
+          phone: custPhone,
+          email: custEmail,
+          messName: custMess,
+          messAddress: custAddress,
+          diningId: subData.diningId || '',
+          timestamp: Date.now()
+        };
+
+        // Call Server Edge Function to execute bKash payment officially
+        if (window.MesslinerPayment && paymentID) {
+          try {
+            const vRes = await window.MesslinerPayment.verifyAndFulfill({
+              paymentID: paymentID,
+              trxID: trxID,
+              type: subData.type || ('subscription_' + plan),
+              amount: orderAmount,
+              customerPhone: custPhone,
+              diningId: subData.diningId || '',
+              metadata: {
+                ...meta,
+                invoiceNo: 'INV-' + (paymentID ? paymentID.slice(-8) : Date.now().toString().slice(-8)).toUpperCase()
+              }
+            });
+
+            if (vRes && vRes.success) {
+              if (vRes.trxID) verifiedTrx = vRes.trxID;
+              if (vRes.amount) verifiedAmount = vRes.amount;
+              completedPayload.trxID = verifiedTrx;
+              completedPayload.amount = verifiedAmount;
+              try {
+                localStorage.setItem('ml_last_completed_subscription', JSON.stringify(completedPayload));
+                localStorage.removeItem('ml_pending_subscription');
+              } catch (_) {}
+
+              window.location.replace(`checkout.html?status=success&paymentID=${encodeURIComponent(paymentID)}&trxID=${encodeURIComponent(verifiedTrx)}`);
+              return;
+            } else {
+              // Gateway or Edge verification failed
+              stateLoading.classList.add("hidden");
+              stateFailure.classList.remove("hidden");
+              const failEl = document.getElementById("stateFailure");
+              if (failEl) {
+                failEl.innerHTML = `
+                  <div class="flex flex-col items-center text-center">
+                    <div class="w-12 h-12 rounded-full bg-rose-50 border-2 border-rose-300 text-rose-600 flex items-center justify-center mb-2 animate-pop shadow-md flex-shrink-0">
+                      <i data-lucide="x" class="h-6 w-6 stroke-[2.5]"></i>
+                    </div>
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-bold mb-1.5">
+                      <span>Verification Failed</span>
+                    </div>
+                    <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">Payment Verification Incomplete</h1>
+                    <p class="text-[11px] sm:text-xs text-slate-500 mt-1 max-w-sm leading-normal">${(vRes && vRes.error) || "bKash transaction was not confirmed by the gateway."}</p>
+                    <div class="mt-4 w-full">
+                      <a href="${retryUrl}" class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md transition-all">
+                        <span>Try Again</span>
+                      </a>
+                    </div>
+                  </div>`;
+                if (window.lucide) lucide.createIcons();
+              }
+              return;
+            }
+          } catch (vErr) {
+            console.warn("[Subscription Callback] Notice:", vErr);
+            stateLoading.classList.add("hidden");
+            stateFailure.classList.remove("hidden");
+            const failEl = document.getElementById("stateFailure");
+            if (failEl) {
+              failEl.innerHTML = `
+                <div class="flex flex-col items-center text-center">
+                  <div class="w-12 h-12 rounded-full bg-rose-50 border-2 border-rose-300 text-rose-600 flex items-center justify-center mb-2 animate-pop shadow-md flex-shrink-0">
+                    <i data-lucide="x" class="h-6 w-6 stroke-[2.5]"></i>
+                  </div>
+                  <h1 class="text-xl font-black text-slate-900">Verification Error</h1>
+                  <p class="text-xs text-slate-500 mt-1">Unable to confirm payment. Please contact support or try again.</p>
+                  <div class="mt-4 w-full">
+                    <a href="${retryUrl}" class="w-full inline-flex items-center justify-center py-3 px-6 bg-slate-900 text-white font-bold text-xs rounded-xl">Try Again</a>
+                  </div>
+                </div>`;
+              if (window.lucide) lucide.createIcons();
+            }
+            return;
+          }
+        } else {
+          // Missing paymentID
+          stateLoading.classList.add("hidden");
+          stateFailure.classList.remove("hidden");
+          return;
+        }
+      }
+
+      // ==========================================
+      // 2. CANCELLED / FAILED STATE (Compact, Viewport Fitted, Zero Scroll)
+      // ==========================================
+      stateLoading.classList.add("hidden");
+      stateFailure.classList.remove("hidden");
+
+      const isCancelled = paymentStatus === "cancel";
+      const failureTitle = isCancelled ? "Payment Cancelled" : "Payment Incomplete";
+      const failureDesc = isCancelled
+        ? "You have cancelled the bKash payment process. No amount was deducted from your account."
+        : (errorMessage || "The payment gateway was unable to complete your transaction. Please try again.");
+
+      stateFailure.innerHTML = `
+        <div class="flex flex-col items-center text-center">
+          
+          <!-- Animated Status Icon -->
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full ${isCancelled ? 'bg-amber-50 border-2 border-amber-300 text-amber-600' : 'bg-rose-50 border-2 border-rose-300 text-rose-600'} flex items-center justify-center mb-2 animate-pop shadow-md flex-shrink-0">
+            <i data-lucide="${isCancelled ? 'alert-triangle' : 'x'}" class="h-6 w-6 sm:h-7 sm:w-7 stroke-[2.5]"></i>
+          </div>
+
+          <!-- Status Badge -->
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full ${isCancelled ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-rose-50 border border-rose-200 text-rose-800'} text-[11px] font-bold mb-1.5">
+            <span>Status: ${isCancelled ? 'Cancelled by User' : 'Payment Failed'}</span>
+          </div>
+
+          <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">${failureTitle}</h1>
+          <p class="text-[11px] sm:text-xs text-slate-500 mt-1 max-w-sm leading-normal">${failureDesc}</p>
+
+          <!-- Order Summary Card with Dynamic Values & Labels -->
+          <div class="w-full bg-slate-50 border border-slate-200/80 rounded-2xl p-3 sm:p-4 my-3 text-left text-xs space-y-1.5 sm:space-y-2">
+            <div class="flex justify-between items-center pb-1.5 border-b border-slate-200/60">
+              <span class="text-slate-500 font-medium">Selected Plan</span>
+              <span class="font-bold text-slate-900">${planName}</span>
+            </div>
+
+            <div class="flex justify-between items-center pb-1.5 border-b border-slate-200/60">
+              <span class="text-slate-500 font-medium">Billing Cycle</span>
+              <span class="font-semibold text-slate-800">${cycleLabel}</span>
+            </div>
+
+            <div class="flex justify-between items-center pb-1.5 border-b border-slate-200/60">
+              <span class="text-slate-500 font-medium">Payable Amount</span>
+              <span class="font-extrabold text-[#E2136E]">৳${formattedAmount}</span>
+            </div>
+
+            <div class="flex justify-between items-center pb-1.5 border-b border-slate-200/60">
+              <span class="text-slate-500 font-medium">Mess / Dining</span>
+              <span class="font-semibold text-slate-800 truncate max-w-[60%] text-right">${custMess}</span>
+            </div>
+
+            ${custAddress ? `
+            <div class="flex justify-between items-center pb-1.5 border-b border-slate-200/60">
+              <span class="text-slate-500 font-medium flex-shrink-0">Mess Address</span>
+              <span class="font-medium text-slate-700 text-right truncate max-w-[60%]">${custAddress}</span>
+            </div>` : ''}
+
+            ${custEmail ? `
+            <div class="flex justify-between items-center pb-1.5 border-b border-slate-200/60">
+              <span class="text-slate-500 font-medium">Email</span>
+              <span class="font-medium text-slate-700 truncate max-w-[60%] text-right">${custEmail}</span>
+            </div>` : ''}
+
+            <div class="flex justify-between items-center ${paymentID ? 'pb-1.5 border-b border-slate-200/60' : ''}">
+              <span class="text-slate-500 font-medium">Payment Method</span>
+              <span class="font-semibold text-slate-800 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#E2136E]"></span>
+                <span>bKash Online Payment</span>
+              </span>
+            </div>
+
+            ${paymentID ? `
+            <div class="flex justify-between items-center">
+              <span class="text-slate-500 font-medium">Payment ID</span>
+              <span class="font-mono text-[11px] text-slate-700">${paymentID}</span>
+            </div>` : ''}
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="w-full flex flex-col sm:flex-row gap-2.5 mt-1">
+            <a href="${retryUrl}" class="flex-1 flex items-center justify-center gap-2 py-2.5 sm:py-3 px-4 rounded-xl text-white font-bold text-xs bkash-gradient hover:opacity-95 shadow-md shadow-pink-500/20 transition-all transform active:scale-95">
+              <i data-lucide="refresh-cw" class="h-3.5 w-3.5"></i>
+              <span>Try Again</span>
+            </a>
+
+            <a href="dashboard.html" class="flex-1 flex items-center justify-center gap-2 py-2.5 sm:py-3 px-4 rounded-xl text-slate-700 font-bold text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all">
+              <i data-lucide="layout-dashboard" class="h-3.5 w-3.5"></i>
+              <span>Back to Dashboard</span>
+            </a>
+          </div>
+
+        </div>
+      `;
+
+      initIcons();
+    })();
+  </script>
+
+</body>
+
+</html>

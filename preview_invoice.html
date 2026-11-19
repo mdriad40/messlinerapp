@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Official Invoice — Messliner</title>
+  <style>
+    /* Reset & Clean Print/Display Typography */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      padding: 36px 12px;
+      color: #0f172a;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Floating Invoice Sheet */
+    .invoice-card {
+      max-width: 660px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.04);
+      position: relative;
+    }
+
+    .invoice-body {
+      padding: 48px 52px 20px 52px;
+      position: relative;
+      z-index: 5;
+    }
+
+    /* Top Bar: Logo & Invoice No */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+    .logo-img {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      display: block;
+    }
+    .invoice-no {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #1e293b;
+      letter-spacing: 0.5px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+    }
+
+    /* INVOICE Big Title */
+    .invoice-heading {
+      font-size: 46px;
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      color: #0f172a;
+      line-height: 1;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    /* Date Line */
+    .date-text {
+      font-size: 14px;
+      color: #334155;
+      margin-bottom: 26px;
+    }
+    .date-text strong {
+      font-weight: 800;
+      color: #0f172a;
+      margin-right: 4px;
+    }
+
+    /* Two-Column Addresses: Billed to & From */
+    .address-section {
+      display: flex;
+      justify-content: space-between;
+      gap: 36px;
+      margin-bottom: 34px;
+    }
+    .address-box {
+      flex: 1;
+    }
+    .address-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+    .address-org {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 3px;
+    }
+    .address-detail {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    /* Table Styling matching sample */
+    .item-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .item-table th {
+      background-color: #e5e7eb;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1f2937;
+      text-transform: capitalize;
+    }
+    .item-table th:first-child {
+      border-top-left-radius: 6px;
+      border-bottom-left-radius: 6px;
+      text-align: left;
+    }
+    .item-table th:nth-child(2) {
+      text-align: center;
+    }
+    .item-table th:nth-child(3),
+    .item-table th:last-child {
+      text-align: right;
+    }
+    .item-table th:last-child {
+      border-top-right-radius: 6px;
+      border-bottom-right-radius: 6px;
+    }
+
+    .item-table td {
+      padding: 14px 16px;
+      font-size: 13.5px;
+      color: #334155;
+    }
+    .item-table td.col-name {
+      text-align: left;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .item-table td.col-qty {
+      text-align: center;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .item-table td.col-price {
+      text-align: right;
+      color: #475569;
+    }
+    .item-table td.col-amt {
+      text-align: right;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    /* Discount Row */
+    .discount-row td {
+      padding: 6px 16px 12px 16px;
+      font-size: 12.5px;
+      color: #475569;
+      font-weight: 600;
+    }
+
+    /* Total Divider (matching sample image's clean lines) */
+    .total-row {
+      border-top: 1.5px solid #e5e7eb;
+      border-bottom: 1.5px solid #e5e7eb;
+    }
+    .total-row td {
+      padding: 13px 16px;
+    }
+    .total-label {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      text-align: right;
+    }
+    .total-amount {
+      font-size: 17px;
+      font-weight: 900;
+      color: #0f172a;
+      text-align: right;
+    }
+
+    /* Bottom Meta Notes */
+    .notes-section {
+      margin-top: 24px;
+      margin-bottom: 30px;
+    }
+    .note-row {
+      font-size: 13.5px;
+      color: #334155;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+    }
+    .note-row strong {
+      font-weight: 800;
+      color: #0f172a;
+      min-width: 140px;
+    }
+
+    /* Decorative Bottom Waves (Exactly 2 Organic Shapes) */
+    .waves-container {
+      width: 100%;
+      height: 140px;
+      position: relative;
+      margin-top: -15px;
+      overflow: hidden;
+      line-height: 0;
+    }
+    .waves-container svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    @media print {
+      body {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+      .invoice-card {
+        box-shadow: none !important;
+        max-width: 100% !important;
+        border-radius: 0 !important;
+      }
+      .invoice-body {
+        padding: 30px !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Controls bar for user preview -->
+  <div class="no-print" style="max-width: 660px; margin: 0 auto 16px auto; display: flex; justify-content: space-between; align-items: center; background: #1e293b; color: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(15,23,42,0.15);">
+    <div style="font-size: 13px; font-weight: 600;">
+      📄 <strong>Official Messliner Invoice</strong> (Minimal Monochrome / Slate Theme)
+    </div>
+    <div>
+      <button onclick="window.print()" style="background: #3b82f6; border: none; color: white; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">
+        🖨️ Print / Save PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- The Invoice Document Sheet -->
+  <div class="invoice-card">
+    <div class="invoice-body">
+
+      <!-- Top Bar: Logo & Number -->
+      <div class="top-bar">
+        <div>
+          <img src="assets/messLinerApp_logo.png" 
+               alt="Messliner Logo" 
+               class="logo-img"
+               onerror="this.src='assets/messLiner-logo.png'">
+        </div>
+        <div class="invoice-no">
+          NO. 000001
+        </div>
+      </div>
+
+      <!-- INVOICE Large Heading -->
+      <h1 class="invoice-heading">INVOICE</h1>
+
+      <!-- Date -->
+      <div class="date-text">
+        <strong>Date:</strong> 11 November, 2026
+      </div>
+
+      <!-- Address Columns: Billed to & From -->
+      <div class="address-section">
+        <!-- Billed to Column -->
+        <div class="address-box">
+          <div class="address-title">Billed to:</div>
+          <div class="address-detail">
+            Messliner<br>
+            Address: Rajshahi, Bangladesh<br>
+            Email: support@gmail.com
+          </div>
+        </div>
+
+        <!-- From Column -->
+        <div class="address-box">
+          <div class="address-title">From:</div>
+          <div class="address-detail">
+            Customer: Rahim Uddin (Al-Madina Mess)<br>
+            Address: Rajshahi, Bangladesh<br>
+            Phone: 01712345678
+          </div>
+        </div>
+      </div>
+
+      <!-- Itemized Table -->
+      <table class="item-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Messliner Pro (Annual Subscription)</td>
+            <td class="col-qty">1</td>
+            <td class="col-price">৳ 2,499</td>
+            <td class="col-amt">৳ 2,499</td>
+          </tr>
+          <!-- Discount Row -->
+          <tr class="discount-row">
+            <td class="col-name" style="color: #64748b;">
+              Savings (31% Off)
+            </td>
+            <td class="col-qty">1</td>
+            <td class="col-price" style="color: #64748b;">- ৳ 775</td>
+            <td class="col-amt" style="color: #64748b;">- ৳ 775</td>
+          </tr>
+          <!-- Total Row with dual divider lines -->
+          <tr class="total-row">
+            <td colspan="3" class="total-label">Total</td>
+            <td class="total-amount" style="display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
+              <img src="assets/taka-symbol.png" alt="৳" style="width: 17px; height: 17px; object-fit: contain; vertical-align: middle;">
+              <span>1,724</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Bottom Notes -->
+      <div class="notes-section">
+        <div class="note-row">
+          <strong>Payment method:</strong>
+          <span style="font-weight: 700; color: #0f172a;">bKash</span>
+        </div>
+        <div class="note-row">
+          <strong>TrxID:</strong>
+          <span style="font-family: monospace; font-weight: 700; color: #0f172a;">BKL928475819</span>
+        </div>
+        <div class="note-row">
+          <strong>Note:</strong>
+          <span style="color: #64748b;">Thank you for choosing us!</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Decorative Waves (EXACTLY TWO ORGANIC SHAPES MATCHING SAMPLE) -->
+    <div class="waves-container">
+      <svg viewBox="0 0 660 140" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <!-- Shape 1 (Left / Underneath): Light Cool Slate / Gray curve -->
+        <path d="M0,60 C90,40 180,60 270,105 C310,122 340,135 365,140 L0,140 Z" fill="#cbd5e1"/>
+        
+        <!-- Shape 2 (Right / On top): Deep Midnight Slate / Charcoal sweeping wave rising to the right -->
+        <path d="M45,140 C140,135 220,120 310,105 C420,85 520,55 660,15 L660,140 L45,140 Z" fill="#1e293b"/>
+      </svg>
+    </div>
+
+  </div>
+
+</body>
+</html>
+

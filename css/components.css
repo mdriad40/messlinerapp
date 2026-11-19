@@ -570,20 +570,58 @@ textarea.form-input {
   font-weight: var(--weight-semibold);
 }
 
-.modal-close {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-lg);
-  color: var(--text-tertiary);
-  transition: all var(--transition-fast);
+/* Universal Modal Close Button (Bazar Rotating Cross Effect) */
+.modal-close,
+.modal-close-btn,
+.btn-close {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  color: #64748B !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  padding: 0 !important;
+  outline: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  box-sizing: border-box !important;
 }
 
-.modal-close:hover {
-  background: var(--gray-100);
-  color: var(--text-primary);
+.modal-close svg,
+.modal-close-btn svg,
+.btn-close svg {
+  width: 16px !important;
+  height: 16px !important;
+  stroke: currentColor !important;
+  transition: stroke 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  pointer-events: none !important;
+}
+
+.modal-close:hover,
+.modal-close-btn:hover,
+.btn-close:hover {
+  background: #FEE2E2 !important;
+  border-color: #FCA5A5 !important;
+  color: #DC2626 !important;
+  transform: rotate(90deg) scale(1.12) !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.18) !important;
+}
+
+.modal-close:active,
+.modal-close-btn:active,
+.btn-close:active {
+  transform: rotate(90deg) scale(0.95) !important;
+  background: #FECACA !important;
+  box-shadow: 0 1px 4px rgba(220, 38, 38, 0.2) !important;
 }
 
 .modal-body {
@@ -2119,6 +2157,14 @@ textarea.form-input {
    BAZAR HISTORY — Components
    ============================================ */
 
+#bazarUserViewContainer {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 16px 32px 16px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
 /* ---- Page Header + Selectors ---- */
 .bazar-history-header {
   display: flex;
@@ -2400,7 +2446,9 @@ textarea.form-input {
 }
 
 .bazar-day-card.expanded .bazar-day-card-body {
-  max-height: 800px;
+  max-height: 5000px !important;
+  display: block !important;
+  overflow: visible !important;
   border-top: 1px solid var(--border-color);
 }
 
@@ -2682,6 +2730,40 @@ textarea.form-input {
   color: var(--primary-700);
   flex-shrink: 0;
   letter-spacing: -0.02em;
+}
+
+.bazar-item-right-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.bazar-item-edit-btn {
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  color: #64748B;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.bazar-item-edit-btn:hover {
+  background: var(--primary-50, #ECFDF5);
+  color: var(--primary-700, #047857);
+  border-color: var(--primary-200, #A7F3D0);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(5, 150, 105, 0.12);
+}
+
+.bazar-item-edit-btn:active {
+  transform: translateY(0);
 }
 
 .bazar-items-total-row {

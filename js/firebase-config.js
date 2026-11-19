@@ -2,15 +2,15 @@
    Messliner — Firebase Configuration
    ============================================ */
 
-const firebaseConfig = {
-  apiKey: "AIzaSyD9qxIggxqT_d4NPMUhQBeVb32zT5hvDBo",
-  authDomain: "meiner-3a1e5.firebaseapp.com",
-  databaseURL: "https://meiner-3a1e5-default-rtdb.firebaseio.com",
-  projectId: "meiner-3a1e5",
-  storageBucket: "meiner-3a1e5.firebasestorage.app",
-  messagingSenderId: "889336710226",
-  appId: "1:889336710226:web:50df307a5be2f455570b8b",
-  measurementId: "G-L4RDDY6VRG"
+const firebaseConfig = (window.__ENV__ && window.__ENV__.FIREBASE) ? window.__ENV__.FIREBASE : {
+  apiKey: (window.__ENV__ && window.__ENV__.FIREBASE && window.__ENV__.FIREBASE.apiKey) || "",
+  authDomain: "meiner-6ec2e.firebaseapp.com",
+  databaseURL: "https://meiner-6ec2e-default-rtdb.firebaseio.com",
+  projectId: "meiner-6ec2e",
+  storageBucket: "meiner-6ec2e.firebasestorage.app",
+  messagingSenderId: "270392233174",
+  appId: "1:270392233174:web:6cbd159e10073c26824d77",
+  measurementId: "G-X2HD4LRXMZ"
 };
 
 // Gemini API Key for Smart Campus AI Features (Loaded dynamically from environment config js/env.js)
@@ -25,6 +25,27 @@ const GEMINI_MODEL = (window.__ENV__ && window.__ENV__.GEMINI_MODEL)
 // Initialize Firebase (Realtime Database & Gemini API)
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+window.db = db;
+
+// Initialize Admin Firebase App for Central Subscriptions, Analytics & Logs
+let adminDb = null;
+try {
+  const adminConfig = (window.__ENV__ && window.__ENV__.FIREBASE_ADMIN) ? window.__ENV__.FIREBASE_ADMIN : {
+    apiKey: (window.__ENV__ && window.__ENV__.FIREBASE_ADMIN && window.__ENV__.FIREBASE_ADMIN.apiKey) || "",
+    authDomain: "meiner-admin.firebaseapp.com",
+    databaseURL: "https://meiner-admin-default-rtdb.firebaseio.com",
+    projectId: "meiner-admin",
+    storageBucket: "meiner-admin.firebasestorage.app",
+    messagingSenderId: "62196998163",
+    appId: "1:62196998163:web:b60256d994a0c674d95fe6"
+  };
+  const adminApp = (firebase.apps && firebase.apps.find(a => a.name === 'adminApp'))
+    || firebase.initializeApp(adminConfig, 'adminApp');
+  adminDb = adminApp.database();
+} catch (e) {
+  console.warn('[Messliner] Admin Firebase Database init notice:', e.message);
+}
+window.adminDb = adminDb;
 
 // Silence repetitive Firebase unspecified index warnings in console
 const _origConsoleWarn = console.warn;
@@ -41,5 +62,12 @@ if (!window.auth && typeof authAdapter !== 'undefined') {
   window.auth = authAdapter;
 }
 var auth = window.auth;
+
+// Trigger immediate background sync with Firebase if Supabase session is present
+if (typeof window.syncFirebaseSession === 'function') {
+  try {
+    window.syncFirebaseSession();
+  } catch (_) { }
+}
 
 console.log('[Messliner] Firebase Database & Gemini initialized (Auth strictly powered by Supabase)');

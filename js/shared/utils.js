@@ -318,26 +318,12 @@ const Utils = {
   },
 
   /**
-   * Format bazar items list. If it has newlines, format as a bulleted list.
-   * If the list has more than 3 items, render as collapsible with Show More / Show Less.
+   * Format bazar items list. Renders full list directly without nested show more/less.
    */
   formatBazarItems(itemsStr) {
     if (!itemsStr) return '—';
     const lines = itemsStr.split('\n').map(line => line.trim()).filter(line => line.length > 0);
     if (lines.length > 1) {
-      if (lines.length > 3) {
-        const uniqueId = 'bazar-items-' + Math.random().toString(36).substr(2, 9);
-        return `
-          <div class="bazar-items-collapsible-wrapper">
-            <ul id="${uniqueId}" class="bazar-items-list-styled collapsed">
-              ${lines.map(line => `<li>${line}</li>`).join('')}
-            </ul>
-            <button class="bazar-items-toggle-btn" type="button" onclick="event.stopPropagation(); const el = document.getElementById('${uniqueId}'); const btn = this; if (el.classList.contains('collapsed')) { el.classList.remove('collapsed'); btn.innerHTML = 'Show Less <span>↑</span>'; } else { el.classList.add('collapsed'); btn.innerHTML = 'Show More <span>↓</span>'; }">
-              Show More <span>↓</span>
-            </button>
-          </div>
-        `;
-      }
       return `
         <ul class="bazar-items-list-styled">
           ${lines.map(line => `<li>${line}</li>`).join('')}

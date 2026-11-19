@@ -92,17 +92,35 @@ const Router = {
       return this.role;
     }
     try {
-      const viewMode = localStorage.getItem('viewMode') || sessionStorage.getItem('viewMode');
-      if (viewMode === 'user') return 'user';
+      const explicitRole = localStorage.getItem('ml_user_role');
+      if (explicitRole === 'admin' || explicitRole === 'manager') {
+        this.role = 'admin';
+        return 'admin';
+      }
+      if (document.documentElement.classList.contains('ml-is-admin') || document.body?.classList.contains('role-admin')) {
+        this.role = 'admin';
+        return 'admin';
+      }
       const sbRaw = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
       const email = sbRaw ? JSON.parse(sbRaw)?.user?.email : null;
       if (email) {
-        const emailKey = email.toLowerCase().replace(/[\.\$#\[\]\/@]/g, '_');
-        const cached = localStorage.getItem('ml_cache_v2_' + emailKey);
+        const k1 = 'ml_cache_v2_' + email.replace(/\./g, ',');
+        const k2 = 'ml_cache_v2_' + email.toLowerCase().replace(/[\.\$#\[\]\/@]/g, '_');
+        const m1 = 'ml_map_' + email.replace(/\./g, ',');
+        const m2 = 'ml_map_' + email.toLowerCase().replace(/[\.\$#\[\]\/@]/g, '_');
+        const cached = localStorage.getItem(k1) || localStorage.getItem(k2);
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed?.userData?.role) {
-            this.role = parsed.userData.role;
+            this.role = (parsed.userData.role === 'admin' || parsed.userData.role === 'manager') ? 'admin' : parsed.userData.role;
+            return this.role;
+          }
+        }
+        const cachedMap = localStorage.getItem(m1) || localStorage.getItem(m2);
+        if (cachedMap) {
+          const parsedMap = JSON.parse(cachedMap);
+          if (parsedMap?.role) {
+            this.role = (parsedMap.role === 'admin' || parsedMap.role === 'manager') ? 'admin' : parsedMap.role;
             return this.role;
           }
         }
@@ -303,8 +321,8 @@ const Router = {
     }
 
     // Subpage entries always glide forward
-    const subpages = ['mealchart', 'bazar', 'summary', 'fridaymeal', 'mealhistory', 'bazarroster', 'tasks', 'notices', 'export-slip', 'prayer'];
-    if (subpages.includes(newPage)) {
+    const subpages = ['mealchart', 'summary', 'fridaymeal', 'mealhistory', 'bazarroster', 'tasks', 'notices', 'export-slip', 'prayer'];
+    if (subpages.includes(newPage) || (this.getRole() !== 'admin' && newPage === 'bazar')) {
       return 'slide-forward';
     }
 
@@ -341,7 +359,117 @@ const Router = {
     this._isRestoringScroll = true;
 
     // Validate page
-    const section = document.getElementById(`page-${page}`);
+    let section = document.getElementById(`page-${page}`);
+    if (!section && page === 'pro') {
+      const contentArea = document.querySelector('.content-area');
+      if (contentArea) {
+        section = document.createElement('section');
+        section.id = 'page-pro';
+        section.className = 'page-section';
+        section.style.cssText = 'max-width: 900px; margin: 0 auto; padding: 16px 14px 40px;';
+        
+        // Compute live subscription and member count details
+        let currentMemberCount = 0;
+        try {
+          const userList = (typeof UsersModule !== 'undefined' && UsersModule.users && Object.keys(UsersModule.users).length > 0)
+            ? UsersModule.users
+            : ((window.UsersModule && UsersModule.users)
+            || (window.OverviewModule && OverviewModule.cachedData && OverviewModule.cachedData.users)
+            || (window.Messliner && Messliner.state && Messliner.state.users)
+            || (window.Messliner && Messliner.diningData && Messliner.diningData.users)
+            || {});
+          currentMemberCount = Object.keys(userList || {}).length;
+        } catch (_) { }
+        const subInfo = (window.Dashboard && window.Dashboard.currentSubInfo)
+          || (window.Messliner && Messliner.state && Messliner.state.subscription)
+          || (window.Messliner && Messliner.diningData && Messliner.diningData.subscription)
+          || window.currentSubInfo
+          || {};
+        const maxLimit = parseInt(subInfo.membersLimit || subInfo.maxMembers) || 25;
+        const rawPlan = String(subInfo.plan || 'pro').toLowerCase();
+        const planLabel = rawPlan === 'pay_as_you_go' ? 'Pay-As-You-Go' : (rawPlan === 'pro' ? 'Messliner Pro' : 'Free Trial');
+
+        section.innerHTML = `
+          <div class="pro-settings-card fade-up" style="background: linear-gradient(135deg, #064E3B 0%, #065F46 45%, #047857 80%, #059669 100%); color: #ffffff; border: none; border-radius: 24px; padding: 24px; position: relative; overflow: hidden; box-shadow: 0 12px 30px rgba(5, 150, 105, 0.25); margin-bottom: 20px;">
+            <div style="position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(251, 191, 36, 0.2) 0%, transparent 70%); border-radius: 50%;"></div>
+            
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; position: relative; z-index: 2; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                <div style="width: 44px; height: 44px; border-radius: 14px; background: rgba(251, 191, 36, 0.2); border: 1.5px solid rgba(251, 191, 36, 0.5); display: flex; align-items: center; justify-content: center; color: #FBBF24; flex-shrink: 0;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
+                  </svg>
+                </div>
+                <div style="min-width: 0;">
+                  <h3 style="margin: 0; font-size: 1.22rem; font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Messliner Pro</h3>
+                  <span style="font-size: 0.75rem; color: #A7F3D0; font-weight: 600; white-space: nowrap; display: block;">Active Membership</span>
+                </div>
+              </div>
+              <span class="sub-status-pill" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(4px); font-size: 0.74rem; font-weight: 800; color: #ffffff; flex-shrink: 0; white-space: nowrap;">
+                <span class="sub-status-dot" style="width: 6px; height: 6px; border-radius: 50%; background: #34D399;"></span>
+                <span>Active</span>
+              </span>
+            </div>
+
+            <p style="font-size: 0.9rem; line-height: 1.5; color: rgba(255, 255, 255, 0.9); margin: 0 0 20px 0; position: relative; z-index: 2;">
+              Manage your mess dining with seamless member tracking, real-time balances, automated billing slips, SMS alerts, and AI-powered meal tracking.
+            </p>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 2;">
+              <a href="checkout.html?plan=pro" class="btn" style="background: #F59E0B; color: #ffffff; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                <span style="white-space: nowrap;">Renew / Upgrade Plan</span>
+              </a>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+            <div class="pro-settings-card" style="margin: 0; padding: 18px; border-radius: 18px; cursor: pointer;" onclick="Messliner.router.navigate('users')">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                </div>
+                <h4 id="proMemberLimitTitle" style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${currentMemberCount} out of ${maxLimit} Members Limit</h4>
+              </div>
+              <p id="proMemberLimitDesc" style="margin: 0; font-size: 0.8rem; color: #64748B; line-height: 1.4;">${currentMemberCount} out of ${maxLimit} member limit used on ${planLabel}. Click to manage members.</p>
+            </div>
+
+            <div class="pro-settings-card" style="margin: 0; padding: 18px; border-radius: 18px;">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Instant SMS Notifications</h4>
+              </div>
+              <p style="margin: 0; font-size: 0.8rem; color: #64748B; line-height: 1.4;">Automated SMS alerts sent to members on meal entries, deposits, and bill dues.</p>
+            </div>
+
+            <div class="pro-settings-card" style="margin: 0; padding: 18px; border-radius: 18px;">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6v6l4 2"/></svg>
+                </div>
+                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">AI Assistant &amp; Analysis</h4>
+              </div>
+              <p style="margin: 0; font-size: 0.8rem; color: #64748B; line-height: 1.4;">Smart assistance for meal analytics, bazar budgeting, and routine image analysis.</p>
+            </div>
+
+            <div class="pro-settings-card" style="margin: 0; padding: 18px; border-radius: 18px; cursor: pointer;" onclick="Messliner.router.navigate('export-slip')">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: #FDF2F8; color: #DB2777; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Monthly Statements &amp; Slips</h4>
+              </div>
+              <p style="margin: 0; font-size: 0.8rem; color: #64748B; line-height: 1.4;">Download professional monthly statements, slips, and financial audit statements.</p>
+            </div>
+          </div>
+        `;
+        contentArea.appendChild(section);
+      }
+    }
     if (!section) {
       page = 'dashboard';
     }
@@ -383,7 +511,7 @@ const Router = {
       targetLoaderClass = 'ml-loader-dining';
     } else if (['ledger', 'user-bills', 'bills', 'finance'].includes(page)) {
       targetLoaderClass = 'ml-loader-ledger';
-    } else if (['profile', 'userprofile', 'more', 'settings', 'help'].includes(page)) {
+    } else if (['profile', 'userprofile', 'more', 'settings', 'help', 'pro'].includes(page)) {
       targetLoaderClass = 'ml-loader-profile';
     }
 
@@ -408,6 +536,56 @@ const Router = {
         }, { once: true });
       }
       target.classList.add('active');
+
+      if (page === 'pro') {
+        try {
+          let users = {};
+          if (typeof UsersModule !== 'undefined' && UsersModule.users && Object.keys(UsersModule.users).length > 0) {
+            users = UsersModule.users;
+          } else if (window.UsersModule && window.UsersModule.users && Object.keys(window.UsersModule.users).length > 0) {
+            users = window.UsersModule.users;
+          } else if (window.OverviewModule && OverviewModule.cachedData && OverviewModule.cachedData.users && Object.keys(OverviewModule.cachedData.users).length > 0) {
+            users = OverviewModule.cachedData.users;
+          } else if (window.Messliner && Messliner.state && Messliner.state.users && Object.keys(Messliner.state.users).length > 0) {
+            users = Messliner.state.users;
+          } else if (window.Messliner && Messliner.diningData && Messliner.diningData.users && Object.keys(Messliner.diningData.users).length > 0) {
+            users = Messliner.diningData.users;
+          }
+          let currentMemberCount = Object.keys(users || {}).length;
+          const subInfo = (window.Dashboard && window.Dashboard.currentSubInfo)
+            || (window.Messliner && Messliner.state && Messliner.state.subscription)
+            || (window.Messliner && Messliner.diningData && Messliner.diningData.subscription)
+            || window.currentSubInfo
+            || {};
+          const maxLimit = parseInt(subInfo.membersLimit || subInfo.maxMembers) || 25;
+          const rawPlan = String(subInfo.plan || 'pro').toLowerCase();
+          const planLabel = rawPlan === 'pay_as_you_go' ? 'Pay-As-You-Go' : (rawPlan === 'pro' ? 'Messliner Pro' : 'Free Trial');
+
+          const titleEl = document.getElementById('proMemberLimitTitle');
+          if (titleEl) {
+            titleEl.textContent = `${currentMemberCount} out of ${maxLimit} Members Limit`;
+          }
+          const descEl = document.getElementById('proMemberLimitDesc');
+          if (descEl) {
+            descEl.textContent = `${currentMemberCount} out of ${maxLimit} member limit used on ${planLabel}. Click to manage members.`;
+          }
+
+          // Realtime fallback fetch if not hydrated yet
+          const dId = (window.Messliner && Messliner.state && Messliner.state.diningId)
+            || (typeof UsersModule !== 'undefined' && UsersModule.diningId)
+            || (window.OverviewModule && OverviewModule.diningId);
+          if (currentMemberCount === 0 && dId && window.firebase && firebase.database) {
+            firebase.database().ref(`dinings/${dId}/users`).once('value').then(snap => {
+              if (snap.exists()) {
+                const liveUsers = snap.val() || {};
+                const liveCount = Object.keys(liveUsers).length;
+                if (titleEl) titleEl.textContent = `${liveCount} out of ${maxLimit} Members Limit`;
+                if (descEl) descEl.textContent = `${liveCount} out of ${maxLimit} member limit used on ${planLabel}. Click to manage members.`;
+              }
+            }).catch(() => {});
+          }
+        } catch (_) { }
+      }
     }
 
     // Toggle active class on body and content-area for AI Assistant
@@ -423,9 +601,13 @@ const Router = {
       }
     }
 
-    // Toggle active class on body for dining subpages (Meal Chart, Bazar, Summary, Friday's Meal, Prayer)
-    const isDiningSubpage = ['mealchart', 'bazar', 'summary', 'fridaymeal', 'prayer'].includes(page);
+    // Toggle active class on body for dining subpages (Meal Chart, Summary, Friday's Meal, Prayer, Member Bazar)
+    const isAdmin = this.getRole() === 'admin';
+    const isMemberBazar = !isAdmin && page === 'bazar';
+    const isUserDining = !isAdmin && page === 'overview';
+    const isDiningSubpage = ['mealchart', 'summary', 'fridaymeal', 'prayer'].includes(page) || isMemberBazar;
     document.body.classList.toggle('dining-subpage-active', isDiningSubpage);
+    document.body.classList.toggle('user-dining-active', isUserDining);
     document.body.classList.toggle('user-bills-active', page === 'user-bills');
 
     // Update page title and subtitle in header
@@ -438,6 +620,7 @@ const Router = {
       overview: 'Dining Overview',
       settings: 'Settings',
       profile: 'Profile',
+      pro: 'Messliner Pro',
       mymeal: 'My Meal',
       mealchart: 'Meal Chart',
       bazar: 'Bazar',
@@ -458,6 +641,7 @@ const Router = {
     };
 
     const subtitles = {
+      pro: 'Membership & Premium Features',
       mealhistory: 'Meal toggle log',
       bazarroster: 'Roster schedule',
       tasks: 'My duties',
@@ -473,12 +657,21 @@ const Router = {
       if (searchBar) searchBar.style.setProperty('display', 'none', 'important');
       if (titleContainer) titleContainer.style.setProperty('display', 'flex', 'important');
       if (greetingEl) greetingEl.style.display = 'none';
-      Utils.setText('headerTitle', titles[page] || 'Meal Chart');
+      Utils.setText('headerTitle', isMemberBazar ? 'Bazar History' : (titles[page] || 'Meal Chart'));
       if (subtitle) {
         subtitle.textContent = '';
         subtitle.style.setProperty('display', 'none', 'important');
       }
-    } else if (page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices') {
+    } else if (isUserDining) {
+      if (searchBar) searchBar.style.setProperty('display', 'none', 'important');
+      if (titleContainer) titleContainer.style.setProperty('display', 'flex', 'important');
+      if (greetingEl) greetingEl.style.display = 'none';
+      Utils.setText('headerTitle', 'Dining Overview');
+      if (subtitle) {
+        subtitle.textContent = '';
+        subtitle.style.setProperty('display', 'none', 'important');
+      }
+    } else if (page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices' || page === 'pro') {
       if (searchBar) searchBar.style.setProperty('display', 'none', 'important');
       if (titleContainer) titleContainer.style.setProperty('display', 'flex', 'important');
       if (greetingEl) greetingEl.style.display = 'none';
@@ -522,14 +715,16 @@ const Router = {
     // Update the green icon pill in the header
     if (typeof setHeaderIcon === 'function') setHeaderIcon(page);
     const pageIcon = document.getElementById('headerPageIcon');
-    if (pageIcon && (page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices' || page === 'dashboard')) {
+    if (pageIcon && (page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices' || page === 'dashboard' || page === 'pro')) {
       pageIcon.style.setProperty('display', 'none', 'important');
     }
 
     // Toggle header back button and mobile menu button visibility
     const backBtn = document.getElementById('headerBackBtn');
     if (backBtn) {
-      const showBack = (this.navigatedFromDesktopPopover || this.navigatedFromMobileNotifScreen || this.navigatedFromNotifications || page === 'mealchart' || page === 'bazar' || page === 'summary' || page === 'history' || page === 'notifications' || page === 'export-slip' || page === 'fridaymeal' || page === 'prayer' || page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices' || page === 'finance' || page === 'ledger');
+      const isMobile = window.innerWidth <= 768;
+      const isAdmin = this.getRole() === 'admin';
+      const showBack = (this.navigatedFromDesktopPopover || this.navigatedFromMobileNotifScreen || this.navigatedFromNotifications || page === 'mealchart' || page === 'summary' || page === 'history' || page === 'notifications' || page === 'export-slip' || page === 'fridaymeal' || page === 'prayer' || page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices' || page === 'pro' || (!isAdmin && page === 'bazar') || (isMobile && isAdmin && ['users', 'bazar', 'ledger', 'settings', 'more', 'aiassistant', 'profile', 'help'].includes(page)));
       backBtn.style.display = showBack ? 'inline-flex' : 'none';
 
       // Set onclick dynamically to handle navigation flow
@@ -537,7 +732,7 @@ const Router = {
 
       const menuBtn = document.querySelector('.mobile-menu-btn');
       if (menuBtn) {
-        if (showBack) {
+        if (showBack || isUserDining) {
           menuBtn.style.setProperty('display', 'none', 'important');
         } else {
           menuBtn.style.removeProperty('display');
@@ -553,10 +748,16 @@ const Router = {
 
     // Determine which nav page should be highlighted
     let activeNavPage = page;
+    const isMobileNav = window.innerWidth <= 768;
+    const isAdminRole = this.getRole() === 'admin';
     if (page === 'mealchart' || page === 'bazar' || page === 'summary' || page === 'export-slip' || page === 'fridaymeal') {
-      activeNavPage = (this.getRole() === 'admin' && page === 'bazar') ? 'bazar' : 'overview';
+      activeNavPage = (isAdminRole && page === 'bazar') ? (isMobileNav ? 'more-sheet' : 'bazar') : 'overview';
     } else if (page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices') {
-      activeNavPage = (this.getRole() === 'admin' ? 'mymeal' : 'dashboard');
+      activeNavPage = (isAdminRole ? (['tasks', 'notices'].includes(page) && isMobileNav ? 'more-sheet' : 'mymeal') : 'dashboard');
+    } else if (isAdminRole && ['users', 'ledger', 'settings', 'more', 'aiassistant', 'profile', 'help'].includes(page)) {
+      if (isMobileNav) {
+        activeNavPage = 'more-sheet';
+      }
     }
 
     // Update sidebar nav active state
@@ -623,6 +824,7 @@ const Router = {
   _onPageEnter(page) {
     switch (page) {
       case 'dashboard':
+        if (Messliner.syncRoleLayout) Messliner.syncRoleLayout(this.getRole());
         if (Messliner.userDashboard) Messliner.userDashboard.refresh();
         break;
       case 'users':
@@ -651,6 +853,7 @@ const Router = {
         if (Messliner.history) Messliner.history.refresh();
         break;
       case 'mymeal':
+        if (Messliner.syncRoleLayout) Messliner.syncRoleLayout(this.getRole());
         if (Messliner.userDashboard) Messliner.userDashboard.refresh();
         break;
       case 'mealchart':
@@ -786,13 +989,38 @@ const Router = {
     container.querySelectorAll('.bottom-nav-item').forEach(btn => {
       let lastTrigger = 0;
       const handleTrigger = (e) => {
+        const page = btn.dataset.page;
+        if (!page) return;
+
+        // Dedicated handling for Mobile Manager "More" Bottom Sheet
+        if (page === 'more-sheet' || btn.id === 'bottomNavMore') {
+          // Ignore pointerdown to prevent ghost clicks on the overlay during sheet slide-up
+          if (e && e.type === 'pointerdown') return;
+          if (e) {
+            try {
+              e.preventDefault();
+              e.stopPropagation();
+            } catch (_) {}
+          }
+          const now = Date.now();
+          if (now - lastTrigger < 350) return; // Debounce clicks
+          lastTrigger = now;
+
+          if (window.Messliner && typeof Messliner.toggleMoreSheet === 'function') {
+            Messliner.toggleMoreSheet();
+          }
+          return;
+        }
+
         if (e.type === 'pointerdown' && e.button !== 0) return;
         const now = Date.now();
         if (now - lastTrigger < 300) return; // Prevent double trigger from pointerdown + synthetic click
         lastTrigger = now;
 
-        const page = btn.dataset.page;
-        if (!page) return;
+        // Close More sheet if open when tapping any standard nav tab
+        if (window.Messliner && typeof Messliner.closeMoreSheet === 'function') {
+          Messliner.closeMoreSheet(true);
+        }
 
         // Optimistically update active state immediately for zero latency
         container.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));

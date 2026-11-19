@@ -375,6 +375,16 @@ const OverviewModule = {
       Messliner.state.totalMeals = totalMeals;
       Messliner.state.totalBazar = totalBazar;
 
+      this.mealRate = mealRate;
+      if (formattedMonth === Utils.currentMonth()) {
+        this.currentMonthMealRate = mealRate;
+        Messliner.state.monthlyMealRate = mealRate;
+        Messliner.state.mealRate = mealRate;
+        if (window.UserDashboard && typeof UserDashboard.renderStats === 'function') {
+          UserDashboard.renderStats();
+        }
+      }
+
       // Render overview stats
       this.renderStats(totalDeposit, totalMeals, mealRate, totalMealCost, totalDeductions, totalOtherCosting, totalCost, netBalance, totalBazar);
 
@@ -415,6 +425,25 @@ const OverviewModule = {
     if (!container) return;
 
     const bazarCost = totalBazar !== undefined ? totalBazar : totalMealCost;
+
+    // User profile & notification data for topbar
+    const u = (Messliner.state && Messliner.state.user) || {};
+    const isManager = (Messliner.state && (Messliner.state.role === 'admin' || Messliner.state.role === 'manager' || Messliner.state.actualRole === 'admin')) ||
+      (u.role === 'admin' || u.role === 'manager') ||
+      (window.UserDashboard && UserDashboard.userData && UserDashboard.userData.role === 'admin') ||
+      (typeof Auth !== 'undefined' && Auth.isAdmin && Auth.isAdmin()) ||
+      document.documentElement.classList.contains('ml-is-admin') ||
+      document.body.classList.contains('role-admin');
+    const userName = isManager ? 'Manager' : (u.name || 'Member');
+    const userAvatar = isManager ? 'M' : ((window.Utils && typeof Utils.initials === 'function') ? Utils.initials(userName) : userName.charAt(0).toUpperCase());
+    const diningName = (Messliner.state && Messliner.state.diningName) ||
+      document.getElementById('sidebarDiningName')?.textContent ||
+      'Messliner';
+    const diningCode = (Messliner.state && Messliner.state.diningCode) || '';
+    const messInfoText = diningCode ? `${diningName} · ${diningCode}` : diningName;
+    const unreadCount = (window.Notifications && Array.isArray(Notifications.notifications))
+      ? Notifications.notifications.filter(n => !n.read).length
+      : parseInt(document.getElementById('notifBadge')?.textContent || '0', 10);
 
     // Custom Minimal Professional SVG Icons
     const icons = {
@@ -524,26 +553,22 @@ const OverviewModule = {
       </div>
 
       <!-- Mobile layout: Dark Forest Green Hero Card matching User Panel Home -->
-      <div class="overview-mobile-stats">
-        <div class="mymeal-mobile-hero-wrapper" style="margin-bottom: 16px;">
+      <div class="overview-mobile-stats" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important;">
+        <div class="mymeal-mobile-hero-wrapper overview-mobile-hero-wrapper" style="margin: 0 0 18px 0 !important; border-radius: 0 0 28px 28px !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important;">
           <div class="mymeal-ambient-circle circle-1"></div>
           <div class="mymeal-ambient-circle circle-2"></div>
 
-          <!-- Dining Overview Mobile Topbar -->
-          <div class="overview-mobile-topbar" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 2px 2px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(52, 211, 153, 0.35); display: flex; align-items: center; justify-content: center; color: #34d399; flex-shrink: 0;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="3" ry="3"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-              </div>
-              <div>
-                <span style="font-size: 0.95rem; font-weight: 700; color: #ffffff; letter-spacing: 0.01em;">Dining Overview</span>
-              </div>
+          <!-- Dining Overview Header (Icon + Title) matching reference design -->
+          <div class="overview-hero-top-title" style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding: 2px 2px 4px 2px;">
+            <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: rgba(5, 150, 105, 0.22); border: 1px solid rgba(16, 185, 129, 0.45); flex-shrink: 0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
             </div>
+            <span style="font-size: 1.15rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em;">Dining Overview</span>
           </div>
 
           <div class="mymeal-hero-card">
@@ -686,6 +711,18 @@ const OverviewModule = {
       const deduction = uDeductions[id] || 0;
       const balance = deposit - mealCost - otherCost - deduction;
 
+      const isNeg = balance < 0;
+      const formattedBal = Math.abs(balance).toLocaleString('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      const balContent = `${isNeg ? '<span class="sign-minus">−</span>' : ''}<span class="tk-symbol"></span>${formattedBal}`;
+
+      const isDepNeg = deposit < 0;
+      const formattedDep = Math.abs(deposit).toLocaleString('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      const depContent = `${isDepNeg ? '<span class="sign-minus">−</span>' : ''}<span class="tk-symbol"></span>${formattedDep}`;
+
+      const isCostNeg = mealCost < 0;
+      const formattedCost = Math.abs(mealCost).toLocaleString('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      const costContent = `${isCostNeg ? '<span class="sign-minus">−</span>' : ''}<span class="tk-symbol"></span>${formattedCost}`;
+
       const statusBadge = balance >= 0
         ? `<span class="member-status-badge status-paid"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Paid</span>`
         : `<span class="member-status-badge status-due"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Due</span>`;
@@ -702,10 +739,10 @@ const OverviewModule = {
               </div>
             </div>
           </td>
-          <td class="numeric-td meals-count-val">${userMealsCount}</td>
-          <td class="numeric-td deposit-val">${Utils.tk(deposit)}</td>
-          <td class="numeric-td meal-cost-val">${Utils.tk(mealCost)}</td>
-          <td class="numeric-td balance-val ${balance >= 0 ? 'bal-positive' : 'bal-negative'}">${Utils.tk(balance)}</td>
+          <td class="numeric-td meals-count-val"><span class="stat-cell-val">${userMealsCount}</span></td>
+          <td class="numeric-td deposit-val"><span class="stat-cell-val">${depContent}</span></td>
+          <td class="numeric-td meal-cost-val"><span class="stat-cell-val">${costContent}</span></td>
+          <td class="numeric-td balance-val ${balance >= 0 ? 'bal-positive' : 'bal-negative'}"><span class="stat-cell-val ${isNeg ? 'is-neg' : ''}">${balContent}</span></td>
           <td class="status-td">${statusBadge}</td>
         </tr>
       `;

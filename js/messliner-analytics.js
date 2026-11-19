@@ -16,8 +16,8 @@
   window.__MesslinerAnalyticsInitialized = true;
 
   // Administrative Firebase Project Configuration (meiner-admin)
-  const ADMIN_FIREBASE_CONFIG = {
-    apiKey: "AIzaSyA0cRmgOZuAVjsGBtfBKN1GORD_BHWBAss",
+  const ADMIN_FIREBASE_CONFIG = (window.__ENV__ && window.__ENV__.FIREBASE_ADMIN) ? window.__ENV__.FIREBASE_ADMIN : {
+    apiKey: (window.__ENV__ && window.__ENV__.FIREBASE_ADMIN && window.__ENV__.FIREBASE_ADMIN.apiKey) || "",
     authDomain: "meiner-admin.firebaseapp.com",
     databaseURL: "https://meiner-admin-default-rtdb.firebaseio.com",
     projectId: "meiner-admin",

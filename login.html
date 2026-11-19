@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://pgnjvtmofglkjplotrha.supabase.co" crossorigin>
-  <link rel="preconnect" href="https://meiner-3a1e5-default-rtdb.firebaseio.com" crossorigin>
+  <link rel="preconnect" href="https://meiner-6ec2e-default-rtdb.firebaseio.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -28,7 +28,10 @@
 
   <!-- Mobile App Bridge & Theme Color -->
   <meta name="theme-color" content="#064E3B">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <script src="js/mobile-bridge.js"></script>
+  <!-- Environment Variables & Secrets Hub -->
+  <script src="js/env.js"></script>
 
   <!-- Instant Dashboard Redirect if authenticated / 0ms Instant Login Engine -->
   <script>
@@ -36,18 +39,28 @@
       try {
         var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
         var dashboardUrl = isLocal ? 'dashboard.html' : '/dashboard';
-        var sbToken = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
+        var tokenKey = (window.__ENV__ && typeof window.__ENV__.getAuthTokenKey === 'function')
+          ? window.__ENV__.getAuthTokenKey()
+          : 'sb-pgnjvtmofglkjplotrha-auth-token';
+        var sbToken = (window.__ENV__ && typeof window.__ENV__.getStoredAuthToken === 'function')
+          ? window.__ENV__.getStoredAuthToken()
+          : (localStorage.getItem(tokenKey) || localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token'));
         if (sbToken) {
           var parsed = JSON.parse(sbToken);
           if (parsed && parsed.user && parsed.refresh_token) {
             window.location.replace(dashboardUrl);
             return;
           } else if (!parsed || !parsed.user) {
+            localStorage.removeItem(tokenKey);
             localStorage.removeItem('sb-pgnjvtmofglkjplotrha-auth-token');
           }
         }
       } catch (_) {
-        try { localStorage.removeItem('sb-pgnjvtmofglkjplotrha-auth-token'); } catch (e) { }
+        try {
+          var k = (window.__ENV__ && typeof window.__ENV__.getAuthTokenKey === 'function') ? window.__ENV__.getAuthTokenKey() : 'sb-pgnjvtmofglkjplotrha-auth-token';
+          localStorage.removeItem(k);
+          localStorage.removeItem('sb-pgnjvtmofglkjplotrha-auth-token');
+        } catch (e) { }
       }
       document.documentElement.classList.add('ml-guest-ready');
     })();
@@ -60,13 +73,25 @@
     html.ml-guest-ready #authPage {
       display: flex !important;
     }
+
+    /* Enable full-page window scrolling on Auth page */
+    html,
+    body {
+      height: auto !important;
+      min-height: 100% !important;
+      min-height: 100vh !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      overscroll-behavior-y: auto !important;
+      touch-action: auto !important;
+    }
   </style>
 
   <!-- Favicon -->
   <link rel="icon" href="assets/messLiner-logo.png" type="image/png">
 </head>
 
-<body>
+<body class="auth-body">
 
   <!-- ======== PAGE LOADER ======== -->
   <div id="pageLoader" class="page-loader" style="display:none;">
@@ -173,7 +198,7 @@
               </div>
               <div class="auth-feature-text">
                 <h4>Meal tracking that never lies</h4>
-                <p>Members log their meals before the cutoff &mdash; timestamps do the arguing for you.</p>
+                <p>Members log their meals before the cutoff, timestamps do the arguing for you.</p>
               </div>
             </div>
             <div class="auth-feature-item">
@@ -187,7 +212,7 @@
               </div>
               <div class="auth-feature-text">
                 <h4>Deposit &amp; balance at a glance</h4>
-                <p>Every member sees their balance in real time &mdash; no surprises at month-end.</p>
+                <p>Every member sees their balance in real time, no surprises at month-end.</p>
               </div>
             </div>
             <div class="auth-feature-item">
@@ -202,7 +227,7 @@
               </div>
               <div class="auth-feature-text">
                 <h4>Auto bill split to the taka</h4>
-                <p>Total cost split fairly by meals eaten &mdash; settled and cleared every month.</p>
+                <p>Total cost split fairly by meals eaten, settled and cleared every month.</p>
               </div>
             </div>
           </div>
@@ -639,8 +664,8 @@
         </div>
 
         <div class="auth-right-footer">
-          By continuing you agree to the <a href="/terms-and-conditions" target="_blank">Terms of
-            Service</a> &amp; <a href="/privacy-policy" target="_blank">Privacy Policy</a>.
+          By continuing you agree to the <a href="terms-and-conditions.html" target="_blank">Terms of
+            Service</a> &amp; <a href="privacy-policy.html" target="_blank">Privacy Policy</a>.
         </div>
 
       </div>
@@ -650,18 +675,20 @@
   <!-- ======== TOAST CONTAINER ======== -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- Supabase JS SDK & Config -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script defer src="js/supabase-config.js"></script>
-
   <!-- Firebase SDK (compat for Realtime Database & Gemini) -->
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-  <!-- App Scripts -->
+  <!-- App Firebase Config -->
   <script defer src="js/firebase-config.js"></script>
+
+  <!-- Supabase JS SDK & Config -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="js/supabase-config.js"></script>
+
+  <!-- App Scripts -->
   <script defer src="js/shared/utils.js"></script>
   <script defer src="js/shared/notifications.js"></script>
   <script defer src="js/auth.js"></script>
@@ -689,6 +716,7 @@
       if (rightPane) {
         rightPane.classList.remove('view-login', 'view-register', 'view-forgot', 'view-reset');
       }
+      window.scrollTo(0, 0);
 
       if (viewId === 'loginView') {
         document.title = 'Messliner | Log in';
@@ -767,6 +795,10 @@
        HELPER UTILITIES
     ============================================================ */
     const isValidEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+    const isValidGmail = v => {
+      const clean = (v || '').trim().toLowerCase();
+      return /^[^\s@]+@(gmail\.com|([a-z0-9\.-]+\.)?edu\.bd)$/i.test(clean);
+    };
     const isValidPhone = v => /^[0-9]{11}$/.test(v.trim().replace(/[\s\-+]/g, ''));
 
     function setHint(id, msg, isError) {
@@ -806,12 +838,32 @@
       const pwd = document.getElementById('regPassword').value;
 
       const nameOk = name.length >= 2;
-      const emailOk = isValidEmail(email);
+      const emailOk = isValidGmail(email);
       const phoneOk = isValidPhone(phone);
       const pwdOk = pwd.length >= 8;
 
       setBtn('registerBtn', nameOk && emailOk && phoneOk && pwdOk);
     }
+
+    /* -- Email inline validation (Strict Gmail Enforcement) -- */
+    document.getElementById('regEmail').addEventListener('input', function () {
+      const val = this.value.trim();
+      const hintEl = document.getElementById('emailHint') || (function() {
+        const span = document.createElement('span');
+        span.id = 'emailHint';
+        span.className = 'field-hint';
+        document.getElementById('regEmail').parentNode.parentNode.appendChild(span);
+        return span;
+      })();
+      if (val.length === 0) {
+        setHint('emailHint', '', false);
+      } else if (!isValidGmail(val)) {
+        setHint('emailHint', 'Only @gmail.com or official .edu.bd accounts are permitted', true);
+      } else {
+        setHint('emailHint', 'Valid account email ✓', false);
+      }
+      checkRegisterReady();
+    });
 
     /* -- Phone inline validation -- */
     document.getElementById('regPhone').addEventListener('input', function () {

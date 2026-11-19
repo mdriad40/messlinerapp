@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Checkout · Messliner Subscription</title>
+  <link rel="icon" type="image/png" href="assets/messLiner-logo.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- Environment Variables & Firebase SDK Compat -->
+  <script src="js/env.js?v=3.5.3"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="js/firebase-config.js?v=3.5.5"></script>
+  <script src="js/shared/payment.js?v=3.5.5"></script>
+  <script src="js/shared/subscription.js?v=3.5.5"></script>
+  <script src="js/shared/invoice-email.js?v=3.5.3"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at 50% 0%, #fef2f2 0%, #f0fdf4 35%, #f8fafc 100%);
+      min-height: 100vh;
+      color: #0f172a;
+    }
+
+    .bkash-gradient {
+      background: linear-gradient(135deg, #E2136E 0%, #C20E5E 100%);
+    }
+
+    .bkash-shadow {
+      box-shadow: 0 10px 25px -5px rgba(226, 19, 110, 0.35);
+    }
+
+    @keyframes checkBounce {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+
+      50% {
+        transform: scale(1.15);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .animate-bounce-in {
+      animation: checkBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* Custom range slider styling */
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none;
+      height: 20px;
+      width: 20px;
+      border-radius: 50%;
+      background: #059669;
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+      }
+
+      header,
+      #checkoutBreadcrumbs,
+      #btnBackToApp,
+      #btnDownloadSlip,
+      #btnCompletedDashboard,
+      .no-print {
+        display: none !important;
+      }
+
+      #completedView {
+        display: block !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+
+      #receiptSlipContent {
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        width: 100% !important;
+      }
+    }
+
+    /* Hide scrollbar for clean horizontal mobile breadcrumbs */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Minimal Google Material Indeterminate Spinner (Emerald Single-Color) */
+    .google-spinner {
+      width: 40px;
+      height: 40px;
+      animation: gRotate 1.8s linear infinite;
+    }
+
+    .google-spinner svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .google-spinner .path {
+      stroke: #059669;
+      stroke-linecap: round;
+      animation: gDash 1.4s ease-in-out infinite;
+    }
+
+    @keyframes gRotate {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes gDash {
+      0% {
+        stroke-dasharray: 1, 150;
+        stroke-dashoffset: 0;
+      }
+
+      50% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -35;
+      }
+
+      100% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -124;
+      }
+    }
+
+    /* Complete blocking of focus, active ring, caret, and cursor on readonly inputs */
+    input[readonly],
+    input:read-only {
+      pointer-events: none !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      caret-color: transparent !important;
+      cursor: default !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    input[readonly]:focus,
+    input:read-only:focus,
+    input[readonly]:active,
+    input:read-only:active {
+      outline: none !important;
+      box-shadow: none !important;
+      border-color: #e2e8f0 !important;
+      background-color: #f1f5f9 !important;
+    }
+  </style>
+</head>
+
+<body class="selection:bg-emerald-500 selection:text-white py-3 sm:py-6 md:py-10 px-3 sm:px-4 md:px-6">
+  <!-- Minimal Preloader: 100% Solid White Backdrop (Hides Everything Behind Until Fully Loaded) -->
+  <div id="checkoutPreloader"
+    class="fixed inset-0 z-[9999] flex items-center justify-center transition-opacity duration-300"
+    style="background-color: #ffffff !important;">
+    <div class="google-spinner">
+      <svg viewBox="0 0 50 50">
+        <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="3.5"></circle>
+      </svg>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto">
+
+    <!-- Top Navigation Header -->
+    <header
+      class="flex flex-col sm:flex-row items-center justify-between pb-4 sm:pb-6 mb-5 sm:mb-8 border-b border-slate-200/80 gap-3 sm:gap-4">
+      <div class="flex items-center justify-between w-full sm:w-auto">
+        <!-- Brand Logo -->
+        <a href="index.html" class="flex items-center gap-2.5 sm:gap-3">
+          <img src="assets/messLiner-logo.png" alt="Messliner Logo" class="w-8 h-8 sm:w-9 sm:h-9 object-contain"
+            onerror="this.src='assets/img/messLiner-logo.png'">
+          <div class="flex flex-col">
+            <span class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 leading-tight">Messliner</span>
+          </div>
+        </a>
+
+        <!-- Mobile Quick Dashboard Link -->
+        <a href="dashboard.html"
+          class="sm:hidden text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+          <span>Dashboard</span>
+        </a>
+      </div>
+
+      <!-- Breadcrumbs Progress matching reference workflow -->
+      <div id="checkoutBreadcrumbs"
+        class="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold text-slate-400 overflow-x-auto no-scrollbar w-full sm:w-auto py-1 whitespace-nowrap -mx-3 px-3 sm:mx-0 sm:px-0">
+        <a href="index.html#pricing"
+          class="hover:text-slate-700 flex items-center gap-1 sm:gap-1.5 transition-colors flex-shrink-0">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600 flex-shrink-0"></i>
+          <span>1. Select Plan</span>
+        </a>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300 flex-shrink-0"></i>
+        <span id="crumbBillingDetails"
+          class="text-emerald-700 bg-emerald-50 px-2 sm:px-2.5 py-1 rounded-full flex items-center gap-1 sm:gap-1.5 font-bold flex-shrink-0">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 flex-shrink-0"></span>
+          2. Billing Details
+        </span>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300 flex-shrink-0"></i>
+        <span id="crumbPayment" class="text-slate-400 flex items-center gap-1 flex-shrink-0">3. Payment</span>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300 flex-shrink-0"></i>
+        <span id="crumbCompleted" class="text-slate-400 flex items-center gap-1 flex-shrink-0">4. Completed</span>
+      </div>
+
+      <!-- Desktop Back to App Link -->
+      <a href="dashboard.html" id="btnBackToApp"
+        class="hidden sm:flex text-xs font-semibold text-slate-600 hover:text-slate-900 items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        <span>Dashboard</span>
+      </a>
+    </header>
+
+    <!-- Role Restriction Alert (Visible if logged-in user is a Member, not Manager) -->
+    <div id="roleAlertBox"
+      class="hidden mb-4 sm:mb-6 bg-rose-50 border border-rose-200 rounded-xl sm:rounded-2xl p-3.5 sm:p-5 flex items-start gap-3 text-rose-900">
+      <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5"></i>
+      <div class="text-xs sm:text-sm">
+        <h4 class="font-bold text-rose-800">Manager Authorization Required</h4>
+        <p class="mt-1 text-rose-700 leading-relaxed text-[11px] sm:text-xs">
+          You are currently logged in as a <strong>Dining Member</strong>. In Messliner, only <strong>Mess
+            Managers</strong> can activate or upgrade subscriptions. Please ask your mess manager to complete this
+          billing
+          process.
+        </p>
+      </div>
+    </div>
+
+    <!-- Main 2-Column Split Checkout Layout -->
+    <div id="checkoutFlowContainer" class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8 items-start">
+
+      <!-- LEFT COLUMN (7 Cols): Billing Details & Payment Method -->
+      <div class="lg:col-span-7 space-y-4 sm:space-y-6">
+
+        <!-- Card 1: Billing Details Form -->
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-sm border border-slate-200/80">
+          <div class="pb-3 sm:pb-4 mb-4 sm:mb-6 border-b border-slate-100">
+            <div class="flex items-center justify-between gap-2">
+              <h2 class="text-base sm:text-lg font-bold text-slate-900 whitespace-nowrap">Billing Details</h2>
+              <span id="sessionStatusBadge"
+                class="text-[10px] sm:text-[11px] font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap flex-shrink-0">
+                Guest Checkout
+              </span>
+            </div>
+            <p id="billingSubtext" class="text-[11px] sm:text-xs text-slate-500 mt-1">
+              <span class="sm:hidden">Enter details for the Messliner subscription.</span>
+              <span class="hidden sm:inline">Enter details of the person managing the subscription.</span>
+            </p>
+          </div>
+
+          <form id="checkoutForm" onsubmit="event.preventDefault();" class="space-y-2.5 sm:space-y-4">
+            <div>
+              <label for="inputFullName"
+                class="block text-[10px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 sm:mb-1.5">
+                Full Name <span class="text-rose-500">*</span>
+              </label>
+              <input type="text" id="inputFullName" required placeholder="e.g. Md. Riad Hasan"
+                class="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-slate-200 bg-slate-50/50 text-sm sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-slate-900">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
+              <div>
+                <label for="inputMobile"
+                  class="block text-[10px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 sm:mb-1.5">
+                  Phone Number <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative">
+                  <span
+                    class="absolute left-3 sm:left-3.5 inset-y-0 flex items-center text-xs font-bold text-slate-400 select-none">+88</span>
+                  <input type="tel" id="inputMobile" required maxlength="11" placeholder="017XXXXXXXX"
+                    class="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-slate-200 bg-slate-50/50 text-sm sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-slate-900">
+                </div>
+              </div>
+
+              <div>
+                <label for="inputEmail"
+                  class="block text-[10px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 sm:mb-1.5">
+                  Email Address <span class="text-rose-500">*</span>
+                </label>
+                <input type="email" id="inputEmail" required placeholder="name@domain.com"
+                  class="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-slate-200 bg-slate-50/50 text-sm sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-slate-900">
+              </div>
+            </div>
+
+            <div>
+              <label for="inputMessName"
+                class="block text-[10px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 sm:mb-1.5">
+                Mess / Dining Group Name <span class="text-rose-500">*</span>
+              </label>
+              <input type="text" id="inputMessName" required placeholder="e.g. Uttara Green View Mess"
+                class="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-slate-200 bg-slate-50/50 text-sm sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-slate-900">
+            </div>
+
+            <div>
+              <label for="inputMessAddress"
+                class="block text-[10px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 sm:mb-1.5">
+                Mess Address <span class="text-rose-500">*</span>
+              </label>
+              <input type="text" id="inputMessAddress" required
+                placeholder="e.g. House #12, Road #4, Sector #10, Uttara, Dhaka"
+                class="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-slate-200 bg-slate-50/50 text-sm sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-slate-900">
+            </div>
+          </form>
+        </div>
+
+        <!-- Card 2: Payment Method (bKash Default as requested) -->
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-sm border border-slate-200/80">
+          <div class="flex items-center justify-between pb-2.5 sm:pb-4 mb-3 sm:mb-4 border-b border-slate-100 gap-2">
+            <div>
+              <h2 class="text-sm sm:text-lg font-bold text-slate-900 whitespace-nowrap">Payment Information</h2>
+              <p class="hidden sm:block text-[11px] sm:text-xs text-slate-500 mt-0.5">Secure payment processing with
+                automated verification.</p>
+            </div>
+            <div
+              class="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-emerald-600 font-bold bg-emerald-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full whitespace-nowrap flex-shrink-0">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+              <span>256-bit Encrypted</span>
+            </div>
+          </div>
+
+          <!-- bKash Radio Option (Selected by Default) -->
+          <div
+            class="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border-2 border-[#E2136E] bg-pink-50/30 flex items-center justify-between cursor-pointer transition-all gap-2">
+            <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+              <input type="radio" id="payBkash" name="payment_method" value="bkash" checked
+                class="w-4 h-4 text-[#E2136E] focus:ring-[#E2136E] flex-shrink-0">
+              <label for="payBkash" class="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0">
+                <img src="assets/Bkash-Logo.png" alt="bKash" class="h-6 sm:h-7 object-contain flex-shrink-0"
+                  onerror="this.src='https://mygateway.netlify.app/bkash_logo.png'">
+                <span class="text-xs sm:text-sm font-bold text-slate-900 whitespace-nowrap">bKash Online Payment</span>
+              </label>
+            </div>
+            <span
+              class="hidden sm:inline-block text-[9px] sm:text-[10px] font-extrabold uppercase px-1.5 sm:px-2 py-0.5 rounded bg-pink-100 text-[#E2136E] whitespace-nowrap flex-shrink-0">
+              Recommended
+            </span>
+          </div>
+
+          <!-- User Payment Guidance / Instant Activation Notice -->
+          <div
+            class="mt-2.5 sm:mt-4 flex items-center gap-2 text-[10px] sm:text-[11px] text-slate-600 bg-slate-50 p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border border-slate-200/70">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600 flex-shrink-0"></i>
+            <span class="truncate sm:whitespace-normal sm:leading-relaxed">
+              <span class="sm:hidden">Instant automated activation via bKash portal</span>
+              <span class="hidden sm:inline">You will be safely redirected to the bKash payment portal. After confirming
+                your payment, your subscription will be activated automatically.</span>
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN (5 Cols): Order Summary & Dynamic Calculation -->
+      <div class="lg:col-span-5 space-y-4">
+
+        <!-- Minimal Account Required Card (Right Column, Above Order Summary) -->
+        <div id="unauthAlertBox"
+          class="hidden p-3 rounded-2xl bg-amber-50/95 border border-amber-300 text-amber-950 shadow-sm animate-pop">
+          <div class="flex items-center gap-2 mb-2">
+            <div
+              class="w-6 h-6 rounded-lg bg-amber-200 text-amber-800 flex items-center justify-center flex-shrink-0 font-bold text-xs shadow-xs">
+              <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+            </div>
+            <div class="min-w-0">
+              <h4 class="text-xs font-black text-slate-900 leading-tight">Please login or create your mess first</h4>
+              <p class="text-[11px] text-slate-600 leading-tight mt-0.5">Sign in or create a mess before checking out.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 pt-1.5 border-t border-amber-200/60">
+            <a href="login.html?redirect=checkout.html"
+              class="flex-1 text-center py-1.5 px-2 rounded-xl bg-slate-900 text-white font-bold text-[11px] hover:bg-slate-800 transition-all shadow-sm">
+              Log In
+            </a>
+            <a href="dashboard.html"
+              class="flex-1 text-center py-1.5 px-2 rounded-xl bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-700 transition-all shadow-sm">
+              Create Mess
+            </a>
+          </div>
+        </div>
+
+        <!-- Minimal Current Active Subscription Status Card (Above Order Summary) -->
+        <div id="activeSubStatusCard"
+          class="hidden p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-white border border-emerald-200/90 shadow-xs animate-pop">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 sm:gap-2.5 min-w-0">
+              <div
+                class="w-6 h-6 rounded-lg sm:rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-xs flex-shrink-0">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="text-[9px] font-extrabold text-emerald-800 uppercase tracking-wider hidden sm:block">Active
+                  Subscription</div>
+                <div id="activePlanTitle"
+                  class="text-xs font-black text-slate-900 leading-tight whitespace-nowrap truncate">Messliner Pro</div>
+              </div>
+            </div>
+            <span id="activePlanDaysBadge"
+              class="text-[10px] font-bold px-2 sm:px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 whitespace-nowrap flex-shrink-0">
+              Active
+            </span>
+          </div>
+        </div>
+
+        <div
+          class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-sm border border-slate-200/80 lg:sticky lg:top-6">
+          <div class="flex items-center justify-between pb-3 sm:pb-4 mb-4 sm:mb-5 border-b border-slate-100">
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Order Summary</h2>
+            <span id="planBadge"
+              class="text-[11px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-100 text-emerald-800">
+              Messliner Pro
+            </span>
+          </div>
+
+          <!-- Plan Switcher Tabs -->
+          <div
+            class="grid grid-cols-3 gap-1 sm:gap-1.5 p-1 bg-slate-100 rounded-xl sm:rounded-2xl mb-4 sm:mb-5 text-center text-[11px] sm:text-xs font-bold">
+            <button type="button" onclick="selectPlan('trial')" id="tabTrial"
+              class="py-1.5 sm:py-2 px-1 rounded-lg sm:rounded-xl transition-all text-slate-600 hover:text-slate-900 truncate">
+              Free Trial
+            </button>
+            <button type="button" onclick="selectPlan('pro')" id="tabPro"
+              class="py-1.5 sm:py-2 px-1 rounded-lg sm:rounded-xl transition-all bg-white text-emerald-700 shadow-sm truncate">
+              Messliner Pro
+            </button>
+            <button type="button" onclick="selectPlan('pay_as_you_go')" id="tabPayGo"
+              class="py-1.5 sm:py-2 px-1 rounded-lg sm:rounded-xl transition-all text-slate-600 hover:text-slate-900 truncate">
+              Pay As You Go
+            </button>
+          </div>
+
+          <!-- Billing Cycle Selector (Monthly vs Yearly) -->
+          <div id="billingCycleSection" class="mb-4 sm:mb-5">
+            <div
+              class="flex items-center justify-between bg-slate-50 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-slate-200/70 text-[11px] sm:text-xs font-bold gap-1">
+              <button type="button" onclick="setBillingCycle('monthly')" id="btnCycleMonthly"
+                class="flex-1 py-1.5 sm:py-2 text-center rounded-lg sm:rounded-xl bg-white text-slate-900 shadow-sm transition-all truncate">
+                Monthly Billing
+              </button>
+              <button type="button" onclick="setBillingCycle('yearly')" id="btnCycleYearly"
+                class="flex-1 py-1.5 sm:py-2 text-center rounded-lg sm:rounded-xl text-slate-500 hover:text-slate-900 transition-all flex items-center justify-center gap-1 sm:gap-1.5 truncate">
+                <span>Annual Billing</span>
+                <span id="annualDiscountBadge"
+                  class="hidden text-[9px] sm:text-[10px] bg-emerald-100 text-emerald-800 px-1 sm:px-1.5 py-0.5 rounded font-extrabold flex-shrink-0"></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Member Counter (Only for Pay-As-You-Go) -->
+          <div id="memberCounterSection"
+            class="hidden mb-4 sm:mb-5 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-emerald-50/50 border border-emerald-100">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-slate-700">Dining Members:</span>
+              <div class="flex items-center gap-1 font-extrabold text-emerald-700 text-sm">
+                <span id="memberCountDisplay">25</span>
+                <span class="text-xs font-medium text-slate-500">Members</span>
+              </div>
+            </div>
+            <input type="range" id="memberRangeSlider" min="25" max="200" step="5" value="25"
+              oninput="handleMemberSliderChange(this.value)"
+              class="w-full h-2 bg-emerald-200 rounded-lg appearance-none cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-400 mt-1 font-semibold">
+              <span>Min: 25</span>
+              <span id="sliderRateLabel">Rate: ৳2.49 per member / month</span>
+              <span>Max: 200</span>
+            </div>
+          </div>
+
+          <!-- Line Items Breakdown -->
+          <div class="space-y-2.5 sm:space-y-3 text-xs border-t border-slate-100 pt-3.5 sm:pt-4 mb-5 sm:mb-6">
+            <div class="flex justify-between text-slate-600">
+              <span id="labelPlanLine">Messliner Pro Plan</span>
+              <span id="valPlanLine" class="font-bold text-slate-900">--</span>
+            </div>
+            <div class="flex justify-between text-slate-600">
+              <span>Duration</span>
+              <span id="valDurationLine" class="font-semibold text-slate-700">1 Month (30 Days)</span>
+            </div>
+            <div class="flex justify-between text-slate-600">
+              <span>Grace Period Protection</span>
+              <span class="font-semibold text-emerald-600">+3 Days Included</span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-600 gap-2">
+              <span class="flex-shrink-0">Customer Support</span>
+              <span id="valSupportLine"
+                class="font-semibold text-right break-words max-w-[65%] sm:max-w-none text-slate-700">24/7 Priority
+                Support</span>
+            </div>
+            <div id="rowSavings" class="hidden flex justify-between text-emerald-600 font-bold">
+              <span>Annual Discount</span>
+              <span id="valSavings">-৳ 0.00</span>
+            </div>
+            <div class="border-t border-slate-100 pt-3 flex justify-between items-baseline">
+              <span class="text-xs sm:text-sm font-extrabold text-slate-900">Total Amount</span>
+              <div class="text-right">
+                <div id="valTotalDisplay" class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">--</div>
+                <div id="valTaxNote" class="text-[10px] text-slate-400">All fees & gateway charges included</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Checkout CTA Button -->
+          <button type="button" id="btnPayAction" onclick="handlePayCheckout()"
+            class="w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl text-white font-extrabold text-xs sm:text-sm md:text-base bkash-gradient bkash-shadow hover:brightness-105 active:scale-[0.99] transition-all flex flex-row items-center justify-center gap-2 select-none">
+            <i data-lucide="lock" class="w-4 h-4 flex-shrink-0"></i>
+            <span class="font-extrabold truncate">Proceed to Payment</span>
+          </button>
+
+          <!-- Free Trial Policy / 3-Day Grace Notice -->
+          <p id="checkoutDisclaimer" class="text-center text-[11px] text-slate-400 mt-4 leading-relaxed">
+            By proceeding, you agree to Messliner's Terms of Service. A 3-day grace period is granted automatically upon
+            plan expiration.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Dedicated Completed / Success Screen (matching provided screenshot) -->
+    <div id="completedView" class="hidden max-w-xl mx-auto">
+      <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-9 shadow-xl border border-slate-200/80">
+        <!-- Top Multi-step Breadcrumb matching Image 2 -->
+        <div
+          class="flex items-center justify-center gap-1.5 sm:gap-4 pb-4 sm:pb-6 mb-4 sm:mb-6 border-b border-slate-100 text-[11px] sm:text-xs font-medium">
+          <div class="flex items-center gap-1.5 text-slate-700">
+            <span
+              class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black">✓</span>
+            <span class="font-semibold">Information</span>
+          </div>
+          <div class="w-6 sm:w-14 h-px bg-slate-200"></div>
+          <div class="flex items-center gap-1.5 text-slate-700">
+            <span
+              class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black">✓</span>
+            <span class="font-semibold">Payment</span>
+          </div>
+          <div class="w-6 sm:w-14 h-px bg-slate-200"></div>
+          <div class="flex items-center gap-1.5 text-slate-900 font-bold">
+            <span
+              class="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-black">3</span>
+            <span>Completed</span>
+          </div>
+        </div>
+
+        <!-- Center Success Icon & Booking/Subscription Heading -->
+        <div class="text-center py-2">
+          <div
+            class="w-12 h-12 sm:w-16 sm:h-16 mx-auto rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 mb-3 sm:mb-4 animate-bounce-in">
+            <i data-lucide="check" class="w-7 h-7 sm:w-9 sm:h-9 stroke-[3]"></i>
+          </div>
+          <h2 id="completedHeading" class="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight">Booking
+            confirmed</h2>
+          <p id="completedSubtext" class="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto">
+            We've sent an email to you with a receipt containing all the details.
+          </p>
+        </div>
+
+        <!-- Detailed Key-Value Receipt Slip (Styled exactly like Image 2) -->
+        <div id="receiptSlipContent"
+          class="bg-slate-50/90 border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 my-4 sm:my-6 text-xs sm:text-sm space-y-3 sm:space-y-3.5">
+          <!-- Slip Brand Header -->
+          <div class="flex items-center justify-between pb-3 border-b border-slate-200/70">
+            <div class="flex items-center gap-2">
+              <img src="assets/messLiner-logo.png" alt="Messliner" class="w-5 h-5 sm:w-6 sm:h-6 object-contain"
+                onerror="this.src='assets/img/messLiner-logo.png'">
+              <span class="font-extrabold text-slate-900 tracking-tight text-xs sm:text-sm">Messliner Official
+                Slip</span>
+            </div>
+            <span id="slipStatusBadge"
+              class="text-[10px] sm:text-[11px] font-extrabold px-2 sm:px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-wider">
+              Active · Paid
+            </span>
+          </div>
+
+          <div class="flex justify-between items-start gap-4 pt-1">
+            <span class="text-slate-500 font-medium">Plan</span>
+            <span id="slipPlanName" class="font-bold text-slate-900 text-right">Messliner Pro</span>
+          </div>
+
+          <div class="flex justify-between items-start gap-4 border-t border-slate-200/50 pt-2.5">
+            <span class="text-slate-500 font-medium">Billing Period</span>
+            <span id="slipBillingCycle" class="font-semibold text-slate-800 text-right">Annual Billing (1 Year)</span>
+          </div>
+
+          <div class="flex justify-between items-start gap-4 border-t border-slate-200/50 pt-2.5">
+            <span class="text-slate-500 font-medium">Mess / Dining</span>
+            <span id="slipMessName" class="font-bold text-slate-900 text-right">Uttara Green View Mess</span>
+          </div>
+
+          <div class="flex justify-between items-start gap-4 border-t border-slate-200/50 pt-2.5">
+            <span class="text-slate-500 font-medium flex-shrink-0">Mess Address</span>
+            <span id="slipMessAddress" class="font-semibold text-slate-800 text-right break-words max-w-[65%]">House
+              #12, Road #4, Sector #10</span>
+          </div>
+
+          <div class="flex justify-between items-start gap-4 border-t border-slate-200/50 pt-2.5">
+            <span class="text-slate-500 font-medium">Host / Manager</span>
+            <span id="slipManagerName" class="font-semibold text-slate-800 text-right">Md. Riad Hasan</span>
+          </div>
+
+          <div class="flex justify-between items-start gap-4 border-t border-slate-200/50 pt-2.5">
+            <span class="text-slate-500 font-medium">Contact</span>
+            <span id="slipContact" class="font-medium text-slate-700 text-right break-all">017XXXXXXXX</span>
+          </div>
+
+          <div class="flex justify-between items-start gap-4 border-t border-slate-200/50 pt-2.5">
+            <span class="text-slate-500 font-medium">Time</span>
+            <span id="slipDateTime" class="font-medium text-slate-700 text-right">Thu, 13 April 2026, 09:00 AM</span>
+          </div>
+
+          <div class="flex justify-between items-start gap-4 border-t border-slate-200/50 pt-2.5">
+            <span class="text-slate-500 font-medium">Transaction ID</span>
+            <span id="slipTrxId" class="font-mono font-bold text-slate-900 text-right">BKASH_CONFIRMED</span>
+          </div>
+
+          <div class="border-t-2 border-dashed border-slate-200 pt-3 flex justify-between items-baseline">
+            <div>
+              <div class="text-xs sm:text-sm font-extrabold text-slate-900">Total</div>
+              <div class="text-[10px] text-slate-400">inclusive of all charges</div>
+            </div>
+            <span id="slipTotalAmount" class="text-xl sm:text-2xl font-black text-slate-900">৳ 499.00</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mt-5 sm:mt-6">
+          <button type="button" onclick="downloadSlip()" id="btnDownloadSlip"
+            class="flex-1 py-3 sm:py-3.5 px-4 sm:px-5 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm bg-slate-900 hover:bg-slate-800 text-white shadow-md flex items-center justify-center gap-2 transition-all">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Download Slip</span>
+          </button>
+          <a href="dashboard.html" id="btnCompletedDashboard"
+            class="flex-1 py-3 sm:py-3.5 px-4 sm:px-5 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 transition-all">
+            <span>Go to Dashboard</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Checkout Controller Script -->
+  <script>
+    // State management
+    const state = {
+      plan: 'pro', // 'trial' | 'pro' | 'pay_as_you_go'
+      billingCycle: 'monthly', // 'monthly' | 'yearly'
+      membersCount: 25,
+      isLoggedIn: false,
+      userRole: '',
+      currentUser: null,
+      diningId: '',
+      currentSubscription: null,
+      hasClaimedTrial: false
+    };
+
+    function isManagerRole(role) {
+      if (!role) return false;
+      const clean = String(role).toLowerCase().trim();
+      return clean === 'admin' || clean === 'manager' || clean === 'owner';
+    }
+
+    function hidePreloader() {
+      const preloader = document.getElementById('checkoutPreloader');
+      if (!preloader || preloader.dataset.hidden === 'true') return;
+      preloader.dataset.hidden = 'true';
+      preloader.classList.add('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        preloader.style.display = 'none';
+      }, 320);
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Safety guard: ensure preloader is hidden after 4.5s under any circumstance
+      setTimeout(hidePreloader, 4500);
+
+      // 1. Check for Payment Success/Completed Callback
+      const params = new URLSearchParams(window.location.search);
+      const paymentStatus = (params.get('status') || '').toLowerCase();
+
+      if (paymentStatus === 'success' || paymentStatus === 'completed') {
+        let completedData = null;
+        try {
+          const raw = localStorage.getItem('ml_last_completed_subscription') || localStorage.getItem('ml_pending_universal_payment');
+          if (raw) completedData = JSON.parse(raw);
+        } catch (_) { }
+
+        const paymentID = params.get('paymentID') || completedData?.paymentID || '';
+        const trxID = params.get('trxID') || completedData?.trxID || 'BKASH_CONFIRMED';
+
+        if (completedData) {
+          if (paymentID) completedData.paymentID = paymentID;
+          if (trxID) completedData.trxID = trxID;
+          hidePreloader();
+          showCompletedView(completedData);
+          return;
+        }
+      } else {
+        // If user navigates or presses back to checkout.html right after a completed subscription
+        let recentCompleted = null;
+        try {
+          const rawRecent = localStorage.getItem('ml_last_completed_subscription');
+          if (rawRecent) recentCompleted = JSON.parse(rawRecent);
+        } catch (_) { }
+
+        if (recentCompleted && recentCompleted.timestamp && (Date.now() - recentCompleted.timestamp) < 30 * 60 * 1000) {
+          hidePreloader();
+          showCompletedView(recentCompleted);
+          return;
+        }
+      }
+
+      // 2. Parse URL Query Parameters (?plan=pro&cycle=yearly&members=50)
+      if (params.get('plan')) state.plan = params.get('plan');
+      if (params.get('cycle')) state.billingCycle = params.get('cycle');
+      if (params.get('members')) state.membersCount = parseInt(params.get('members')) || 25;
+
+      // 3. User State Sync (Local Storage Fast Hydration)
+      detectUserStateSync();
+
+      // 4. Synchronously hydrate cached plans if present
+      try {
+        const cachedPlans = localStorage.getItem('ml_cached_plans');
+        if (cachedPlans && window.MesslinerSubscription && typeof MesslinerSubscription.applyPlansConfig === 'function') {
+          MesslinerSubscription.applyPlansConfig(JSON.parse(cachedPlans));
+        }
+      } catch (_) { }
+
+      // 5. Fetch fresh accurate dynamic pricing from Database (Preloader blocks premature display)
+      try {
+        if (window.MesslinerSubscription && typeof MesslinerSubscription.loadDynamicPlans === 'function') {
+          await Promise.race([
+            MesslinerSubscription.loadDynamicPlans(),
+            new Promise(res => setTimeout(res, 3000))
+          ]);
+        }
+      } catch (err) {
+        console.warn('[Checkout] Dynamic plans sync notice:', err);
+      }
+
+      // 6. Detect fresh cloud user state
+      try {
+        await Promise.race([
+          detectUserStateAsync(),
+          new Promise(res => setTimeout(res, 2500))
+        ]);
+      } catch (err) {
+        console.warn('[Checkout] User state sync notice:', err);
+      }
+
+      // 7. Render view with 100% accurate database pricing
+      renderCheckoutView();
+      if (window.lucide) lucide.createIcons();
+
+      // 8. Smoothly fade out preloader
+      hidePreloader();
+    });
+
+    function setFieldReadOnly(el, isReadOnly) {
+      if (!el) return;
+      el.readOnly = isReadOnly;
+      if (isReadOnly) {
+        el.classList.add('bg-slate-100', 'text-slate-700', 'select-none', 'border-slate-300/80', 'pointer-events-none');
+        el.classList.remove('bg-slate-50/50', 'text-slate-900', 'focus:ring-2', 'focus:ring-emerald-500', 'focus:bg-white');
+        el.setAttribute('tabindex', '-1');
+        el.setAttribute('aria-disabled', 'true');
+        el.onfocus = function () { if (this.readOnly) this.blur(); };
+        el.onmousedown = function (e) { if (this.readOnly) e.preventDefault(); };
+      } else {
+        el.classList.remove('bg-slate-100', 'text-slate-700', 'select-none', 'border-slate-300/80', 'pointer-events-none');
+        el.classList.add('bg-slate-50/50', 'text-slate-900', 'focus:ring-2', 'focus:ring-emerald-500', 'focus:bg-white');
+        el.removeAttribute('tabindex');
+        el.removeAttribute('aria-disabled');
+        el.onfocus = null;
+        el.onmousedown = null;
+      }
+    }
+
+    /**
+     * Fast Synchronous User & Subscription Hydration (< 5ms)
+     * Directly reads browser localStorage/sessionStorage so page renders instantly without layout jump/flash
+     */
+    function detectUserStateSync() {
+      try {
+        // 1. Locate active Supabase auth session token
+        let userObj = null;
+        let rawToken = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
+
+        if (!rawToken) {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
+              rawToken = localStorage.getItem(k);
+              break;
+            }
+          }
+        }
+        if (!rawToken) {
+          for (let i = 0; i < sessionStorage.length; i++) {
+            const k = sessionStorage.key(i);
+            if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
+              rawToken = sessionStorage.getItem(k);
+              break;
+            }
+          }
+        }
+
+        if (rawToken) {
+          try {
+            const parsed = JSON.parse(rawToken);
+            if (parsed && parsed.user) {
+              userObj = parsed.user;
+            }
+          } catch (_) { }
+        }
+
+        // 2. Scan localStorage for cached payload (ml_cache_v2_* and ml_map_*)
+        let cachedUserData = null;
+        let cachedDiningInfo = null;
+        let cachedMapping = null;
+        let cachedSubscription = null;
+        let foundDiningId = localStorage.getItem('currentDiningId') || localStorage.getItem('dining_id') || localStorage.getItem('messliner_dining_id') || '';
+        let bootEmail = (userObj && userObj.email) || localStorage.getItem('ml_boot_email') || '';
+
+        // If bootEmail is available, prioritize user's direct cache first (prevents picking up member caches)
+        if (bootEmail) {
+          const directKeys = [
+            `ml_cache_v2_${bootEmail.replace(/\./g, ',')}`,
+            `ml_cache_v2_${bootEmail.toLowerCase().replace(/[\.\$#\[\]\/@]/g, '_')}`
+          ];
+          for (const dKey of directKeys) {
+            try {
+              const dRaw = localStorage.getItem(dKey);
+              if (dRaw) {
+                const parsed = JSON.parse(dRaw);
+                if (parsed) {
+                  if (parsed.userData) cachedUserData = parsed.userData;
+                  if (parsed.info) cachedDiningInfo = parsed.info;
+                  if (parsed.mapping) cachedMapping = parsed.mapping;
+                  if (parsed.subscription) cachedSubscription = parsed.subscription;
+                  if (parsed.mapping?.diningId) foundDiningId = parsed.mapping.diningId;
+                  break;
+                }
+              }
+            } catch (_) { }
+          }
+        }
+
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (!k) continue;
+          if (k.startsWith('ml_cache_v2_imp_')) continue; // Skip impersonated member caches
+          if (k.startsWith('ml_cache_v2_')) {
+            try {
+              const p = JSON.parse(localStorage.getItem(k));
+              if (p) {
+                const pEmail = p.userData?.email || p.info?.email || '';
+                const matchesEmail = !bootEmail || (pEmail && pEmail.toLowerCase() === bootEmail.toLowerCase());
+                if (matchesEmail || !cachedUserData) {
+                  if (!cachedUserData && p.userData) cachedUserData = p.userData;
+                  if (!cachedDiningInfo && p.info) cachedDiningInfo = p.info;
+                  if (!cachedMapping && p.mapping) cachedMapping = p.mapping;
+                  if (!cachedSubscription && p.subscription) cachedSubscription = p.subscription;
+                  if (!bootEmail && p.userData?.email) bootEmail = p.userData.email;
+                  if (!foundDiningId && p.mapping?.diningId) foundDiningId = p.mapping.diningId;
+                }
+              }
+            } catch (_) { }
+          }
+          if (k.startsWith('ml_map_')) {
+            try {
+              const m = JSON.parse(localStorage.getItem(k));
+              if (m) {
+                const matchesMapEmail = !bootEmail || (m.email && m.email.toLowerCase() === bootEmail.toLowerCase());
+                if (matchesMapEmail || !cachedMapping) {
+                  if (!cachedMapping) cachedMapping = m;
+                  if (!foundDiningId && m.diningId) foundDiningId = m.diningId;
+                  if (m.diningName && !cachedDiningInfo) cachedDiningInfo = { name: m.diningName };
+                }
+              }
+            } catch (_) { }
+          }
+        }
+
+        // 3. Consolidate initial values from local sources
+        let fullName = (userObj?.user_metadata?.full_name) ||
+          (userObj?.user_metadata?.name) ||
+          (cachedUserData?.name) ||
+          (cachedDiningInfo?.managerName) || '';
+
+        let email = (userObj?.email) || bootEmail || (cachedUserData?.email) || '';
+
+        let phone = (userObj?.user_metadata?.phone) ||
+          (userObj?.phone) ||
+          (cachedUserData?.phone) ||
+          (cachedDiningInfo?.phone) || '';
+
+        let diningName = (cachedDiningInfo?.name) ||
+          (cachedDiningInfo?.diningName) ||
+          (cachedMapping?.diningName) ||
+          (localStorage.getItem('sidebarDiningName')) || '';
+
+        let userId = (cachedMapping?.userId) || (userObj?.id) || (userObj?.user_metadata?.firebase_uid) || '';
+
+        // If cached dining info confirms user as manager/admin, honor manager status
+        const isManagerByCachedInfo = Boolean(
+          (cachedDiningInfo?.adminUid && userObj?.id && cachedDiningInfo.adminUid === userObj.id) ||
+          (cachedDiningInfo?.email && email && cachedDiningInfo.email.toLowerCase() === email.toLowerCase()) ||
+          (cachedDiningInfo?.managerName && fullName && cachedDiningInfo.managerName.toLowerCase().trim() === fullName.toLowerCase().trim())
+        );
+        let userRole = isManagerByCachedInfo ? 'manager' : (cachedMapping?.role || cachedUserData?.role || (cachedDiningInfo ? 'member' : ''));
+
+        // 4. Mark login status
+        const isUserLoggedIn = Boolean(userObj || email || foundDiningId);
+        state.isLoggedIn = isUserLoggedIn;
+        state.currentUser = userObj || (email ? { email: email } : null);
+        state.diningId = foundDiningId;
+        state.userRole = userRole;
+
+        // Evaluate cached subscription immediately
+        if (cachedSubscription) {
+          if (window.MesslinerSubscription && typeof MesslinerSubscription.evaluateSubscription === 'function') {
+            state.currentSubscription = MesslinerSubscription.evaluateSubscription(cachedSubscription);
+          } else {
+            state.currentSubscription = cachedSubscription;
+          }
+          if (cachedSubscription.hasUsedTrial || cachedSubscription.plan === 'pro' || cachedSubscription.plan === 'pay_as_you_go') {
+            state.hasClaimedTrial = true;
+          }
+        }
+
+        const nameInput = document.getElementById('inputFullName');
+        const phoneInput = document.getElementById('inputMobile');
+        const emailInput = document.getElementById('inputEmail');
+        const messNameInput = document.getElementById('inputMessName');
+        const messAddressInput = document.getElementById('inputMessAddress');
+        const statusBadge = document.getElementById('sessionStatusBadge');
+
+        if (isUserLoggedIn && statusBadge) {
+          statusBadge.textContent = 'Logged In';
+          statusBadge.className = 'text-[10px] sm:text-[11px] font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-50 text-emerald-700 whitespace-nowrap flex-shrink-0';
+        }
+
+        // Populate and lock pre-filled fields
+        if (fullName && nameInput) {
+          nameInput.value = fullName;
+          if (isUserLoggedIn) setFieldReadOnly(nameInput, true);
+        }
+        if (email && emailInput) {
+          emailInput.value = email;
+          if (isUserLoggedIn) setFieldReadOnly(emailInput, true);
+        }
+        if (phone && phoneInput) {
+          phoneInput.value = phone.replace(/^\+?88/, '');
+          if (isUserLoggedIn) setFieldReadOnly(phoneInput, true);
+        }
+        if (messNameInput) {
+          if (diningName) messNameInput.value = diningName;
+          if (isUserLoggedIn) setFieldReadOnly(messNameInput, true);
+        }
+        if (messAddressInput) {
+          messAddressInput.value = '';
+          setFieldReadOnly(messAddressInput, false);
+        }
+
+        // Role restriction check
+        const alertBox = document.getElementById('roleAlertBox');
+        if (state.userRole && !isManagerRole(state.userRole)) {
+          if (alertBox) alertBox.classList.remove('hidden');
+          setButtonState('lock', 'Manager Required to Purchase', false);
+        } else {
+          if (alertBox) alertBox.classList.add('hidden');
+        }
+      } catch (e) {
+        console.warn('[Checkout] Fast sync hydration notice:', e);
+      }
+    }
+
+    /**
+     * Non-blocking Background Async Cloud Sync
+     * Queries Firebase RTDB to guarantee 100% precision without blocking UI
+     */
+    async function detectUserStateAsync() {
+      try {
+        const email = state.currentUser?.email || '';
+        let foundDiningId = state.diningId;
+        let userId = '';
+
+        const nameInput = document.getElementById('inputFullName');
+        const phoneInput = document.getElementById('inputMobile');
+        const emailInput = document.getElementById('inputEmail');
+        const messNameInput = document.getElementById('inputMessName');
+
+        let fullName = nameInput ? nameInput.value : '';
+        let phone = phoneInput ? phoneInput.value : '';
+        let diningName = messNameInput ? messNameInput.value : '';
+
+        const rtdb = window.db || (typeof db !== 'undefined' ? db : (typeof firebase !== 'undefined' && firebase.database ? firebase.database() : null));
+        if (rtdb && (email || foundDiningId)) {
+          // Resolve diningId from userMappings if missing
+          if (!foundDiningId && email) {
+            const emailVariants = [
+              email.replace(/\./g, ','),
+              email.toLowerCase().replace(/\./g, ','),
+              email.toLowerCase().replace(/[\.\$#\[\]\/@]/g, '_'),
+              email
+            ];
+            for (const variant of emailVariants) {
+              try {
+                const mapSnap = await rtdb.ref(`userMappings/emailToDining/${variant}`).once('value');
+                const mVal = mapSnap.val();
+                if (mVal && mVal.diningId) {
+                  foundDiningId = mVal.diningId;
+                  state.diningId = foundDiningId;
+                  if (mVal.userId) userId = mVal.userId;
+                  if (mVal.role) state.userRole = mVal.role;
+                  if (mVal.diningName && !diningName) diningName = mVal.diningName;
+                  break;
+                }
+              } catch (_) { }
+            }
+          }
+
+          if (foundDiningId) {
+            try {
+              const infoSnap = await rtdb.ref(`dinings/${foundDiningId}/info`).once('value');
+              const info = infoSnap.val() || {};
+              if (info.name && !diningName) diningName = info.name;
+              if (info.managerName && !fullName) fullName = info.managerName;
+              if (info.phone && !phone) phone = info.phone;
+
+              // Check if user is the Mess Manager according to dining info
+              const currentAuthId = state.currentUser?.id || state.currentUser?.uid || '';
+              const isManagerMatch = Boolean(
+                (info.adminUid && currentAuthId && info.adminUid === currentAuthId) ||
+                (info.managerId && userId && info.managerId === userId) ||
+                (info.email && email && info.email.toLowerCase().trim() === email.toLowerCase().trim()) ||
+                (info.phone && phone && phone.replace(/\D/g, '').endsWith(info.phone.replace(/\D/g, '').slice(-10))) ||
+                (info.managerName && fullName && info.managerName.toLowerCase().trim() === fullName.toLowerCase().trim())
+              );
+              if (isManagerMatch) {
+                state.userRole = 'manager';
+              }
+            } catch (_) { }
+
+            try {
+              const allUsersSnap = await rtdb.ref(`dinings/${foundDiningId}/users`).once('value');
+              const usersObj = allUsersSnap.val() || {};
+              const currentAuthId = state.currentUser?.id || state.currentUser?.uid || '';
+              let userFoundInDining = false;
+              for (const uid in usersObj) {
+                const u = usersObj[uid];
+                const isMatch = (u && email && u.email && u.email.toLowerCase().trim() === email.toLowerCase().trim()) ||
+                  (u && uid === userId) ||
+                  (u && currentAuthId && u.authUid && u.authUid === currentAuthId);
+                if (isMatch) {
+                  userFoundInDining = true;
+                  if (u.name) fullName = u.name;
+                  if (u.phone) phone = u.phone;
+                  if (isManagerRole(u.role) || isManagerMatch) {
+                    state.userRole = 'manager';
+                  } else {
+                    state.userRole = u.role || 'member';
+                  }
+                  break;
+                }
+              }
+              if (!userFoundInDining && !isManagerMatch) {
+                state.userRole = 'member';
+              }
+            } catch (_) { }
+
+            // Resolve Active Mess Subscription & Trial Status
+            try {
+              const subSnap = await rtdb.ref(`dinings/${foundDiningId}/subscription`).once('value');
+              const subData = subSnap.val();
+              if (window.MesslinerSubscription && typeof MesslinerSubscription.evaluateSubscription === 'function') {
+                state.currentSubscription = MesslinerSubscription.evaluateSubscription(subData);
+                if (subData?.hasUsedTrial || subData?.plan === 'pro' || subData?.plan === 'pay_as_you_go') {
+                  state.hasClaimedTrial = true;
+                }
+              }
+            } catch (_) { }
+
+            if (window.adminDb) {
+              try {
+                const trialSnap = await window.adminDb.ref(`trialsLedger/messes/${foundDiningId}`).once('value');
+                if (trialSnap.exists()) {
+                  state.hasClaimedTrial = true;
+                }
+              } catch (_) { }
+            }
+          }
+
+          // Apply freshly retrieved Firebase values
+          const isUserLoggedIn = state.isLoggedIn;
+          if (nameInput) {
+            if (fullName && (!nameInput.value || nameInput.value !== fullName)) nameInput.value = fullName;
+            if (isUserLoggedIn) setFieldReadOnly(nameInput, true);
+          }
+          if (phoneInput) {
+            if (phone && (!phoneInput.value || phoneInput.value !== phone.replace(/^\+?88/, ''))) {
+              phoneInput.value = phone.replace(/^\+?88/, '');
+            }
+            if (isUserLoggedIn) setFieldReadOnly(phoneInput, true);
+          }
+          if (messNameInput) {
+            if (diningName && (!messNameInput.value || messNameInput.value !== diningName)) {
+              messNameInput.value = diningName;
+            }
+            if (isUserLoggedIn) setFieldReadOnly(messNameInput, true);
+          }
+          if (emailInput) {
+            if (email && (!emailInput.value || emailInput.value !== email)) emailInput.value = email;
+            if (isUserLoggedIn) setFieldReadOnly(emailInput, true);
+          }
+        }
+
+        // Role restriction check
+        const alertBox = document.getElementById('roleAlertBox');
+        if (state.userRole && !isManagerRole(state.userRole)) {
+          if (alertBox) alertBox.classList.remove('hidden');
+          setButtonState('lock', 'Manager Required to Purchase', false);
+        } else {
+          if (alertBox) alertBox.classList.add('hidden');
+        }
+      } catch (e) {
+        console.warn('[Checkout] Background async user check notice:', e);
+      }
+    }
+
+    function selectPlan(planId) {
+      if (state.isLoggedIn && !isManagerRole(state.userRole)) return;
+      state.plan = planId;
+      renderCheckoutView();
+    }
+
+    function setBillingCycle(cycle) {
+      if (state.isLoggedIn && !isManagerRole(state.userRole)) return;
+      state.billingCycle = cycle;
+      renderCheckoutView();
+    }
+
+    function handleMemberSliderChange(val) {
+      if (state.isLoggedIn && !isManagerRole(state.userRole)) return;
+      state.membersCount = parseInt(val) || 25;
+      document.getElementById('memberCountDisplay').textContent = state.membersCount;
+      renderCheckoutView();
+    }
+
+    function setButtonState(iconName, text, isEnabled, isTrial = false) {
+      const btn = document.getElementById('btnPayAction');
+      if (!btn) return;
+      btn.disabled = !isEnabled;
+      if (!isEnabled) {
+        btn.className = 'w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl text-slate-400 font-extrabold text-xs sm:text-sm md:text-base bg-slate-200 cursor-not-allowed transition-all flex flex-row items-center justify-center gap-2 select-none shadow-none';
+      } else if (isTrial) {
+        btn.className = 'w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl text-white font-extrabold text-xs sm:text-sm md:text-base bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/30 active:scale-[0.99] transition-all flex flex-row items-center justify-center gap-2 select-none';
+      } else {
+        btn.className = 'w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl text-white font-extrabold text-xs sm:text-sm md:text-base bkash-gradient bkash-shadow hover:brightness-105 active:scale-[0.99] transition-all flex flex-row items-center justify-center gap-2 select-none';
+      }
+      btn.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 flex-shrink-0"></i><span class="font-extrabold truncate">${text}</span>`;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderCheckoutView() {
+      const tabTrial = document.getElementById('tabTrial');
+      const tabPro = document.getElementById('tabPro');
+      const tabPayGo = document.getElementById('tabPayGo');
+      const cycleSection = document.getElementById('billingCycleSection');
+      const memberSection = document.getElementById('memberCounterSection');
+      const btnCycleMonthly = document.getElementById('btnCycleMonthly');
+      const btnCycleYearly = document.getElementById('btnCycleYearly');
+      const planBadge = document.getElementById('planBadge');
+      const labelPlanLine = document.getElementById('labelPlanLine');
+      const valPlanLine = document.getElementById('valPlanLine');
+      const valDurationLine = document.getElementById('valDurationLine');
+      const valSupportLine = document.getElementById('valSupportLine');
+      const rowSavings = document.getElementById('rowSavings');
+      const valSavings = document.getElementById('valSavings');
+      const valTotalDisplay = document.getElementById('valTotalDisplay');
+      const annualDiscountBadge = document.getElementById('annualDiscountBadge');
+      const unauthBox = document.getElementById('unauthAlertBox');
+      const activeCard = document.getElementById('activeSubStatusCard');
+      const activeTitle = document.getElementById('activePlanTitle');
+      const activeDays = document.getElementById('activePlanDaysBadge');
+
+      // ── Step 1: Mandatory Auth / Mess Gatekeeper Check ──
+      const isMessBound = Boolean(state.isLoggedIn && state.diningId);
+      if (!isMessBound) {
+        if (unauthBox) unauthBox.classList.remove('hidden');
+        const sessionBadge = document.getElementById('sessionStatusBadge');
+        if (sessionBadge) {
+          sessionBadge.textContent = 'Login Required';
+          sessionBadge.className = 'text-[10px] sm:text-[11px] font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 whitespace-nowrap flex-shrink-0';
+        }
+      } else {
+        if (unauthBox) unauthBox.classList.add('hidden');
+      }
+
+      // Reinforce locked fields when user is logged in / mess-bound
+      if (state.isLoggedIn || isMessBound) {
+        ['inputFullName', 'inputMobile', 'inputEmail', 'inputMessName'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) setFieldReadOnly(el, true);
+        });
+      }
+
+      // ── Step 2: Resolve & Display Current Active Plan Status ──
+      const curSub = state.currentSubscription;
+      const isProActive = Boolean(curSub && curSub.plan === 'pro' && !curSub.isExpired);
+      const isPaygoActive = Boolean(curSub && curSub.plan === 'pay_as_you_go' && !curSub.isExpired);
+      const isTrialActive = Boolean(curSub && curSub.isTrial && !curSub.isExpired);
+      const isTrialAlreadyClaimed = Boolean(
+        state.hasClaimedTrial ||
+        isProActive ||
+        isPaygoActive ||
+        (curSub && curSub.plan && curSub.plan !== 'trial') ||
+        (curSub && curSub.isTrial && curSub.isExpired)
+      );
+
+      if (isMessBound && curSub && curSub.planName) {
+        if (activeCard) activeCard.classList.remove('hidden');
+        if (activeTitle) {
+          const cycleStr = curSub.billingCycle ? ` (${curSub.billingCycle.toUpperCase()})` : '';
+          activeTitle.innerHTML = `<span class="sm:hidden">${curSub.planName}</span><span class="hidden sm:inline">${curSub.planName}${cycleStr}</span>`;
+        }
+        if (activeDays) {
+          if (curSub.isExpired) {
+            activeDays.innerHTML = `<span class="sm:hidden">Expired</span><span class="hidden sm:inline">Expired · Renewal Due</span>`;
+            activeDays.className = 'text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 whitespace-nowrap flex-shrink-0';
+          } else if (curSub.isGracePeriod) {
+            activeDays.innerHTML = `<span class="sm:hidden">⚠️ ${curSub.graceDaysLeft}d Grace</span><span class="hidden sm:inline">⚠️ ${curSub.graceDaysLeft}d Grace Remaining</span>`;
+            activeDays.className = 'text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 animate-pulse whitespace-nowrap flex-shrink-0';
+          } else {
+            activeDays.innerHTML = `<span class="sm:hidden">✓ Active · ${curSub.daysLeft}d left</span><span class="hidden sm:inline">✓ Active · ${curSub.daysLeft} Days Left</span>`;
+            activeDays.className = 'text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 whitespace-nowrap flex-shrink-0';
+          }
+        }
+      } else {
+        if (activeCard) activeCard.classList.add('hidden');
+      }
+
+      // ── Step 3: Smart Plan Switcher Tabs ──
+      // Allow clicking any tab (including Free Trial)
+      [tabTrial, tabPro, tabPayGo].forEach(tab => {
+        if (tab) tab.className = 'py-1.5 sm:py-2 px-1 rounded-lg sm:rounded-xl transition-all text-slate-600 hover:text-slate-900 truncate';
+      });
+      if (tabTrial) {
+        tabTrial.onclick = function () { selectPlan('trial'); };
+      }
+
+      // Dynamic Annual Discount Badge Calculation
+      let discountPct = 0;
+      if (state.plan === 'pro') {
+        const proPlan = MesslinerSubscription?.PLANS?.pro;
+        const monthlyCost = proPlan?.priceMonthly || 60;
+        const yearlyCost = proPlan?.priceYearly || 499;
+        const full12Months = monthlyCost * 12;
+        if (full12Months > yearlyCost && full12Months > 0) {
+          discountPct = Math.round(((full12Months - yearlyCost) / full12Months) * 100);
+        }
+      } else if (state.plan === 'pay_as_you_go') {
+        const paygoPlan = MesslinerSubscription?.PLANS?.pay_as_you_go;
+        const monthlyRate = paygoPlan?.ratePerMemberMonthly || 2.49;
+        const yearlyRate = paygoPlan?.ratePerMemberYearly || 29.99;
+        const members = state.membersCount || 25;
+        const full12Months = members * monthlyRate * 12;
+        const yearlyCost = Math.round(members * yearlyRate);
+        if (full12Months > yearlyCost && full12Months > 0) {
+          discountPct = Math.round(((full12Months - yearlyCost) / full12Months) * 100);
+        }
+      }
+
+      if (annualDiscountBadge) {
+        if (discountPct > 0) {
+          annualDiscountBadge.textContent = `Save ${discountPct}%`;
+          annualDiscountBadge.classList.remove('hidden');
+        } else {
+          annualDiscountBadge.classList.add('hidden');
+        }
+      }
+
+      const isCurrentActive = Boolean(curSub && !curSub.isExpired && !curSub.isGracePeriod);
+      const isCurrentGrace = Boolean(curSub && curSub.isGracePeriod);
+      const isCurrentExpired = Boolean(curSub && curSub.isExpired);
+      const activePlanId = curSub ? curSub.plan : null;
+      const activeCycle = (curSub && curSub.billingCycle) ? curSub.billingCycle : 'monthly';
+
+      // ── Case A: Free Trial Plan View ──
+      if (state.plan === 'trial') {
+        if (tabTrial) tabTrial.className = 'py-1.5 sm:py-2 px-1 rounded-lg sm:rounded-xl transition-all bg-white text-emerald-700 shadow-sm font-extrabold truncate';
+        cycleSection.classList.add('hidden');
+        memberSection.classList.add('hidden');
+        planBadge.textContent = 'Free Trial (30 Days)';
+        planBadge.className = 'text-[11px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-blue-100 text-blue-800';
+
+        labelPlanLine.textContent = '30-Day Free Trial';
+        valPlanLine.textContent = '৳ 0.00';
+        valDurationLine.textContent = '30 Days + 3-Day Grace Period';
+        valSupportLine.textContent = 'Self-Service (Community & Docs)';
+        valSupportLine.className = 'font-semibold text-right break-words text-slate-500';
+        rowSavings.classList.add('hidden');
+        valTotalDisplay.textContent = '৳ 0';
+
+        if (!isMessBound) {
+          setButtonState('lock', 'Log In to Activate', false);
+        } else if (isCurrentActive && activePlanId === 'trial') {
+          setButtonState('check', 'Current Plan', false);
+        } else if (isTrialAlreadyClaimed) {
+          setButtonState('lock', 'Free Trial Already Utilized', false);
+        } else {
+          setButtonState('sparkles', 'Activate 30-Day Free Trial', true, true);
+        }
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      cycleSection.classList.remove('hidden');
+
+      // Update Billing Cycle buttons
+      if (state.billingCycle === 'yearly') {
+        btnCycleYearly.className = 'flex-1 py-1.5 sm:py-2 text-center rounded-lg sm:rounded-xl bg-white text-slate-900 shadow-sm transition-all flex items-center justify-center gap-1 sm:gap-1.5 font-extrabold truncate';
+        btnCycleMonthly.className = 'flex-1 py-1.5 sm:py-2 text-center rounded-lg sm:rounded-xl text-slate-500 hover:text-slate-900 transition-all truncate';
+        valDurationLine.textContent = '1 Year (365 Days) + 3-Day Grace';
+      } else {
+        btnCycleMonthly.className = 'flex-1 py-1.5 sm:py-2 text-center rounded-lg sm:rounded-xl bg-white text-slate-900 shadow-sm transition-all font-extrabold truncate';
+        btnCycleYearly.className = 'flex-1 py-1.5 sm:py-2 text-center rounded-lg sm:rounded-xl text-slate-500 hover:text-slate-900 transition-all flex items-center justify-center gap-1 sm:gap-1.5 truncate';
+        valDurationLine.textContent = '1 Month (30 Days) + 3-Day Grace';
+      }
+
+      valSupportLine.textContent = '24/7 Priority Support';
+      valSupportLine.className = 'font-semibold text-right break-words text-emerald-600';
+
+      // ── Pro Plan Mode ──
+      if (state.plan === 'pro') {
+        tabPro.className = 'py-1.5 sm:py-2 px-1 rounded-lg sm:rounded-xl transition-all bg-white text-emerald-700 shadow-sm font-extrabold truncate';
+        memberSection.classList.add('hidden');
+        planBadge.textContent = 'Messliner Pro';
+        planBadge.className = 'text-[11px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-100 text-emerald-800';
+
+        const pricing = MesslinerSubscription.calculateProPrice(state.billingCycle);
+        labelPlanLine.textContent = 'Messliner Pro (Up to 25 Members)';
+        valPlanLine.textContent = `৳ ${pricing.totalAmount}.00`;
+
+        if (pricing.savings > 0) {
+          rowSavings.classList.remove('hidden');
+          valSavings.textContent = `-৳ ${pricing.savings}.00`;
+        } else {
+          rowSavings.classList.add('hidden');
+        }
+
+        valTotalDisplay.textContent = `৳ ${pricing.totalAmount}`;
+
+        const isExactSamePro = Boolean(isCurrentActive && activePlanId === 'pro' && activeCycle === state.billingCycle);
+
+        if (!isMessBound) {
+          setButtonState('lock', 'Log In to Checkout', false);
+        } else if (isExactSamePro) {
+          // Exactly the current active tier -> Cannot repurchase current tier while active
+          setButtonState('check', 'Current Plan', false);
+        } else {
+          // Active button for Upgrade, Switch, or Renewal
+          if (isCurrentActive) {
+            if (activePlanId === 'trial') {
+              const upgradeText = state.billingCycle === 'yearly'
+                ? `Upgrade to Annual Pro · ৳ ${pricing.totalAmount}`
+                : `Upgrade to Pro · ৳ ${pricing.totalAmount}`;
+              setButtonState('sparkles', upgradeText, true);
+            } else if (activePlanId === 'pro' && activeCycle === 'monthly' && state.billingCycle === 'yearly') {
+              // Monthly Pro -> Annual Pro upgrade!
+              setButtonState('sparkles', `Upgrade to Annual Pro · ৳ ${pricing.totalAmount}`, true);
+            } else if (activePlanId === 'pay_as_you_go') {
+              setButtonState('arrow-right-left', `Switch to Pro · ৳ ${pricing.totalAmount}`, true);
+            } else {
+              setButtonState('lock', `Pay ৳ ${pricing.totalAmount} with bKash`, true);
+            }
+          } else if (isCurrentGrace || isCurrentExpired) {
+            setButtonState('refresh-cw', `Renew Pro Plan · ৳ ${pricing.totalAmount}`, true);
+          } else {
+            setButtonState('lock', `Pay ৳ ${pricing.totalAmount} with bKash`, true);
+          }
+        }
+
+        // ── Pay As You Go Mode ──
+      } else if (state.plan === 'pay_as_you_go') {
+        tabPayGo.className = 'py-1.5 sm:py-2 px-1 rounded-lg sm:rounded-xl transition-all bg-white text-emerald-700 shadow-sm font-extrabold truncate';
+        memberSection.classList.remove('hidden');
+        planBadge.textContent = 'Pay As You Go';
+        planBadge.className = 'text-[11px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-amber-100 text-amber-800';
+
+        const pricing = MesslinerSubscription.calculatePayAsYouGoPrice(state.membersCount, state.billingCycle);
+        labelPlanLine.textContent = `Pay As You Go (${state.membersCount} Members @ ৳${pricing.rate})`;
+        valPlanLine.textContent = `৳ ${pricing.totalAmount}.00`;
+        valDurationLine.textContent = state.billingCycle === 'yearly' ? '1 Year (per member / year)' : '1 Month (per member / month)';
+
+        const sliderRateLabel = document.getElementById('sliderRateLabel');
+        if (sliderRateLabel) {
+          sliderRateLabel.textContent = state.billingCycle === 'yearly'
+            ? `Rate: ৳${pricing.rate} per member / year`
+            : `Rate: ৳${pricing.rate} per member / month`;
+        }
+
+        if (pricing.savings > 0) {
+          rowSavings.classList.remove('hidden');
+          valSavings.textContent = `-৳ ${pricing.savings}.00`;
+        } else {
+          rowSavings.classList.add('hidden');
+        }
+
+        valTotalDisplay.textContent = `৳ ${pricing.totalAmount}`;
+
+        const isExactSamePaygo = Boolean(
+          isCurrentActive &&
+          activePlanId === 'pay_as_you_go' &&
+          activeCycle === state.billingCycle &&
+          (curSub.membersLimit === state.membersCount)
+        );
+
+        if (!isMessBound) {
+          setButtonState('lock', 'Log In to Checkout', false);
+        } else if (isExactSamePaygo) {
+          // Exactly the current active tier -> Cannot repurchase current tier while active
+          setButtonState('check', 'Current Plan', false);
+        } else {
+          // Active button for Upgrade, Member Adjustment, or Renewal
+          if (isCurrentActive) {
+            if (activePlanId === 'trial' || activePlanId === 'pro') {
+              setButtonState('arrow-up-right', `Upgrade to Pay-As-You-Go · ৳ ${pricing.totalAmount}`, true);
+            } else if (activePlanId === 'pay_as_you_go' && activeCycle === 'monthly' && state.billingCycle === 'yearly') {
+              setButtonState('sparkles', `Upgrade to Annual PayGo · ৳ ${pricing.totalAmount}`, true);
+            } else {
+              setButtonState('users', `Adjust Members · ৳ ${pricing.totalAmount}`, true);
+            }
+          } else if (isCurrentGrace || isCurrentExpired) {
+            setButtonState('refresh-cw', `Renew Pay-As-You-Go · ৳ ${pricing.totalAmount}`, true);
+          } else {
+            setButtonState('lock', `Pay ৳ ${pricing.totalAmount} with bKash`, true);
+          }
+        }
+      }
+
+      // Reinforce role alert visibility & disable ALL subscription controls for Dining Members
+      const roleAlert = document.getElementById('roleAlertBox');
+      const isRestrictedUser = Boolean(state.isLoggedIn && !isManagerRole(state.userRole));
+
+      ['tabTrial', 'tabPro', 'tabPayGo', 'btnCycleMonthly', 'btnCycleYearly'].forEach(btnId => {
+        const el = document.getElementById(btnId);
+        if (el) {
+          el.disabled = isRestrictedUser;
+          if (isRestrictedUser) {
+            el.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+          } else {
+            el.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+          }
+        }
+      });
+      const memberSlider = document.getElementById('memberRangeInput');
+      if (memberSlider) {
+        memberSlider.disabled = isRestrictedUser;
+        if (isRestrictedUser) {
+          memberSlider.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        } else {
+          memberSlider.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        }
+      }
+
+      if (isRestrictedUser) {
+        if (roleAlert) roleAlert.classList.remove('hidden');
+        setButtonState('lock', 'Manager Required to Purchase', false);
+      } else {
+        if (roleAlert) roleAlert.classList.add('hidden');
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    async function handlePayCheckout() {
+      // Mandatory Auth & Mess Enforcement Check (Prevents Unassigned Payments)
+      if (!state.isLoggedIn || !state.diningId) {
+        alert('Please log in or create your mess account first so your subscription can be activated immediately.');
+        window.location.href = 'login.html?redirect=checkout.html';
+        return;
+      }
+
+      // Role enforcement check
+      if (state.isLoggedIn && state.userRole && !isManagerRole(state.userRole)) {
+        alert('Only Mess Managers / Admins can purchase or renew subscriptions.');
+        return;
+      }
+
+      // Guard against repurchasing the identical active tier
+      const curSub = state.currentSubscription;
+      const isCurrentActive = Boolean(curSub && !curSub.isExpired && !curSub.isGracePeriod);
+      const activePlanId = curSub ? curSub.plan : null;
+      const activeCycle = (curSub && curSub.billingCycle) ? curSub.billingCycle : 'monthly';
+
+      if (isCurrentActive && activePlanId === state.plan && activeCycle === state.billingCycle) {
+        if (state.plan !== 'pay_as_you_go' || (curSub.membersLimit === state.membersCount)) {
+          alert('You already have an active subscription for this plan (' + (curSub.planName || state.plan) + '). You can upgrade to Annual billing or Pay-As-You-Go anytime.');
+          return;
+        }
+      }
+
+      const name = (document.getElementById('inputFullName')?.value || '').trim();
+      const phone = (document.getElementById('inputMobile')?.value || '').trim();
+      const email = (document.getElementById('inputEmail')?.value || '').trim();
+      const messName = (document.getElementById('inputMessName')?.value || '').trim();
+      const messAddress = (document.getElementById('inputMessAddress')?.value || '').trim();
+
+      if (!name) {
+        alert('Please enter your Full Name.');
+        document.getElementById('inputFullName')?.focus();
+        return;
+      }
+      if (!phone || phone.length < 11) {
+        alert('Please enter a valid 11-digit Bangladeshi Phone Number (e.g. 017XXXXXXXX).');
+        document.getElementById('inputMobile')?.focus();
+        return;
+      }
+      if (!email || !email.includes('@')) {
+        alert('Please enter a valid Email Address.');
+        document.getElementById('inputEmail')?.focus();
+        return;
+      }
+      if (!messName) {
+        alert('Please enter your Mess / Dining Name.');
+        document.getElementById('inputMessName')?.focus();
+        return;
+      }
+      if (!messAddress) {
+        alert('Please enter your Mess Address.');
+        document.getElementById('inputMessAddress')?.focus();
+        return;
+      }
+
+      // Case A: Free Trial Activation
+      if (state.plan === 'trial') {
+        const btn = document.getElementById('btnPayAction');
+        btn.disabled = true;
+        btn.innerHTML = `<span class="inline-block animate-spin mr-2">◌</span><span class="whitespace-nowrap font-extrabold">Checking Free Trial Eligibility...</span>`;
+
+        const eligibility = await MesslinerSubscription.checkTrialEligibility(phone, email, state.diningId);
+        if (!eligibility.eligible) {
+          alert('Free Trial Unavailable: ' + (eligibility.reason || 'This phone number or device has already utilized a 30-day Free Trial. Please choose Messliner Pro or Pay-As-You-Go.'));
+          selectPlan('pro');
+          btn.disabled = false;
+          return;
+        }
+
+        // Record trial in Admin Ledger
+        await MesslinerSubscription.recordTrialClaim({
+          name: name,
+          phone: phone,
+          email: email,
+          messName: messName,
+          messAddress: messAddress,
+          diningId: state.diningId || 'guest_trial'
+        });
+
+        const completedPayload = {
+          plan: 'trial',
+          planName: '30-Day Free Trial',
+          billingCycle: 'trial',
+          cycleLabel: '30 Days + 3-Day Grace Period',
+          amount: 0,
+          trxID: 'TRIAL_' + Math.random().toString(36).substring(2, 9).toUpperCase(),
+          paymentID: 'FREE_TRIAL_ACTIVATED',
+          name: name,
+          phone: phone,
+          email: email,
+          messName: messName,
+          messAddress: messAddress,
+          diningId: state.diningId || 'guest_trial',
+          timestamp: Date.now()
+        };
+        try {
+          localStorage.setItem('ml_last_completed_subscription', JSON.stringify(completedPayload));
+        } catch (_) { }
+
+        showCompletedView(completedPayload);
+        return;
+      }
+
+      // Case B: Paid Plans via bKash Gateway (Pro or Pay As You Go)
+      let payAmount = 60;
+      let planDetails = {};
+
+      if (state.plan === 'pro') {
+        const pricing = MesslinerSubscription.calculateProPrice(state.billingCycle);
+        payAmount = pricing.totalAmount;
+        planDetails = {
+          plan: 'pro',
+          planName: `Messliner Pro (${state.billingCycle})`,
+          billingCycle: state.billingCycle,
+          membersLimit: 25
+        };
+      } else if (state.plan === 'pay_as_you_go') {
+        const pricing = MesslinerSubscription.calculatePayAsYouGoPrice(state.membersCount, state.billingCycle);
+        payAmount = pricing.totalAmount;
+        planDetails = {
+          plan: 'pay_as_you_go',
+          planName: `Messliner Pay-As-You-Go (${state.membersCount} Members - ${state.billingCycle})`,
+          billingCycle: state.billingCycle,
+          membersCount: state.membersCount,
+          membersLimit: state.membersCount
+        };
+      }
+
+      const btn = document.getElementById('btnPayAction');
+      btn.disabled = true;
+      btn.innerHTML = `<span class="inline-block animate-spin mr-2">◌</span><span class="whitespace-nowrap font-extrabold">Connecting to bKash Gateway...</span>`;
+
+      try {
+        // Save pending subscription payload specifically for subscription-callback.html
+        const subPayload = {
+          type: 'subscription_' + state.plan,
+          amount: payAmount,
+          phone: phone,
+          diningId: state.diningId || '',
+          metadata: {
+            ...planDetails,
+            name: name,
+            email: email,
+            phone: phone,
+            messName: messName,
+            messAddress: messAddress,
+            isLoggedIn: state.isLoggedIn
+          }
+        };
+        try {
+          localStorage.setItem('ml_pending_subscription', JSON.stringify(subPayload));
+        } catch (_) { }
+
+        let subCallbackUrl = '';
+        try {
+          subCallbackUrl = new URL('subscription-callback.html', window.location.href).href;
+        } catch (_) {
+          subCallbackUrl = window.location.origin + '/subscription-callback.html';
+        }
+
+        await MesslinerPayment.initiatePayment({
+          amount: payAmount,
+          type: 'subscription_' + state.plan,
+          phone: phone,
+          diningId: state.diningId || '',
+          callbackUrl: subCallbackUrl,
+          metadata: subPayload.metadata
+        });
+      } catch (err) {
+        console.error('Payment initiation error:', err);
+        alert('Failed to connect to payment gateway: ' + (err.message || 'Please try again.'));
+        btn.disabled = false;
+        renderCheckoutView();
+      }
+    }
+
+    /**
+     * Render the dedicated Completed / Confirmation View matching the requested UI design
+     */
+    function showCompletedView(data) {
+      hidePreloader();
+      const flowContainer = document.getElementById('checkoutFlowContainer');
+      const completedView = document.getElementById('completedView');
+      const roleAlert = document.getElementById('roleAlertBox');
+
+      if (flowContainer) flowContainer.classList.add('hidden');
+      if (roleAlert) roleAlert.classList.add('hidden');
+      if (completedView) completedView.classList.remove('hidden');
+
+      // Update Top Header Breadcrumb State to show Step 4 Completed active
+      const crumbBilling = document.getElementById('crumbBillingDetails');
+      const crumbPayment = document.getElementById('crumbPayment');
+      const crumbCompleted = document.getElementById('crumbCompleted');
+
+      if (crumbBilling) {
+        crumbBilling.className = 'hover:text-slate-700 flex items-center gap-1 transition-colors';
+        crumbBilling.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i><span>2. Billing Details</span>`;
+      }
+      if (crumbPayment) {
+        crumbPayment.className = 'hover:text-slate-700 flex items-center gap-1 transition-colors';
+        crumbPayment.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i><span>3. Payment</span>`;
+      }
+      if (crumbCompleted) {
+        crumbCompleted.className = 'text-emerald-700 bg-emerald-50 px-2 sm:px-2.5 py-1 rounded-full flex items-center gap-1 sm:gap-1.5 font-bold';
+        crumbCompleted.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>4. Completed`;
+      }
+
+      // Format Date & Time cleanly
+      const dateObj = new Date(data.timestamp || Date.now());
+      const dateFormatted = dateObj.toLocaleString('en-US', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+
+      // Populate Slip Fields
+      const isTrial = data.plan === 'trial';
+      const headingEl = document.getElementById('completedHeading');
+      const subtextEl = document.getElementById('completedSubtext');
+      const statusBadge = document.getElementById('slipStatusBadge');
+
+      if (headingEl) {
+        headingEl.textContent = isTrial ? 'Free Trial Activated' : 'Booking confirmed';
+      }
+      if (subtextEl) {
+        subtextEl.textContent = isTrial
+          ? 'Your 30-day Free Trial is now active with full system features and 3-day grace protection.'
+          : "We've sent an email to you with a confirmation containing all the details.";
+      }
+      if (statusBadge) {
+        statusBadge.textContent = isTrial ? 'Active · Free Trial' : 'Active · Paid';
+        statusBadge.className = isTrial
+          ? 'text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 uppercase tracking-wider'
+          : 'text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-wider';
+      }
+
+      const planNameEl = document.getElementById('slipPlanName');
+      const cycleEl = document.getElementById('slipBillingCycle');
+      const messEl = document.getElementById('slipMessName');
+      const addressEl = document.getElementById('slipMessAddress');
+      const managerEl = document.getElementById('slipManagerName');
+      const contactEl = document.getElementById('slipContact');
+      const timeEl = document.getElementById('slipDateTime');
+      const trxEl = document.getElementById('slipTrxId');
+      const totalEl = document.getElementById('slipTotalAmount');
+
+      if (planNameEl) planNameEl.textContent = data.planName || (isTrial ? '30-Day Free Trial' : 'Messliner Pro');
+      if (cycleEl) cycleEl.textContent = data.cycleLabel || (data.billingCycle === 'yearly' ? 'Annual Billing (1 Year)' : (isTrial ? '30 Days Trial' : 'Monthly Billing (1 Month)'));
+      if (messEl) messEl.textContent = data.messName || 'My Mess';
+      if (addressEl) addressEl.textContent = data.messAddress || 'N/A';
+      if (managerEl) managerEl.textContent = data.name || 'Mess Manager';
+      if (contactEl) {
+        const parts = [data.phone, data.email].filter(Boolean);
+        contactEl.textContent = parts.join(' · ') || 'N/A';
+      }
+      if (timeEl) timeEl.textContent = dateFormatted;
+      if (trxEl) trxEl.textContent = data.trxID || data.paymentID || 'CONFIRMED';
+      if (totalEl) {
+        const amt = parseFloat(data.amount) || 0;
+        totalEl.textContent = `৳ ${amt.toFixed(2)}`;
+      }
+
+      // Automatically dispatch invoice email via Brevo API
+      if (window.MesslinerInvoiceEmail && data && data.email && !data._invoiceSent) {
+        data._invoiceSent = true;
+        try {
+          window.MesslinerInvoiceEmail.send(data).then(res => {
+            if (res.success) {
+              console.log('[Invoice Email] Brevo email dispatched:', res.messageId);
+            } else {
+              console.warn('[Invoice Email] Brevo status:', res.error);
+            }
+          }).catch(err => {
+            console.warn('[Invoice Email] Brevo send error:', err);
+          });
+        } catch (e) {
+          console.warn('[Invoice Email] Invocation error:', e);
+        }
+      }
+
+      // Clean up all pending transaction storage
+      try {
+        localStorage.removeItem('ml_pending_subscription');
+        localStorage.removeItem('ml_pending_universal_payment');
+        localStorage.removeItem('ml_pending_bkash_recharge');
+      } catch (_) { }
+
+      // Browser History Trap: Prevent user from pressing Back to payment gateway or checkout form
+      try {
+        window.history.pushState({ page: 'completed_view' }, document.title, window.location.href);
+        window.onpopstate = function () {
+          // If user presses browser back button, forward them safely to their Mess Dashboard
+          window.location.replace('dashboard.html');
+        };
+      } catch (_) { }
+
+      if (window.lucide) lucide.createIcons();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /**
+     * Download or Print Official Slip
+     */
+    async function downloadSlip() {
+      const btn = document.getElementById('btnDownloadSlip');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="inline-block animate-spin mr-1.5">◌</span> Generating Slip...`;
+
+      try {
+        const slipEl = document.getElementById('receiptSlipContent');
+        if (window.html2canvas && slipEl) {
+          const canvas = await html2canvas(slipEl, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            logging: false
+          });
+          const dataUrl = canvas.toDataURL('image/png');
+          const mess = (document.getElementById('slipMessName')?.textContent || 'messliner').replace(/[^a-zA-Z0-9]/g, '_');
+          const link = document.createElement('a');
+          link.download = `Messliner_Receipt_${mess}_${Date.now()}.png`;
+          link.href = dataUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else {
+          window.print();
+        }
+      } catch (err) {
+        console.warn('[Slip Download] Canvas error, fallback to print:', err);
+        window.print();
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    /**
+     * =========================================================================
+     * UNINTERRUPTED PAYMENT RECOVERY SYSTEM (Disconnection / Dropped Tab Guard)
+     * =========================================================================
+     */
+    function openRestorePaymentModal() {
+      const modal = document.getElementById('restorePaymentModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        const phoneInput = document.getElementById('restorePhone');
+        if (phoneInput && !phoneInput.value) {
+          phoneInput.value = state.userPhone || localStorage.getItem('user_phone') || '';
+        }
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function closeRestorePaymentModal() {
+      const modal = document.getElementById('restorePaymentModal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    async function handleRestorePaymentSubmit() {
+      const inputTrxOrPayment = (document.getElementById('restoreTrxOrPayment')?.value || '').trim();
+      const inputPhone = (document.getElementById('restorePhone')?.value || '').trim();
+      const statusEl = document.getElementById('restoreStatusMsg');
+      const submitBtn = document.getElementById('btnSubmitRestore');
+
+      if (!inputTrxOrPayment || inputTrxOrPayment.length < 5) {
+        alert('Please enter your bKash Transaction ID (TrxID) or Payment ID.');
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="inline-block animate-spin mr-1.5">◌</span> Verifying with bKash...`;
+      }
+      if (statusEl) {
+        statusEl.classList.remove('hidden');
+        statusEl.className = 'p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center gap-2';
+        statusEl.innerHTML = `<span>Connecting to official bKash verification engine...</span>`;
+      }
+
+      try {
+        if (!window.MesslinerPayment) {
+          throw new Error('Payment engine is not initialized. Please refresh.');
+        }
+
+        const res = await window.MesslinerPayment.verifyAndFulfill({
+          paymentID: inputTrxOrPayment,
+          trxID: inputTrxOrPayment,
+          type: 'subscription_' + (state.plan || 'pro'),
+          customerPhone: inputPhone,
+          diningId: state.diningId || '',
+          metadata: {
+            plan: state.plan || 'pro',
+            billingCycle: state.billingCycle || 'monthly',
+            name: state.userName || 'Mess Manager',
+            phone: inputPhone,
+            messName: state.messName || 'Your Mess',
+            diningId: state.diningId || ''
+          }
+        });
+
+        if (res && res.success) {
+          if (statusEl) {
+            statusEl.className = 'p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-bold';
+            statusEl.innerHTML = `✓ Payment successfully verified and fulfilled! Redirecting...`;
+          }
+          setTimeout(() => {
+            window.location.replace(`checkout.html?status=success&paymentID=${encodeURIComponent(res.paymentID || inputTrxOrPayment)}&trxID=${encodeURIComponent(res.trxID || inputTrxOrPayment)}`);
+          }, 800);
+        } else {
+          throw new Error((res && res.error) || 'Payment verification was not confirmed by the gateway.');
+        }
+      } catch (err) {
+        console.error('[Restore Payment Error]:', err);
+        if (statusEl) {
+          statusEl.className = 'p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 font-semibold';
+          statusEl.innerHTML = `✕ Verification failed: ${err.message || 'Transaction could not be confirmed.'}`;
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `Verify & Restore Subscription`;
+        }
+      }
+    }
+  </script>
+
+  <!-- Restore Payment Modal Markup -->
+  <div id="restorePaymentModal"
+    class="fixed inset-0 z-[999999] bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div
+      class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative animate-pop">
+      <button type="button" onclick="closeRestorePaymentModal()"
+        class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center cursor-pointer transition-colors text-lg font-bold">
+        &times;
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div
+          class="w-10 h-10 rounded-2xl bg-pink-50 border border-pink-200 text-[#E2136E] flex items-center justify-center flex-shrink-0">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-extrabold text-slate-900 leading-tight">Restore / Verify Payment</h3>
+          <p class="text-[11px] text-slate-500">Recover payment if your browser closed or net disconnected.</p>
+        </div>
+      </div>
+
+      <div class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-1">bKash Transaction ID
+            (TrxID) or Payment ID *</label>
+          <input type="text" id="restoreTrxOrPayment" placeholder="e.g. BL1A9XYZ or Payment ID from SMS"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-900 font-mono text-xs focus:border-[#E2136E] focus:outline-none"
+            required>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-1">Mobile Number (used
+            for payment)</label>
+          <input type="tel" id="restorePhone" placeholder="01XXXXXXXXX"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-900 text-xs focus:border-[#E2136E] focus:outline-none">
+        </div>
+
+        <div id="restoreStatusMsg" class="hidden"></div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" onclick="closeRestorePaymentModal()"
+            class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition-colors">
+            Cancel
+          </button>
+          <button type="button" id="btnSubmitRestore" onclick="handleRestorePaymentSubmit()"
+            class="flex-1 py-2.5 px-4 rounded-xl bkash-gradient text-white font-extrabold hover:brightness-105 transition-all shadow-md shadow-pink-500/20">
+            Verify & Restore
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

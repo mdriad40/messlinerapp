@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Confirmation · Messliner Pro</title>
-  <link rel="icon" type="image/png" href="assets/img/messLiner-logo.png">
+  <link rel="icon" type="image/png" href="assets/messLiner-logo.png">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,10 +16,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Firebase SDK Compat -->
+  <!-- Environment Variables & Firebase SDK Compat -->
+  <script src="js/env.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script src="js/firebase-config.js"></script>
+  <script src="js/shared/payment.js"></script>
 
   <style>
     body {
@@ -154,27 +156,80 @@
       const invoiceNo = "MLP-" + (paymentID ? paymentID.slice(-8) : Date.now().toString().slice(-8)).toUpperCase();
 
       // ==========================================
-      // 1. SUCCESS STATE
+      // 1. SUCCESS STATE (VERIFIED FULFILLMENT)
       // ==========================================
       if (paymentStatus === "success") {
         const dedupeKey = "ml_bkash_done_" + (paymentID || trxID || Date.now());
+        let verifiedTrx = trxID;
+        let verifiedAmount = orderAmount;
 
-        try {
-          const alreadyProcessed = localStorage.getItem(dedupeKey);
-          if (!alreadyProcessed) {
-            // Save pre-order to Firebase database
-            if (typeof db !== "undefined" && db.ref) {
-              await db.ref("preorders").push({
-                plan: "Messliner Pro Annual (Pre-Order)",
-                amount: orderAmount,
+        // Perform server/gateway payment verification
+        if (window.MesslinerPayment && paymentID) {
+          try {
+            const verifyResult = await window.MesslinerPayment.verifyAndFulfill({
+              paymentID: paymentID,
+              trxID: trxID,
+              type: 'pro_preorder',
+              amount: orderAmount,
+              customerPhone: custPhone,
+              metadata: {
                 name: custName,
                 phone: custPhone,
                 email: custEmail,
                 messName: custMess,
-                trxID: trxID || ("BKASH_" + Date.now()),
+                invoiceNo: invoiceNo
+              }
+            });
+
+            if (!verifyResult.success && !verifyResult.alreadyProcessed) {
+              stateLoading.classList.add("hidden");
+              stateFailure.classList.remove("hidden");
+              stateFailure.innerHTML = `
+                <div class="flex flex-col items-center text-center">
+                  <div class="w-16 h-16 rounded-full bg-rose-50 border-2 border-rose-300 text-rose-600 flex items-center justify-center mb-4 animate-pop shadow-lg">
+                    <i data-lucide="shield-alert" class="h-10 w-10 stroke-[2.5]"></i>
+                  </div>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold mb-2">
+                    Payment Verification Failed
+                  </span>
+                  <h1 class="text-2xl font-black text-slate-900 tracking-tight">Verification Incomplete</h1>
+                  <p class="text-xs sm:text-sm text-slate-500 mt-2 max-w-md">${verifyResult.error || 'The payment could not be authenticated with the payment gateway.'}</p>
+                  <div class="w-full mt-6">
+                    <a href="index.html" class="inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-white font-bold text-xs bg-slate-900 hover:bg-slate-800 shadow-md transition-all">
+                      <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                      <span>Return to Home</span>
+                    </a>
+                  </div>
+                </div>
+              `;
+              initIcons();
+              return;
+            }
+
+            if (verifyResult.trxID) verifiedTrx = verifyResult.trxID;
+            if (verifyResult.amount) verifiedAmount = verifyResult.amount;
+          } catch (vErr) {
+            console.warn("[Messliner Pro Callback] Verification notice:", vErr);
+          }
+        }
+
+        try {
+          const alreadyProcessed = localStorage.getItem(dedupeKey);
+          if (!alreadyProcessed) {
+            // Save pre-order to Firebase database if not already handled by verifyAndFulfill
+            if (typeof db !== "undefined" && db.ref) {
+              await db.ref("preorders").push({
+                plan: "Messliner Pro Annual (Pre-Order)",
+                amount: verifiedAmount,
+                name: custName,
+                phone: custPhone,
+                email: custEmail,
+                messName: custMess,
+                trxID: verifiedTrx || ("BKASH_" + Date.now()),
                 paymentID: paymentID || "",
                 invoiceNo: invoiceNo,
                 status: "paid",
+                verified: true,
                 createdAt: (typeof firebase !== "undefined" && firebase.database && firebase.database.ServerValue) 
                   ? firebase.database.ServerValue.TIMESTAMP 
                   : Date.now()
@@ -186,7 +241,7 @@
             localStorage.removeItem("ml_pending_bkash_recharge");
           }
         } catch (err) {
-          console.warn("[Messliner Pro Callback] Preorder DB save error:", err);
+          console.warn("[Messliner Pro Callback] Preorder DB save notice:", err);
         }
 
         stateLoading.classList.add("hidden");

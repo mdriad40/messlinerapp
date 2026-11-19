@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Confirmed — Messliner</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      padding: 40px 12px;
+      color: #0f172a;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .email-container {
+      max-width: 520px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+      padding: 36px 32px;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+      display: block;
+    }
+    .brand-name {
+      font-size: 17px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.4px;
+    }
+    .status-pill {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      background-color: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      padding: 4px 10px;
+      border-radius: 9999px;
+    }
+
+    .email-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+      color: #0f172a;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .email-subtitle {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .amount-card {
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .amount-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .amount-sub {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .amount-value {
+      font-size: 28px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+
+    .details-list {
+      border-top: 1px solid #f1f5f9;
+      margin-bottom: 26px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 13.5px;
+    }
+    .detail-key {
+      color: #64748b;
+      font-weight: 500;
+    }
+    .detail-val {
+      color: #0f172a;
+      font-weight: 600;
+      text-align: right;
+    }
+
+    .cta-btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background-color: #0f172a;
+      color: #ffffff;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      letter-spacing: 0.2px;
+      margin-bottom: 24px;
+    }
+
+    /* Clean Minimal Footer (Website URL, Privacy Policy & Copyright only) */
+    .email-footer {
+      border-top: 1px solid #f1f5f9;
+      padding-top: 22px;
+      text-align: center;
+    }
+    .footer-links {
+      font-size: 12.5px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .footer-links a {
+      color: #0f172a;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+    .footer-dot {
+      margin: 0 8px;
+      color: #cbd5e1;
+    }
+    .footer-copyright {
+      font-size: 11.5px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Controls bar for user preview -->
+  <div style="max-width: 520px; margin: 0 auto 16px auto; display: flex; justify-content: space-between; align-items: center; background: #0f172a; color: white; padding: 10px 18px; border-radius: 12px;">
+    <div style="font-size: 12.5px; font-weight: 600;">
+      ✉️ <strong>Messliner Confirmation Email UI</strong>
+    </div>
+    <a href="preview_invoice.html" style="background: #334155; color: white; padding: 5px 12px; border-radius: 8px; font-size: 11.5px; font-weight: 600; text-decoration: none;">
+      📄 View Invoice UI →
+    </a>
+  </div>
+
+  <div class="email-container">
+
+    <!-- Top Header: Logo & Status -->
+    <div class="brand-header">
+      <div class="brand-badge">
+        <img src="assets/messLinerApp_logo.png" 
+             alt="Messliner Logo" 
+             class="brand-logo"
+             onerror="this.src='assets/messLiner-logo.png'">
+        <span class="brand-name">Messliner</span>
+      </div>
+      <div class="status-pill">
+        Active · Paid
+      </div>
+    </div>
+
+    <!-- Email Heading -->
+    <h1 class="email-title">Payment Confirmed</h1>
+    <p class="email-subtitle">
+      Hi Rahim, your subscription payment has been received. Your mess is now active on <strong>Messliner Pro</strong> with all limits unlocked.
+    </p>
+
+    <!-- Amount Card -->
+    <div class="amount-card">
+      <div>
+        <div class="amount-label">AMOUNT PAID</div>
+        <div class="amount-sub" style="font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.35;">
+          Messliner Pro <span style="font-size: 12.5px; font-weight: 500; color: #64748b;">(Annual Billing)</span>
+        </div>
+      </div>
+      <div class="amount-value" style="font-size: 26px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; display: inline-flex; align-items: center; white-space: nowrap; padding-left: 16px;">
+        <img src="assets/taka-symbol.png" alt="৳" style="width: 20px; height: 20px; object-fit: contain; vertical-align: -2px; margin-right: 4px; display: inline-block;">
+        <span>1,724</span>
+      </div>
+    </div>
+
+    <!-- Quick Details List -->
+    <div class="details-list">
+      <div class="detail-row">
+        <span class="detail-key">Mess / Dining</span>
+        <span class="detail-val">Al-Madina Students Hostel</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Billing Cycle</span>
+        <span class="detail-val">Annual (1 Year)</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Payment Gateway</span>
+        <span class="detail-val">bKash</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Transaction ID</span>
+        <span class="detail-val" style="font-family: monospace;">BKL928475819</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Payment Date</span>
+        <span class="detail-val">11 Nov 2026, 01:15 AM</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Grace Protection</span>
+        <span class="detail-val" style="color: #16a34a;">3-Day Guarantee Active</span>
+      </div>
+    </div>
+
+    <!-- Primary Action Button -->
+    <a href="https://messliner.com" target="_blank" class="cta-btn">
+      Launch Messliner Dashboard →
+    </a>
+
+    <!-- Clean Minimal Footer (Website URL, Privacy Policy & Copyright only) -->
+    <div class="email-footer">
+      <div class="footer-links">
+        <a href="https://www.messliner.com" target="_blank" style="color: #64748b; font-weight: normal;">www.messliner.com</a>
+        <span style="margin: 0 6px; color: #94a3b8;">|</span>
+        <a href="https://www.messliner.com/privacy.html" target="_blank" style="color: #64748b; font-weight: normal;">Privacy policy</a>
+      </div>
+      <div class="footer-copyright">
+        © 2026 Messliner. All rights reserved.
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

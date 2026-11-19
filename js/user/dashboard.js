@@ -69,6 +69,7 @@ const UserDashboard = {
 
   /**
    * Dynamically calculate meal rate based on active rateMode (Fixed vs Market)
+   * Guaranteed to match Admin Dashboard / User Dining Tab (OverviewModule) exactly.
    */
   _getDynamicMealRate() {
     const rateMode = this.settings?.rateMode || 'market';
@@ -76,38 +77,43 @@ const UserDashboard = {
       const fixedRates = this.settings?.fixedRates || { breakfast: 0, lunch: 0, dinner: 0 };
       const tm = this.settings?.trackedMeals || { breakfast: true, lunch: true, dinner: true };
       let fullDailyFixedRate = 0;
-      let trackedCount = 0;
       if (tm.breakfast !== false && fixedRates.breakfast) {
         fullDailyFixedRate += parseFloat(fixedRates.breakfast) || 0;
-        trackedCount++;
       }
       if (tm.lunch !== false && fixedRates.lunch) {
         fullDailyFixedRate += parseFloat(fixedRates.lunch) || 0;
-        trackedCount++;
       }
       if (tm.dinner !== false && fixedRates.dinner) {
         fullDailyFixedRate += parseFloat(fixedRates.dinner) || 0;
-        trackedCount++;
       }
-
-      const mealCostTemp = Utils.calcMealCost(0, this.monthlyMeals || 0, this.monthlyMealsBreakdown || {}, fixedRates);
-      if (this.monthlyMeals > 0 && mealCostTemp > 0) {
-        return mealCostTemp / this.monthlyMeals;
-      } else if (trackedCount > 0) {
-        return fullDailyFixedRate / trackedCount;
-      } else {
-        return fullDailyFixedRate;
-      }
+      return fullDailyFixedRate;
     } else {
       // Market mode
+      const currentMonth = Utils.currentMonth();
+      const ov = window.Messliner && Messliner.overview;
+      if (ov && ov.selectedYear && ov.selectedMonth) {
+        const ovMonth = `${ov.selectedYear}-${String(ov.selectedMonth).padStart(2, '0')}`;
+        if (ovMonth === currentMonth && typeof ov.currentMonthMealRate === 'number' && ov.currentMonthMealRate >= 0) {
+          return ov.currentMonthMealRate;
+        }
+      }
+
       let totalDiningMeals = 0;
+      const allUsers = this.allUsers || (window.Messliner && Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) || (window.Messliner && Messliner.users && Messliner.users.users) || {};
+      const isManagerMealEnabled = !!this.settings?.managerMealEnabled;
+
       if (this.monthMealsData) {
         Object.values(this.monthMealsData).forEach(dayData => {
+          if (!dayData || typeof dayData !== 'object') return;
           Object.entries(dayData).forEach(([type, typeData]) => {
             if (type === 'completed') return;
-            if (typeof typeData === 'object') {
-              Object.values(typeData).forEach(count => {
-                totalDiningMeals += parseFloat(count) || 0;
+            if (typeof typeData === 'object' && typeData) {
+              Object.entries(typeData).forEach(([uId, count]) => {
+                const u = allUsers[uId];
+                if (u && u.role === 'admin' && !isManagerMealEnabled) {
+                  return; // Skip manager meals, exactly matching OverviewModule
+                }
+                totalDiningMeals += parseInt(count) || 0;
               });
             }
           });
@@ -218,9 +224,10 @@ const UserDashboard = {
     }
   },
 
-  init(diningId, userId) {
+  init(diningId, userId, initialData) {
     this.diningId = diningId;
     this.userId = userId;
+    this.allUsers = (initialData && initialData.users) || (window.Messliner && Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) || (window.Messliner && Messliner.users && Messliner.users.users) || {};
 
     // Reset/initialize properties
     this.userLogsData = [];
@@ -231,6 +238,7 @@ const UserDashboard = {
     // Clean up previous listeners and pending render timer
     if (this._activityRenderTimer) { clearTimeout(this._activityRenderTimer); this._activityRenderTimer = null; }
     if (this._userRef) this._userRef.off();
+    if (this._usersRef) this._usersRef.off();
     if (this._settingsRef) this._settingsRef.off();
     if (this._logsRef) this._logsRef.off();
     if (this._adminLogsRef) this._adminLogsRef.off();
@@ -245,6 +253,13 @@ const UserDashboard = {
       this.renderStats();
       this.renderMealToggles();
       this.updateMyMealVisibility();
+    });
+
+    // Listen to all users for managerMealEnabled calculation matching OverviewModule
+    this._usersRef = db.ref(`dinings/${diningId}/users`);
+    this._usersRef.on('value', (snap) => {
+      this.allUsers = snap.val() || {};
+      this.renderStats();
     });
 
     // Listen to settings for deadlines
@@ -345,13 +360,26 @@ const UserDashboard = {
       this._debouncedRenderActivity(diningId);
     });
 
-    // Bazar this month (total bazar spend)
+    // Bazar this month (total bazar spend, matching OverviewModule exactly)
     this._bazarRef = db.ref(`dinings/${diningId}/bazar`);
     this._bazarRef.on('value', (snap) => {
       let bazarTotal = 0;
+      const isSelectedMonth = (item) => {
+        if (!item) return false;
+        if (item.date && typeof item.date === 'string') {
+          return item.date.startsWith(currentMonth);
+        }
+        if (item.timestamp && typeof item.timestamp === 'number') {
+          const dt = new Date(item.timestamp);
+          const y = dt.getFullYear();
+          const m = String(dt.getMonth() + 1).padStart(2, '0');
+          return `${y}-${m}` === currentMonth;
+        }
+        return false;
+      };
       snap.forEach(child => {
         const b = child.val();
-        if (Utils.isItemInMonth(b, currentMonth)) {
+        if (isSelectedMonth(b)) {
           bazarTotal += Utils.num(b.amount);
         }
       });
@@ -398,10 +426,8 @@ const UserDashboard = {
 
     // Calculate meal rate dynamically (supports both Fixed Rate & Market Rate)
     const mealRate = this._getDynamicMealRate();
-    if (rateMode === 'market') {
-      Messliner.state.monthlyMealRate = mealRate;
-      Messliner.state.mealRate = mealRate;
-    }
+    Messliner.state.monthlyMealRate = mealRate;
+    Messliner.state.mealRate = mealRate;
 
     let fixedRateTooltip = '';
     if (rateMode === 'fixed' && fixedRates) {
@@ -420,10 +446,19 @@ const UserDashboard = {
     const totalCost = mealCost + otherCosting;
     const balance = this.monthlyDeposit - totalCost - deduction;
 
-    // Update Topbar User Meta
+    // Update Topbar User Meta (Both My Meal & Overview bars)
     const userName = u.name || 'Member';
     Utils.setText('mymealUserName', userName);
     Utils.setText('mymealUserAvatar', Utils.initials(userName));
+
+    const isManager = (Messliner.state && (Messliner.state.role === 'admin' || Messliner.state.role === 'manager')) ||
+      (u.role === 'admin' || u.role === 'manager') ||
+      (typeof Auth !== 'undefined' && Auth.isAdmin && Auth.isAdmin()) ||
+      document.body.classList.contains('role-admin');
+    const overviewDisplayName = isManager ? 'Manager' : userName;
+    const overviewAvatarName = isManager ? 'M' : Utils.initials(userName);
+    Utils.setText('overviewUserName', overviewDisplayName);
+    Utils.setText('overviewUserAvatar', overviewAvatarName);
 
     // Mess Info — zero delay from diningInfo or state
     const diningName = (this.diningInfo && this.diningInfo.name) ||
@@ -433,23 +468,26 @@ const UserDashboard = {
     const diningCode = (this.diningInfo && this.diningInfo.code) || Messliner.state?.diningCode || '';
     const messInfoText = diningCode ? `${diningName} · ${diningCode}` : diningName;
     Utils.setText('mymealMessInfo', messInfoText);
+    Utils.setText('overviewMessInfo', messInfoText);
 
-    // Notification Badge in mymeal topbar — immediate render from Notifications module or DOM
+    // Notification Badge in mymeal & overview topbar
     const unreadCount = (window.Notifications && Array.isArray(Notifications.notifications))
       ? Notifications.notifications.filter(n => !n.read).length
       : parseInt(document.getElementById('notifBadge')?.textContent || '0', 10);
-    const mymealBadge = document.getElementById('mymealNotifBadge');
-    if (mymealBadge) {
-      if (unreadCount > 0) {
-        mymealBadge.textContent = unreadCount > 9 ? '9+' : String(unreadCount);
-        mymealBadge.style.setProperty('display', 'inline-flex', 'important');
-        mymealBadge.classList.remove('hidden');
-      } else {
-        mymealBadge.textContent = '';
-        mymealBadge.style.setProperty('display', 'none', 'important');
-        mymealBadge.classList.add('hidden');
+    const badges = [document.getElementById('mymealNotifBadge'), document.getElementById('overviewNotifBadge')];
+    badges.forEach(b => {
+      if (b) {
+        if (unreadCount > 0) {
+          b.textContent = unreadCount > 9 ? '9+' : String(unreadCount);
+          b.style.setProperty('display', 'inline-flex', 'important');
+          b.classList.remove('hidden');
+        } else {
+          b.textContent = '';
+          b.style.setProperty('display', 'none', 'important');
+          b.classList.add('hidden');
+        }
       }
-    }
+    });
 
     // Update Hero Card Rate & Month
     const currentMonthName = new Date().toLocaleString('en-US', { month: 'long' }).toUpperCase();
@@ -676,13 +714,21 @@ const UserDashboard = {
       }
 
       let totalDiningMeals = 0;
+      const allUsers = this.allUsers || (window.Messliner && Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) || (window.Messliner && Messliner.users && Messliner.users.users) || {};
+      const isManagerMealEnabled = !!this.settings?.managerMealEnabled;
+
       if (this.monthMealsData) {
         Object.values(this.monthMealsData).forEach(dayData => {
+          if (!dayData || typeof dayData !== 'object') return;
           Object.entries(dayData).forEach(([type, typeData]) => {
             if (type === 'completed') return;
-            if (typeof typeData === 'object') {
-              Object.values(typeData).forEach(count => {
-                totalDiningMeals += parseFloat(count) || 0;
+            if (typeof typeData === 'object' && typeData) {
+              Object.entries(typeData).forEach(([uId, count]) => {
+                const u = allUsers[uId];
+                if (u && u.role === 'admin' && !isManagerMealEnabled) {
+                  return; // Skip manager meals matching OverviewModule
+                }
+                totalDiningMeals += parseInt(count) || 0;
               });
             }
           });
@@ -736,7 +782,7 @@ const UserDashboard = {
     const dueInfo = this.getDueInfo();
     const rateMode = this.settings?.rateMode || 'market';
     const fixedRates = rateMode === 'fixed' ? (this.settings?.fixedRates || null) : null;
-    const mealRate = Messliner.state?.monthlyMealRate || 0;
+    const mealRate = this._getDynamicMealRate();
     const mealCost = Utils.calcMealCost(mealRate, this.monthlyMeals || 0, this.monthlyMealsBreakdown || null, fixedRates);
     const otherCosting = this.monthlyOtherCosting || 0;
     const deduction = this.monthlyDeduction || 0;
@@ -2909,15 +2955,16 @@ const UserDashboard = {
     const bottomNavMyMeal = document.getElementById('bottomNavMyMeal');
 
     if (navMyMeal) navMyMeal.style.display = showMyMeal ? 'flex' : 'none';
-    if (bottomNavMyMeal) bottomNavMyMeal.style.display = showMyMeal ? 'flex' : 'none';
+    if (bottomNavMyMeal) bottomNavMyMeal.style.display = isAdmin ? 'flex' : (showMyMeal ? 'flex' : 'none');
     if (window.Router && typeof Router.updateBottomNavIndicator === 'function') {
       Router.updateBottomNavIndicator(true);
     }
 
-    // Premium Banner Visibility: Admin panel only
+    // Premium Banner Visibility: Admin panel on desktop only (> 768px)
     const premiumBanner = document.querySelector('.premium-banner-card');
     if (premiumBanner) {
-      if (isAdmin) {
+      const isMobile = window.innerWidth <= 768;
+      if (isAdmin && !isMobile) {
         premiumBanner.classList.remove('hidden');
         premiumBanner.style.setProperty('display', 'flex', 'important');
       } else {
@@ -3126,44 +3173,49 @@ const UserDashboard = {
    * Refresh dashboard
    */
   refresh() {
-    this.renderStats();
-    this.renderMealToggles();
-    this.updateMyMealVisibility();
-    this.renderRecentActivity(this.diningId);
-    this.renderMealToggleHistory();
-    this.checkAutoMealSchedule();
-
-    const role = Messliner.state.role;
-    const userContent = document.getElementById('userDashboardContent');
-    const mymealContainer = document.getElementById('mymealContainer');
-    const dashboardSection = document.getElementById('page-dashboard');
-
-    if (role === 'admin') {
-      // Admin: Move userDashboardContent to page-mymeal
-      if (userContent && mymealContainer && userContent.parentElement !== mymealContainer) {
-        mymealContainer.appendChild(userContent);
-      }
-
-      // Admin dashboard always shows the Dining Overview
-      const overviewContent = document.getElementById('overviewContent');
-      const managerContainer = document.getElementById('managerOverviewSection');
-      if (overviewContent && managerContainer && overviewContent.parentElement !== managerContainer) {
-        managerContainer.appendChild(overviewContent);
-        managerContainer.classList.remove('hidden');
-        managerContainer.style.display = 'block';
-      }
-      Messliner.overview.refresh();
+    // 1. Sync section layout FIRST so DOM nodes are in their correct containers immediately
+    if (window.Messliner && typeof Messliner.syncRoleLayout === 'function') {
+      Messliner.syncRoleLayout(Messliner.state?.role);
     } else {
-      // Regular user: Make sure userDashboardContent is in page-dashboard
-      if (userContent && dashboardSection && userContent.parentElement !== dashboardSection) {
-        dashboardSection.insertBefore(userContent, dashboardSection.firstChild);
+      const role = (Messliner.state && Messliner.state.role) || 'user';
+      const userContent = document.getElementById('userDashboardContent');
+      const mymealContainer = document.getElementById('mymealContainer');
+      const dashboardSection = document.getElementById('page-dashboard');
+
+      if (role === 'admin') {
+        if (userContent && mymealContainer && userContent.parentElement !== mymealContainer) {
+          mymealContainer.appendChild(userContent);
+        }
+        const overviewContent = document.getElementById('overviewContent');
+        const managerContainer = document.getElementById('managerOverviewSection');
+        if (overviewContent && managerContainer && overviewContent.parentElement !== managerContainer) {
+          managerContainer.appendChild(overviewContent);
+          managerContainer.classList.remove('hidden');
+          managerContainer.style.display = 'block';
+        }
+      } else {
+        if (userContent && dashboardSection && userContent.parentElement !== dashboardSection) {
+          dashboardSection.insertBefore(userContent, dashboardSection.firstChild);
+        }
+        const managerContainer = document.getElementById('managerOverviewSection');
+        if (managerContainer) {
+          managerContainer.style.display = 'none';
+          managerContainer.classList.add('hidden');
+        }
       }
-      // Hide manager overview section for regular users
-      const managerContainer = document.getElementById('managerOverviewSection');
-      if (managerContainer) {
-        managerContainer.style.display = 'none';
-        managerContainer.classList.add('hidden');
-      }
+    }
+
+    // 2. Render user data safely
+    try { this.renderStats(); } catch (e) { console.warn('[UserDashboard] renderStats error:', e); }
+    try { this.renderMealToggles(); } catch (e) { console.warn('[UserDashboard] renderMealToggles error:', e); }
+    try { this.updateMyMealVisibility(); } catch (e) { console.warn('[UserDashboard] updateMyMealVisibility error:', e); }
+    try { this.renderRecentActivity(this.diningId); } catch (e) { console.warn('[UserDashboard] renderRecentActivity error:', e); }
+    try { this.renderMealToggleHistory(); } catch (e) { console.warn('[UserDashboard] renderMealToggleHistory error:', e); }
+    try { this.checkAutoMealSchedule(); } catch (e) { console.warn('[UserDashboard] checkAutoMealSchedule error:', e); }
+
+    // 3. For Admin, refresh overview data
+    if (Messliner.state && Messliner.state.role === 'admin' && Messliner.overview) {
+      try { Messliner.overview.refresh(); } catch (e) { console.warn('[UserDashboard] overview.refresh error:', e); }
     }
   }
 };

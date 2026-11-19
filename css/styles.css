@@ -35,7 +35,7 @@
   --glass-card: rgba(255, 255, 255, 0.75);
   --glass-border: rgba(226, 232, 240, 0.8);
   --glass-border-hover: rgba(5, 150, 105, 0.35);
-  --glass-blur: blur(16px) saturate(180%);
+  --glass-blur: blur(12px) saturate(160%);
   --glass-shadow: 0 15px 35px -10px rgba(15, 23, 42, 0.08), 0 0 1px rgba(15, 23, 42, 0.1);
   --glass-shadow-glow: 0 10px 30px rgba(5, 150, 105, 0.15);
 
@@ -64,7 +64,6 @@
 }
 
 html {
-  scroll-behavior: smooth;
   font-size: 16px;
   color-scheme: light;
 }
@@ -102,6 +101,8 @@ textarea {
   pointer-events: none;
   z-index: -1;
   overflow: hidden;
+  contain: strict;
+  transform: translateZ(0);
 }
 
 /* Light Graph Grid Paper Effect */
@@ -117,13 +118,17 @@ textarea {
   background-position: center center;
   mask-image: radial-gradient(ellipse 90% 90% at 50% 40%, #000 50%, transparent 100%);
   -webkit-mask-image: radial-gradient(ellipse 90% 90% at 50% 40%, #000 50%, transparent 100%);
+  transform: translateZ(0);
 }
 
 .glow-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
+  filter: blur(40px);
   opacity: 0.6;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  backface-visibility: hidden;
   animation: pulseGlow 12s infinite alternate ease-in-out;
 }
 
@@ -155,12 +160,12 @@ textarea {
 
 @keyframes pulseGlow {
   0% {
-    transform: scale(1) translate(0, 0);
+    transform: translate3d(0, 0, 0) scale(1);
     opacity: 0.45;
   }
 
   100% {
-    transform: scale(1.15) translate(30px, -20px);
+    transform: translate3d(30px, -20px, 0) scale(1.15);
     opacity: 0.7;
   }
 }
@@ -183,6 +188,7 @@ textarea {
   background: var(--glass-card);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
+  transform: translateZ(0);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   border-radius: var(--radius-lg);
@@ -322,16 +328,17 @@ textarea {
   width: 100%;
   z-index: 1000;
   padding: 1.25rem 0;
-  transition: all var(--transition-normal);
+  transition: padding 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  transform: translateZ(0);
 }
 
 .navbar.scrolled {
   padding: 0.65rem 0;
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(25px) saturate(210%);
-  -webkit-backdrop-filter: blur(25px) saturate(210%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.75);
-  box-shadow: 0 12px 40px -8px rgba(15, 23, 42, 0.1), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 10px 30px -8px rgba(15, 23, 42, 0.08), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .navbar-container {
@@ -3352,7 +3359,6 @@ textarea {
 /* 1. SCROLL REVEAL ENTRANCE ANIMATIONS */
 [data-animate] {
   opacity: 0;
-  will-change: opacity, transform;
   transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -3389,34 +3395,35 @@ textarea {
 [data-animate].is-visible {
   opacity: 1;
   transform: translateY(0) translateX(0) scale(1);
+  will-change: auto;
 }
 
 /* 2. CONTINUOUS AMBIENT KEYFRAME ANIMATIONS */
 @keyframes floatOrb1 {
   0% {
-    transform: translate(0, 0) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 
   50% {
-    transform: translate(40px, 30px) scale(1.1);
+    transform: translate3d(40px, 30px, 0) scale(1.1);
   }
 
   100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
 @keyframes floatOrb2 {
   0% {
-    transform: translate(0, 0) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 
   50% {
-    transform: translate(-50px, -25px) scale(1.15);
+    transform: translate3d(-50px, -25px, 0) scale(1.15);
   }
 
   100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 

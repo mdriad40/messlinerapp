@@ -35,6 +35,13 @@ const Onboarding = {
     this.user = user;
     console.log('[Messliner Onboarding] Initialized for:', user.email);
 
+    // Strictly suppress App Shell & Bottom Navigation during onboarding
+    document.body.classList.add('onboarding-active');
+    const appShell = document.getElementById('appShell');
+    if (appShell) appShell.style.display = 'none';
+    const bottomNav = document.getElementById('bottomNav');
+    if (bottomNav) bottomNav.style.setProperty('display', 'none', 'important');
+
     // Render left panel brand & bullet points
     this.renderLeftPanel();
 
@@ -616,10 +623,15 @@ const Onboarding = {
    * Step 6: Perform database transactions to create the Mess!
    */
   async createMess() {
+    if (this._isCreating) return;
+    this._isCreating = true;
+
     const btn = document.getElementById('btnOnboardingCreateMess');
     if (btn) {
       btn.disabled = true;
-      btn.textContent = 'Creating mess...';
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.65';
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="border: 2px solid white; border-top: 2px solid transparent; border-radius: 50%; width: 14px; height: 14px; display: inline-block; animation: spin 0.75s linear infinite; margin-right: 8px; vertical-align: middle;"></span>Creating mess...`;
     }
 
     try {
@@ -670,7 +682,35 @@ const Onboarding = {
         }
       };
 
-      // 4. Create Dining record
+      // 4. Evaluate 30-Day Free Trial Eligibility with Anti-Abuse Protection
+      const now = Date.now();
+      let isTrialEligible = { eligible: true };
+      if (window.MesslinerSubscription && typeof MesslinerSubscription.checkTrialEligibility === 'function') {
+        try {
+          isTrialEligible = await MesslinerSubscription.checkTrialEligibility(phone, email);
+        } catch (_) {}
+      }
+
+      const subscriptionData = isTrialEligible.eligible ? {
+        plan: 'trial',
+        status: 'active',
+        startDate: now,
+        expiresAt: now + (30 * 24 * 60 * 60 * 1000), // 30 Days Trial
+        gracePeriodDays: 3,
+        isTrial: true,
+        createdAt: firebase.database.ServerValue.TIMESTAMP || now
+      } : {
+        plan: 'trial',
+        status: 'expired',
+        reason: isTrialEligible.reason || 'TRIAL_PREVIOUSLY_CLAIMED',
+        startDate: now,
+        expiresAt: now,
+        gracePeriodDays: 0,
+        isTrial: true,
+        createdAt: firebase.database.ServerValue.TIMESTAMP || now
+      };
+
+      // 5. Create Dining record
       const diningData = {
         info: {
           name: this.messName,
@@ -682,8 +722,22 @@ const Onboarding = {
           createdAt: firebase.database.ServerValue.TIMESTAMP
         },
         users: diningUsers,
-        settings: diningSettings
+        settings: diningSettings,
+        subscription: subscriptionData
       };
+
+      // Record trial claim in Admin Database for Anti-Abuse Tracking
+      if (isTrialEligible.eligible && window.MesslinerSubscription && typeof MesslinerSubscription.recordTrialClaim === 'function') {
+        try {
+          await MesslinerSubscription.recordTrialClaim({
+            diningId: diningId,
+            messName: this.messName,
+            name: name,
+            phone: phone,
+            email: email
+          });
+        } catch (_) {}
+      }
 
       // Set DB records
       await Promise.all([
@@ -701,20 +755,29 @@ const Onboarding = {
         })
       ]);
 
-      // Create notification
-      await Notifications.create(diningId, 'Welcome to Messliner! 🎉', `${this.messName} has been setup successfully.`, 'all', 'info');
+      // Create non-blocking notification (Safe)
+      try {
+        if (typeof Notifications !== 'undefined' && typeof Notifications.create === 'function') {
+          await Notifications.create(diningId, 'Welcome to Messliner! 🎉', `${this.messName} has been setup successfully.`, 'all', 'info').catch(e => console.warn('[Onboarding] Notif failed:', e));
+        }
+      } catch (_) { }
 
       // Success! Refresh the page to reload dashboard under new mapping
+      document.body.classList.remove('onboarding-active');
       Notifications.toast('success', 'Mess Created', `${this.messName} setup completed!`);
       setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+        const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+        window.location.replace(isLocalHost ? 'dashboard.html' : '/dashboard');
+      }, 800);
 
     } catch (err) {
       console.error('[Onboarding] Create mess error:', err);
+      this._isCreating = false;
       Notifications.toast('error', 'Error', 'Failed to create mess. Please try again.');
       if (btn) {
         btn.disabled = false;
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
         btn.textContent = 'Create mess';
       }
     }
@@ -877,6 +940,10 @@ const Onboarding = {
     const checkbox = document.getElementById('joinRulesAgreement');
     const submitBtn = document.getElementById('btnJoinConfirmSubmit');
     if (submitBtn) {
+      if (this._isJoining) {
+        submitBtn.disabled = true;
+        return;
+      }
       submitBtn.disabled = checkbox ? !checkbox.checked : true;
     }
   },
@@ -951,79 +1018,195 @@ const Onboarding = {
   },
 
   /**
-   * Final Join Action
+   * Final Join Action (Thread-safe, debounced, idempotent with duplicate-member prevention)
    */
   async executeJoin() {
     if (!this.matchedDining) return;
+    if (this._isJoining) return;
+    this._isJoining = true;
 
     const btn = document.getElementById('btnJoinConfirmSubmit');
     if (btn) {
       btn.disabled = true;
-      btn.textContent = 'Joining mess...';
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.7';
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="border: 2px solid white; border-top: 2px solid transparent; border-radius: 50%; width: 14px; height: 14px; display: inline-block; animation: spin 0.75s linear infinite; margin-right: 8px; vertical-align: middle;"></span>Joining mess...`;
     }
 
     try {
       const uid = this.user.uid;
-      const email = this.user.email;
+      const email = (this.user.email || '').trim();
       const phone = this.user.phone || '';
       const name = this.user.name || 'Member';
       const diningId = this.matchedDining.id;
+      const emailKey = Utils.encodeEmail(email);
 
-      // 1. Generate unique member user ID for dining
-      const memberUserId = Utils.generateId();
-      const username = name.toLowerCase().replace(/\s+/g, '') + Math.floor(Math.random() * 100);
+      // 1. Check if user is ALREADY a member in this dining to prevent any duplicate insertion
+      let existingMemberUserId = null;
+      let existingUsername = null;
 
-      // 2. Fetch dining settings to determine default meal values
-      const settingsSnap = await db.ref(`dinings/${diningId}/settings`).once('value');
-      const settings = settingsSnap.val() || {};
-      const trackedMeals = settings.trackedMeals || { breakfast: true, lunch: true, dinner: true };
+      try {
+        const [usersSnap, mapSnap] = await Promise.all([
+          db.ref(`dinings/${diningId}/users`).once('value'),
+          emailKey ? db.ref(`userMappings/emailToDining/${emailKey}`).once('value') : Promise.resolve(null)
+        ]);
 
-      const newUserData = {
-        name: name,
-        username: username,
-        email: email,
-        phone: phone,
-        role: 'user',
-        authUid: uid,
-        totalDeposit: 0,
-        totalMeals: 0,
-        mealCost: 0,
-        balance: 0,
-        createdAt: firebase.database.ServerValue.TIMESTAMP,
-        mealStatus: {
-          breakfast: !!trackedMeals.breakfast,
-          lunch: !!trackedMeals.lunch,
-          dinner: !!trackedMeals.dinner
+        const existingUsers = (usersSnap && usersSnap.val()) || {};
+        const existingMap = mapSnap && mapSnap.val();
+
+        // Check mapping if it already belongs to this dining
+        if (existingMap && existingMap.diningId === diningId && existingMap.userId && existingUsers[existingMap.userId]) {
+          existingMemberUserId = existingMap.userId;
+          existingUsername = existingUsers[existingMap.userId]?.username || null;
         }
-      };
 
-      // 3. Write user details inside dining and mappings
-      await Promise.all([
-        db.ref(`dinings/${diningId}/users/${memberUserId}`).set(newUserData),
-        db.ref(`userMappings/emailToDining/${Utils.encodeEmail(email)}`).set({
-          diningId: diningId,
-          userId: memberUserId
-        }),
-        db.ref(`userMappings/usernameToDining/${username}`).set({
-          diningId: diningId,
-          userId: memberUserId
-        })
-      ]);
+        // Check if any existing member has the same authUid or email
+        if (!existingMemberUserId) {
+          for (const [mId, mData] of Object.entries(existingUsers)) {
+            if (!mData) continue;
+            const matchesUid = uid && mData.authUid === uid;
+            const matchesEmail = email && mData.email && mData.email.toLowerCase() === email.toLowerCase();
+            if (matchesUid || matchesEmail) {
+              existingMemberUserId = mId;
+              existingUsername = mData.username || null;
+              break;
+            }
+          }
+        }
+      } catch (checkErr) {
+        console.warn('[Onboarding] Existing user check warning:', checkErr);
+      }
 
-      // Notify
-      await Notifications.create(diningId, 'New Member Joined! 👋', `${name} has joined the mess.`, 'all', 'info');
-      await Notifications.log(diningId, 'member_joined', `${name} joined the mess`, memberUserId, memberUserId);
+      const isAlreadyMember = Boolean(existingMemberUserId);
+      const memberUserId = existingMemberUserId || Utils.generateId();
+      const username = existingUsername || (name.toLowerCase().replace(/\s+/g, '') + Math.floor(Math.random() * 100));
+
+      if (!isAlreadyMember) {
+        // Enforce member limit securely before allowing new member to join dining
+        try {
+          const [subSnap, curUsersSnap] = await Promise.all([
+            db.ref(`dinings/${diningId}/subscription`).once('value'),
+            db.ref(`dinings/${diningId}/users`).once('value')
+          ]);
+          const subData = subSnap.val() || {};
+          const curMemberCount = curUsersSnap.exists() ? Object.keys(curUsersSnap.val()).length : 0;
+          const plan = subData.plan || 'trial';
+          const maxMembers = plan === 'pay_as_you_go' ? (parseInt(subData.membersLimit) || 25) : 25;
+
+          if (curMemberCount >= maxMembers) {
+            if (typeof Notifications !== 'undefined' && typeof Notifications.toast === 'function') {
+              Notifications.toast('error', 'Dining Full', `This dining has reached its maximum limit of ${maxMembers} members. Please contact the mess manager.`);
+            } else {
+              alert(`Dining Full: This dining has reached its maximum limit of ${maxMembers} members. Please contact the mess manager.`);
+            }
+            return;
+          }
+        } catch (limitErr) {
+          console.warn('[Onboarding] Member limit check warning:', limitErr);
+        }
+
+        // 2. Fetch dining settings to determine default meal values
+        let settings = {};
+        try {
+          const settingsSnap = await db.ref(`dinings/${diningId}/settings`).once('value');
+          settings = settingsSnap.val() || {};
+        } catch (_) { }
+        const trackedMeals = settings.trackedMeals || { breakfast: true, lunch: true, dinner: true };
+
+        const newUserData = {
+          name: name,
+          username: username,
+          email: email,
+          phone: phone,
+          role: 'user',
+          authUid: uid,
+          totalDeposit: 0,
+          totalMeals: 0,
+          mealCost: 0,
+          balance: 0,
+          createdAt: firebase.database.ServerValue.TIMESTAMP,
+          mealStatus: {
+            breakfast: !!trackedMeals.breakfast,
+            lunch: !!trackedMeals.lunch,
+            dinner: !!trackedMeals.dinner
+          }
+        };
+
+        // 3. Write user details inside dining and mappings
+        const writes = [
+          db.ref(`dinings/${diningId}/users/${memberUserId}`).set(newUserData),
+          emailKey ? db.ref(`userMappings/emailToDining/${emailKey}`).set({
+            diningId: diningId,
+            userId: memberUserId
+          }) : Promise.resolve(),
+          username ? db.ref(`userMappings/usernameToDining/${username}`).set({
+            diningId: diningId,
+            userId: memberUserId
+          }) : Promise.resolve()
+        ];
+        await Promise.all(writes);
+      } else {
+        // User already member in database: guarantee mappings and authUid are synchronized without duplicate
+        console.log('[Onboarding] User already joined this mess as:', memberUserId);
+        const syncWrites = [];
+        if (emailKey) {
+          syncWrites.push(db.ref(`userMappings/emailToDining/${emailKey}`).set({
+            diningId: diningId,
+            userId: memberUserId
+          }));
+        }
+        if (username) {
+          syncWrites.push(db.ref(`userMappings/usernameToDining/${username}`).set({
+            diningId: diningId,
+            userId: memberUserId
+          }).catch(() => {}));
+        }
+        if (uid) {
+          syncWrites.push(db.ref(`dinings/${diningId}/users/${memberUserId}/authUid`).set(uid).catch(() => {}));
+        }
+        await Promise.all(syncWrites);
+      }
+
+      // 4. Safe Non-Blocking Notifications & Audit Log
+      // (Any failure in logging or notifications must NEVER abort or fail the join!)
+      if (!isAlreadyMember) {
+        try {
+          if (typeof Notifications !== 'undefined') {
+            if (typeof Notifications.create === 'function') {
+              await Notifications.create(diningId, 'New Member Joined! 👋', `${name} has joined the mess.`, 'all', 'info').catch(e => console.warn('[Onboarding] Notif create failed:', e));
+            }
+            if (typeof Notifications.log === 'function') {
+              await Notifications.log(diningId, 'member_joined', `${name} joined the mess`, memberUserId, memberUserId).catch(e => console.warn('[Onboarding] Log failed:', e));
+            }
+          }
+        } catch (notifErr) {
+          console.warn('[Onboarding] Non-critical notification failed:', notifErr);
+        }
+      }
+
+      // 5. Success! Keep button locked, dismiss onboarding, and redirect
+      if (btn) {
+        btn.disabled = true;
+        btn.style.pointerEvents = 'none';
+        btn.textContent = 'Joined Successfully! Loading...';
+      }
+
+      document.body.classList.remove('onboarding-active');
 
       Notifications.toast('success', 'Joined Successfully', `Welcome to ${this.matchedDining.name}!`);
       setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+        const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+        window.location.replace(isLocalHost ? 'dashboard.html' : '/dashboard');
+      }, 800);
 
     } catch (err) {
       console.error('[Onboarding] Execute join error:', err);
-      Notifications.toast('error', 'Error', 'Failed to join mess.');
+      this._isJoining = false;
+      Notifications.toast('error', 'Error', 'Failed to join mess. Please check your internet connection.');
       if (btn) {
         btn.disabled = false;
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
         btn.textContent = 'Confirm & Join Mess';
       }
     }

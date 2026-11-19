@@ -11,6 +11,7 @@ const UsersModule = {
    * Initialize user management with realtime listener
    */
   init(diningId, initialData) {
+    window.UsersModule = this;
     this.diningId = diningId;
     this.users = initialData?.users || {};
     this.settings = initialData?.settings || {};
@@ -78,6 +79,24 @@ const UsersModule = {
       this.users = snap.val() || {};
       this.render();
       this._updateUserCount();
+
+      // Keep Pro page member limit card synced in realtime
+      try {
+        const proTitle = document.getElementById('proMemberLimitTitle');
+        const proDesc = document.getElementById('proMemberLimitDesc');
+        if (proTitle || proDesc) {
+          const c = Object.keys(this.users || {}).length;
+          const sub = (window.Dashboard && window.Dashboard.currentSubInfo)
+            || (window.Messliner && Messliner.state && Messliner.state.subscription)
+            || window.currentSubInfo
+            || {};
+          const maxL = parseInt(sub.membersLimit || sub.maxMembers) || 25;
+          const rawP = String(sub.plan || 'pro').toLowerCase();
+          const pLabel = rawP === 'pay_as_you_go' ? 'Pay-As-You-Go' : (rawP === 'pro' ? 'Messliner Pro' : 'Free Trial');
+          if (proTitle) proTitle.textContent = `${c} out of ${maxL} Members Limit`;
+          if (proDesc) proDesc.textContent = `${c} out of ${maxL} member limit used on ${pLabel}. Click to manage members.`;
+        }
+      } catch (_) { }
 
       // If we are currently on the meals page, refresh both the user grid AND
       // the meal log table — users arriving late would otherwise leave the log empty.
@@ -244,6 +263,22 @@ const UsersModule = {
    * Show add user modal
    */
   showAddModal() {
+    // Check member limit before showing add member modal
+    const currentMemberCount = Object.keys(this.users || {}).length;
+    const subInfo = (window.Dashboard && window.Dashboard.currentSubInfo)
+      || (window.Messliner && Messliner.state && Messliner.state.subscription)
+      || (window.Messliner && Messliner.diningData && Messliner.diningData.subscription)
+      || (window.MesslinerSubscription && window.Dashboard && window.Dashboard.currentSubInfo)
+      || window.currentSubInfo
+      || {};
+    const maxLimit = parseInt(subInfo.membersLimit || subInfo.maxMembers) || 25;
+    const plan = subInfo.plan || 'trial';
+
+    if (currentMemberCount >= maxLimit) {
+      this.showMemberLimitModal(currentMemberCount, maxLimit, plan);
+      return;
+    }
+
     this.editingUserId = null;
     document.getElementById('userModalTitle').textContent = 'Add Member';
     document.getElementById('addUserForm').reset();
@@ -251,6 +286,45 @@ const UsersModule = {
     document.getElementById('userPasswordInput').required = true;
     document.getElementById('saveUserBtn').querySelector('.btn-text').textContent = 'Save Member';
     openModal('addUserModal');
+  },
+
+  /**
+   * Show member limit reached popup modal
+   */
+  showMemberLimitModal(currentCount = 25, maxLimit = 25, plan = '') {
+    const modal = document.getElementById('memberLimitModal');
+    if (!modal) {
+      alert(`Member Limit Reached: Your dining has reached the maximum limit of ${maxLimit} members. Upgrade your plan to add more members.`);
+      window.location.href = 'checkout.html?plan=pay_as_you_go';
+      return;
+    }
+    const countEl = document.getElementById('memberLimitCountText');
+    const descEl = document.getElementById('memberLimitDescText');
+    const barEl = document.getElementById('memberLimitBarFill');
+    const badgeEl = document.getElementById('memberLimitPlanBadge');
+    const upgradeBtn = document.getElementById('btnUpgradeFromLimit');
+
+    const cleanPlan = String(plan || '').toLowerCase();
+    const planLabel = cleanPlan === 'pay_as_you_go' ? 'Pay-As-You-Go' : (cleanPlan === 'pro' ? 'Messliner Pro' : 'Free Trial');
+
+    if (upgradeBtn) {
+      upgradeBtn.href = (cleanPlan === 'trial') ? 'checkout.html?plan=pro' : 'checkout.html?plan=pay_as_you_go';
+    }
+
+    if (badgeEl) badgeEl.textContent = `${planLabel} Limit`;
+    if (countEl) countEl.textContent = `${currentCount} / ${maxLimit} Members`;
+    if (descEl) {
+      descEl.innerHTML = `You've reached the <strong>${maxLimit}-member limit</strong> on <strong>${planLabel}</strong>.<br style="display:block; margin-top:3px;">Please upgrade your plan to add more dining members.`;
+    }
+    if (barEl) {
+      const pct = Math.min(100, Math.max(10, Math.round((currentCount / Math.max(1, maxLimit)) * 100)));
+      barEl.style.width = `${pct}%`;
+    }
+    if (typeof openModal === 'function') {
+      openModal('memberLimitModal');
+    } else {
+      modal.classList.add('active');
+    }
   },
 
   /**
@@ -292,6 +366,11 @@ const UsersModule = {
 
     if (!name || !username || !email) {
       Notifications.toast('warning', 'Missing Fields', 'Name, username, and email are required.');
+      return;
+    }
+
+    if (!email.toLowerCase().endsWith('@gmail.com')) {
+      Notifications.toast('warning', 'Invalid Email', 'Only official Google (@gmail.com) email addresses are allowed.');
       return;
     }
 
@@ -368,6 +447,27 @@ const UsersModule = {
         Notifications.toast('success', 'Updated', `${name} has been updated.`);
         await Notifications.log(this.diningId, 'user_updated', `Updated user: ${name}`, Messliner.state.userId, this.editingUserId);
       } else {
+        // Enforce member limit securely directly from Database
+        try {
+          const [usersSnap, subSnap] = await Promise.all([
+            db.ref(`dinings/${this.diningId}/users`).once('value'),
+            db.ref(`dinings/${this.diningId}/subscription`).once('value')
+          ]);
+          const currentCount = usersSnap.exists() ? Object.keys(usersSnap.val()).length : 0;
+          const subData = subSnap.val() || {};
+          const plan = subData.plan || 'trial';
+          const maxMembers = plan === 'pay_as_you_go' ? (parseInt(subData.membersLimit) || 25) : 25;
+
+          if (currentCount >= maxMembers) {
+            btn.disabled = false;
+            if (typeof closeModal === 'function') closeModal('addUserModal');
+            this.showMemberLimitModal(currentCount, maxMembers, plan);
+            return;
+          }
+        } catch (limitErr) {
+          console.warn('[Users] Member limit check warning:', limitErr);
+        }
+
         // Create new user with Firebase Auth
         if (!password || password.length < 6) {
           Notifications.toast('warning', 'Weak Password', 'Password must be at least 6 characters.');
@@ -524,5 +624,7 @@ const UsersModule = {
       .join('');
   }
 };
+
+window.UsersModule = UsersModule;
 
 console.log('[Messliner] Users module loaded');

@@ -261,15 +261,18 @@ const Notifications = {
     const userNotifRef = db.ref(`dinings/${this.diningId}/users/${this.userId}/notifications`);
     const globalNotifRef = db.ref(`dinings/${this.diningId}/notifications`);
     const deletedRef = db.ref(`dinings/${this.diningId}/users/${this.userId}/deletedNotifs`);
+    const readRef = db.ref(`dinings/${this.diningId}/users/${this.userId}/readNotifs`);
 
     try {
-      const [userSnap, globalSnap, deletedSnap] = await Promise.all([
+      const [userSnap, globalSnap, deletedSnap, readSnap] = await Promise.all([
         userNotifRef.limitToLast(50).once('value'),
         globalNotifRef.limitToLast(50).once('value'),
-        deletedRef.once('value')
+        deletedRef.once('value'),
+        readRef.once('value')
       ]);
 
       const deletedMap = deletedSnap.val() || {};
+      const readMap = readSnap.val() || {};
       const map = new Map();
       const now = Date.now();
       const joinedAt = typeof this.userJoinedAt === 'number'
@@ -286,33 +289,28 @@ const Notifications = {
         return now;
       };
 
-      // Discard and clean up blank/empty notifications
-      const isValidNotification = (val, id) => {
+      const hasContent = (val) => {
         if (!val || typeof val !== 'object') return false;
         const rawTitle = (val.title || '').trim();
         const rawMsg = (val.message || val.text || val.details || '').trim();
-        if (!rawMsg && (!rawTitle || rawTitle.toLowerCase() === 'notification')) {
-          if (this.diningId && this.userId && id) {
-            db.ref(`dinings/${this.diningId}/users/${this.userId}/notifications/${id}`).remove().catch(() => {});
-            db.ref(`dinings/${this.diningId}/users/${this.userId}/deletedNotifs/${id}`).set(true).catch(() => {});
-          }
-          return false;
-        }
-        return true;
+        return Boolean(rawMsg || (rawTitle && rawTitle.toLowerCase() !== 'notification'));
       };
 
       // 1. Process legacy global notifications
       globalSnap.forEach(child => {
         const val = child.val();
         const id = child.key;
+        if (!val || typeof val !== 'object') return;
         if (deletedMap[id]) return;
-        if (!isValidNotification(val, id)) return;
+        if (!hasContent(val)) return;
+
         const ts = parseTs(val.timestamp);
         // Only filter out old notifications from before joinedAt (never filter today's/recent)
         if (joinedAt && ts < (joinedAt - 60000) && (now - ts) > 172800000) return;
 
         if (val.targetUser === 'all' || val.targetUser === this.userId) {
-          map.set(id, { id, ...val, timestamp: ts });
+          const isRead = Boolean(val.read || readMap[id] || (val.readBy && val.readBy[this.userId]));
+          map.set(id, { id, ...val, timestamp: ts, read: isRead });
         }
       });
 
@@ -320,12 +318,32 @@ const Notifications = {
       userSnap.forEach(child => {
         const val = child.val();
         const id = child.key;
+        if (!val || typeof val !== 'object') return;
         if (deletedMap[id]) return;
-        if (!isValidNotification(val, id)) return;
+
+        const isRead = Boolean(val.read || readMap[id]);
+
+        // If this notification already exists from globalSnap, MERGE without overwriting title/message
+        if (map.has(id)) {
+          const existing = map.get(id);
+          map.set(id, {
+            ...existing,
+            ...(val.title ? { title: val.title } : {}),
+            ...(val.message || val.text ? { message: val.message || val.text } : {}),
+            ...(val.type ? { type: val.type } : {}),
+            timestamp: existing.timestamp || parseTs(val.timestamp),
+            read: isRead || existing.read
+          });
+          return;
+        }
+
+        // Standalone user notification: verify it has non-empty content
+        if (!hasContent(val)) return;
+
         const ts = parseTs(val.timestamp);
         if (joinedAt && ts < (joinedAt - 60000) && (now - ts) > 172800000) return;
 
-        map.set(id, { id, ...val, timestamp: ts });
+        map.set(id, { id, ...val, timestamp: ts, read: isRead });
       });
 
       const list = Array.from(map.values()).filter(n => {
@@ -363,8 +381,9 @@ const Notifications = {
     const unreadCount = (this.notifications || []).filter(n => !n.read).length;
     const badge = document.getElementById('notifBadge');
     const mymealBadge = document.getElementById('mymealNotifBadge');
+    const overviewBadge = document.getElementById('overviewNotifBadge');
 
-    [badge, mymealBadge].forEach(el => {
+    [badge, mymealBadge, overviewBadge].forEach(el => {
       if (!el) return;
       if (unreadCount > 0) {
         el.textContent = unreadCount > 9 ? '9+' : String(unreadCount);
@@ -742,6 +761,11 @@ const Notifications = {
       // 3. Update local array
       this.notifications = this.notifications.filter(n => n.id !== id);
 
+      try {
+        const cacheKey = `ml_notifs_v1_${this.diningId}_${this.userId}`;
+        localStorage.setItem(cacheKey, JSON.stringify(this.notifications.slice(0, 30)));
+      } catch (_) {}
+
       setTimeout(() => {
         this.render();
         this.updateBadge();
@@ -760,21 +784,30 @@ const Notifications = {
     if (event) event.stopPropagation();
     if (!id || !this.diningId || !this.userId) return;
 
-    const notif = this.notifications.find(n => n.id === id);
+    const notif = (this.notifications || []).find(n => n.id === id);
     if (!notif || notif.read) return;
 
     notif.read = true;
     this.updateBadge();
 
-    const card = document.querySelector(`.notif-card[data-notif-id="${id}"]`);
-    if (card) {
-      card.classList.remove('unread');
-      const dot = card.querySelector('.notif-unread-glow-dot');
+    // Immediately update DOM across both mobile and desktop views without removing card
+    document.querySelectorAll(`.notif-m-card[data-notif-id="${id}"]`).forEach(card => {
+      card.classList.remove('is-unread');
+      const dot = card.querySelector('.notif-m-dot');
       if (dot) dot.remove();
-    }
+    });
+
+    // Update local storage cache immediately
+    try {
+      const cacheKey = `ml_notifs_v1_${this.diningId}_${this.userId}`;
+      localStorage.setItem(cacheKey, JSON.stringify((this.notifications || []).slice(0, 30)));
+    } catch (_) {}
 
     try {
-      await db.ref(`dinings/${this.diningId}/users/${this.userId}/notifications/${id}/read`).set(true);
+      const updates = {};
+      updates[`dinings/${this.diningId}/users/${this.userId}/readNotifs/${id}`] = true;
+      updates[`dinings/${this.diningId}/users/${this.userId}/notifications/${id}/read`] = true;
+      await db.ref().update(updates);
     } catch (err) {
       console.error('[Notifications] markAsRead error:', err);
     }
@@ -796,9 +829,16 @@ const Notifications = {
     this.render();
     this.updateBadge();
 
+    // Update local storage cache immediately
+    try {
+      const cacheKey = `ml_notifs_v1_${this.diningId}_${this.userId}`;
+      localStorage.setItem(cacheKey, JSON.stringify((this.notifications || []).slice(0, 30)));
+    } catch (_) {}
+
     try {
       const updates = {};
       unreadItems.forEach(n => {
+        updates[`dinings/${this.diningId}/users/${this.userId}/readNotifs/${n.id}`] = true;
         updates[`dinings/${this.diningId}/users/${this.userId}/notifications/${n.id}/read`] = true;
       });
       await db.ref().update(updates);

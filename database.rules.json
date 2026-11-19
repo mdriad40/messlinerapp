@@ -1,0 +1,135 @@
+{
+  "rules": {
+    "dinings": {
+      "$diningId": {
+        ".read": true,
+        ".write": "!data.exists()",
+        "subscription": {
+          ".read": true,
+          ".write": "!data.exists() || (newData.child('status').exists() && (newData.child('isManualAdminActivation').val() === true || newData.child('isServerFulfillment').val() === true)) || (auth != null && auth.token.admin === true)"
+        },
+        "info": {
+          ".read": true,
+          ".write": true
+        },
+        "users": {
+          ".read": true,
+          ".write": true
+        },
+        "meals": {
+          ".read": true,
+          ".write": true
+        },
+        "bazar": {
+          ".read": true,
+          ".write": true
+        },
+        "bazarRoster": {
+          ".read": true,
+          ".write": true
+        },
+        "bazarSchedule": {
+          ".read": true,
+          ".write": true
+        },
+        "bazarSwipes": {
+          ".read": true,
+          ".write": true
+        },
+        "notifications": {
+          ".read": true,
+          ".write": true
+        },
+        "bills": {
+          ".read": true,
+          ".write": true
+        },
+        "paymentRequests": {
+          ".read": true,
+          ".write": true
+        },
+        "fridayMeals": {
+          ".read": true,
+          ".write": true
+        },
+        "fridayMealsMeta": {
+          ".read": true,
+          ".write": true
+        },
+        "fridayBazar": {
+          ".read": true,
+          ".write": true
+        },
+        "fridaySummary": {
+          ".read": true,
+          ".write": true
+        },
+        "rules": {
+          ".read": true,
+          ".write": true
+        },
+        "summary": {
+          ".read": true,
+          ".write": true
+        },
+        "smsLog": {
+          ".read": true,
+          ".write": true
+        },
+        "deposits": {
+          ".read": true,
+          ".write": true
+        },
+        "settings": {
+          ".read": true,
+          ".write": true
+        },
+        "logs": {
+          ".read": true,
+          ".write": true
+        },
+        "smsConfig": {
+          ".read": true,
+          ".write": true
+        },
+        "smsBalanceHistory": {
+          ".read": true,
+          ".write": true
+        },
+        "subscriptionHistory": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    "userMappings": {
+      ".read": true,
+      ".write": true
+    },
+    "users": {
+      ".read": true,
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "messCodes": {
+      ".read": true,
+      "$code": {
+        ".read": true,
+        ".write": "!data.exists() || data.val() === newData.val()"
+      }
+    },
+    "preorders": {
+      ".read": true,
+      ".write": true
+    },
+    "processedPayments": {
+      ".read": true,
+      "$paymentId": {
+        ".read": true,
+        ".write": "!data.exists() || data.child('status').val() != 'completed'"
+      }
+    }
+  }
+}

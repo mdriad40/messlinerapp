@@ -5,21 +5,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>bKash Payment Confirmation — Messliner</title>
-  <link rel="icon" type="image/png" href="assets/img/messLiner-logo.png">
+  <link rel="icon" type="image/png" href="assets/messLiner-logo.png">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
 
   <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Firebase SDK Compat -->
+  <!-- Environment Variables & Firebase SDK Compat -->
+  <script src="js/env.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script src="js/firebase-config.js"></script>
+  <script src="js/shared/payment.js"></script>
 
   <style>
     body {
@@ -27,20 +31,36 @@
       background: radial-gradient(circle at top, #fdf2f8 0%, #f8fafc 100%);
       min-height: 100vh;
     }
+
     .bkash-pink {
       color: #E2136E;
     }
+
     .bg-bkash {
       background: linear-gradient(135deg, #E2136E 0%, #D12053 100%);
     }
+
     .shadow-bkash {
       box-shadow: 0 10px 25px -5px rgba(226, 19, 110, 0.3);
     }
+
     @keyframes checkBounce {
-      0% { transform: scale(0); opacity: 0; }
-      50% { transform: scale(1.15); opacity: 1; }
-      100% { transform: scale(1); opacity: 1; }
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+
+      50% {
+        transform: scale(1.15);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
     }
+
     .animate-bounce-in {
       animation: checkBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
@@ -50,8 +70,9 @@
 <body class="flex items-center justify-center p-4 selection:bg-pink-500 selection:text-white">
 
   <!-- Card Container -->
-  <div class="w-full max-w-lg bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden relative" id="mainCard">
-    
+  <div class="w-full max-w-lg bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden relative"
+    id="mainCard">
+
     <!-- Top Decorative Bar -->
     <div class="h-2 bg-bkash w-full"></div>
 
@@ -73,7 +94,8 @@
     </div>
 
     <!-- Footer Security Badge -->
-    <div class="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+    <div
+      class="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
       <div class="flex items-center gap-1.5 font-medium">
         <i data-lucide="shield-check" class="h-3.5 w-3.5 text-emerald-600"></i>
         <span>Encrypted 256-Bit bKash Gateway</span>
@@ -97,11 +119,11 @@
       let pending = {};
       try {
         pending = JSON.parse(localStorage.getItem("ml_pending_bkash_recharge") || "{}");
-      } catch (_) {}
+      } catch (_) { }
       let pendingPreorder = {};
       try {
         pendingPreorder = JSON.parse(localStorage.getItem("ml_pending_pro_preorder") || "{}");
-      } catch (_) {}
+      } catch (_) { }
 
       const diningId = pending.diningId || localStorage.getItem("currentDiningId") || "";
       const rechargeAmount = parseFloat(pending.amount) || 0;
@@ -111,14 +133,124 @@
         if (window.lucide) window.lucide.createIcons();
       }
 
-      // ─── 1. SUCCESS FLOW ──────────────────────────────────────────
+      // ─── 1. SUCCESS FLOW (SECURE GATEWAY VERIFIED) ────────────────
       if (paymentStatus === "success") {
         const dedupeKey = "ml_bkash_done_" + (paymentID || trxID);
+        const isSubscription = Boolean(pending.type && pending.type.startsWith('subscription'));
+        const isPreorder = !isSubscription && (pendingPreorder.type === 'pro_preorder' || pending.type === 'pro_preorder');
+        const preData = pendingPreorder.type === 'pro_preorder' ? pendingPreorder : pending;
+        const targetType = isSubscription ? pending.type : (isPreorder ? 'pro_preorder' : 'sms_recharge');
+        const targetAmount = isSubscription ? (parseFloat(pending.amount) || 60) : (isPreorder ? (parseFloat(preData.amount) || 499) : rechargeAmount);
+
+        let verifyResult = null;
+        if (window.MesslinerPayment && paymentID) {
+          try {
+            verifyResult = await window.MesslinerPayment.verifyAndFulfill({
+              paymentID: paymentID,
+              trxID: trxID,
+              type: targetType,
+              diningId: diningId,
+              amount: targetAmount,
+              customerPhone: customerPhone || preData.phone || '',
+              metadata: isSubscription ? (pending.metadata || {}) : (isPreorder ? {
+                name: preData.name || 'Valued Customer',
+                messName: preData.messName || 'Your Mess',
+                email: preData.email || 'N/A',
+                phone: preData.phone || customerPhone || 'N/A'
+              } : {})
+            });
+
+            if (verifyResult && verifyResult.alreadyProcessed) {
+              // Already handled
+            }
+          } catch (vErr) {
+            console.warn('[bKash Callback] Verification notice:', vErr);
+          }
+        }
+
+        // Strict Security Guard: Payment must be verified by official bKash server
+        const isVerifiedSuccess = Boolean(verifyResult && (verifyResult.success === true || verifyResult.alreadyProcessed === true));
+        if (!isVerifiedSuccess) {
+          stateLoading.classList.add("hidden");
+          stateFailure.classList.remove("hidden");
+          const errorMsg = (verifyResult && verifyResult.error) ? verifyResult.error : 'Payment could not be verified by the official bKash gateway. No balance was credited.';
+          stateFailure.innerHTML = `
+            <div class="flex flex-col items-center text-center">
+              <div class="w-16 h-16 rounded-full bg-rose-50 border-rose-200 text-rose-600 border-2 flex items-center justify-center mb-4 shadow-md">
+                <i data-lucide="x" class="h-8 w-8 stroke-[2.5]"></i>
+              </div>
+
+              <span class="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 mb-2">
+                VERIFICATION FAILED
+              </span>
+
+              <h2 class="text-xl font-extrabold text-slate-900">Payment Verification Failed</h2>
+              <p class="text-xs text-slate-500 mt-1 max-w-sm">${errorMsg}</p>
+
+              ${paymentID ? `
+              <div class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 my-5 text-xs text-left">
+                <div class="flex justify-between items-center text-slate-600">
+                  <span>bKash Payment ID:</span>
+                  <span class="font-mono font-bold text-slate-800">${paymentID}</span>
+                </div>
+              </div>` : ''}
+
+              <div class="w-full mt-4 space-y-2">
+                <a href="dashboard.html#more" class="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-white font-bold text-xs bg-slate-900 hover:bg-slate-800 transition-all shadow-md">
+                  <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i>
+                  <span>Return to SMS Dashboard</span>
+                </a>
+              </div>
+            </div>
+          `;
+          renderIcons();
+          return;
+        }
+
+        const verifiedTrx = (verifyResult && verifyResult.trxID) || trxID || 'BKASH_CONFIRMED';
+        const finalAmount = (verifyResult && verifyResult.amount) || targetAmount;
+
+        // 0. SUBSCRIPTION ACTIVATION FLOW
+        if (isSubscription) {
+          const subMeta = pending.metadata || {};
+          const planName = subMeta.planName || (subMeta.plan === 'pay_as_you_go' ? 'Pay As You Go' : 'Messliner Pro');
+          const billingCycle = subMeta.billingCycle || 'monthly';
+          const cycleLabel = billingCycle === 'yearly' ? '1 Year (365 Days)' : '1 Month (30 Days)';
+
+          localStorage.setItem(dedupeKey, "1");
+          localStorage.removeItem("ml_pending_bkash_payment");
+
+          const now = new Date();
+          const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${now.toLocaleTimeString()}`;
+
+          // Cache verified subscription details for Checkout Completed Screen & Slip Download
+          const completedPayload = {
+            plan: subMeta.plan || 'pro',
+            planName: planName,
+            billingCycle: billingCycle,
+            cycleLabel: cycleLabel,
+            amount: finalAmount,
+            trxID: verifiedTrx,
+            paymentID: paymentID,
+            name: subMeta.name || 'Manager',
+            phone: subMeta.phone || customerPhone || '',
+            email: subMeta.email || '',
+            messName: subMeta.messName || '',
+            messAddress: subMeta.messAddress || '',
+            diningId: diningId,
+            timestamp: Date.now()
+          };
+          try {
+            localStorage.setItem('ml_last_completed_subscription', JSON.stringify(completedPayload));
+          } catch (_) { }
+
+          // Redirect directly to the dedicated Completed UI on checkout.html
+          window.location.replace(`checkout.html?status=success&paymentID=${encodeURIComponent(paymentID)}&trxID=${encodeURIComponent(verifiedTrx)}`);
+          return;
+        }
 
         // A. PRO PRE-ORDER FLOW
-        if (pendingPreorder.type === 'pro_preorder' || pending.type === 'pro_preorder') {
-          const preData = pendingPreorder.type === 'pro_preorder' ? pendingPreorder : pending;
-          const preorderAmount = parseFloat(preData.amount) || 499;
+        if (isPreorder) {
           const custName = preData.name || 'Valued Customer';
           const custMess = preData.messName || 'Your Mess';
           const custPhone = preData.phone || customerPhone || 'N/A';
@@ -126,24 +258,24 @@
 
           try {
             const alreadyProcessed = localStorage.getItem(dedupeKey);
-            if (!alreadyProcessed) {
+            if (!alreadyProcessed && !verifyResult?.success) {
               await db.ref("preorders").push({
                 plan: "Messliner Pro Annual (Pre-Order)",
-                amount: preorderAmount,
+                amount: finalAmount,
                 name: custName,
                 phone: custPhone,
                 email: custEmail,
                 messName: custMess,
-                trxID: trxID || ("BKASH_" + Date.now()),
+                trxID: verifiedTrx,
                 paymentID: paymentID || "",
                 status: "paid",
+                verified: true,
                 createdAt: firebase.database.ServerValue.TIMESTAMP || Date.now()
               });
-
-              localStorage.setItem(dedupeKey, "1");
-              localStorage.removeItem("ml_pending_pro_preorder");
-              localStorage.removeItem("ml_pending_bkash_recharge");
             }
+            localStorage.setItem(dedupeKey, "1");
+            localStorage.removeItem("ml_pending_pro_preorder");
+            localStorage.removeItem("ml_pending_bkash_recharge");
           } catch (dbErr) {
             console.error("[bKash Callback] Preorder DB save error:", dbErr);
           }
@@ -169,7 +301,7 @@
 
               <div class="w-full bg-gradient-to-r from-pink-50/50 via-white to-pink-50/50 border border-pink-100 rounded-2xl p-4 my-5 text-center">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Pre-Order Amount Paid (bKash)</span>
-                <div class="text-3xl font-black text-[#E2136E] mt-0.5">৳${preorderAmount.toFixed(2)}</div>
+                <div class="text-3xl font-black text-[#E2136E] mt-0.5">৳${finalAmount.toFixed(2)}</div>
                 <span class="inline-block mt-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">1 Year Annual License Secured</span>
               </div>
 
@@ -188,7 +320,7 @@
                 </div>
                 <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
                   <span class="text-slate-500 font-medium">Transaction ID (TrxID)</span>
-                  <span class="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">${trxID || 'BKASH_CONFIRMED'}</span>
+                  <span class="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">${verifiedTrx}</span>
                 </div>
                 <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
                   <span class="text-slate-500 font-medium">Payment ID</span>
@@ -212,50 +344,28 @@
           return;
         }
 
-        // B. STANDARD SMS TOP-UP FLOW
-        let updatedBalance = 0;
+        // B. STANDARD SMS TOP-UP FLOW (Fulfillment executed securely by Serverless Edge Function)
+        let updatedBalance = (verifyResult && verifyResult.updatedBalance) || 0;
         let perSmsRate = 0.30;
 
         try {
-          if (diningId && rechargeAmount > 0) {
-            // Double-credit protection check
-            const alreadyProcessed = localStorage.getItem(dedupeKey);
-
-            // Fetch current balance from Firebase
+          if (diningId && finalAmount > 0) {
+            // Fetch verified balance directly from Firebase RTDB
             const snap = await db.ref(`dinings/${diningId}/smsConfig`).once("value");
             const cfg = snap.val() || {};
-            const oldBalance = parseFloat(cfg.smsBalance) || 0;
+            const liveBalance = parseFloat(cfg.smsBalance) || 0;
             perSmsRate = parseFloat(cfg.smsRate) || 0.30;
 
-            if (!alreadyProcessed) {
-              updatedBalance = oldBalance + rechargeAmount;
-
-              // 1. Update SMS Balance in Firebase
-              await db.ref(`dinings/${diningId}/smsConfig/smsBalance`).set(updatedBalance);
-
-              // 2. Append to SMS Balance & Recharge History
-              await db.ref(`dinings/${diningId}/smsBalanceHistory`).push({
-                amount: rechargeAmount,
-                type: "recharge",
-                gateway: "bkash",
-                balance: updatedBalance,
-                rate: perSmsRate,
-                trxID: trxID || ("BKASH_" + Date.now()),
-                paymentID: paymentID || "",
-                phone: customerPhone,
-                note: `bKash Instant Auto Recharge of ৳${rechargeAmount.toFixed(2)} (TrxID: ${trxID || 'N/A'})`,
-                timestamp: firebase.database.ServerValue.TIMESTAMP || Date.now()
-              });
-
-              // Mark processed
-              localStorage.setItem(dedupeKey, "1");
-              localStorage.removeItem("ml_pending_bkash_recharge");
-            } else {
-              updatedBalance = oldBalance;
+            if (updatedBalance === 0) {
+              updatedBalance = liveBalance;
             }
+
+            // Mark processed in local browser storage
+            localStorage.setItem(dedupeKey, "1");
+            localStorage.removeItem("ml_pending_bkash_recharge");
           }
         } catch (dbErr) {
-          console.error("[bKash Callback] DB update error:", dbErr);
+          console.warn("[bKash Callback] DB balance fetch notice:", dbErr);
         }
 
         const estCredits = perSmsRate > 0 ? Math.floor(rechargeAmount / perSmsRate) : 0;
@@ -321,12 +431,19 @@
       }
 
       // ─── 2. CANCELLED / FAILED FLOW ──────────────────────────────
+      // If this was a subscription payment, redirect to dedicated subscription-callback.html
+      const isSub = Boolean((pending.type && pending.type.startsWith('subscription')) || localStorage.getItem('ml_pending_subscription'));
+      if (isSub) {
+        window.location.replace(`subscription-callback.html${window.location.search}`);
+        return;
+      }
+
       stateLoading.classList.add("hidden");
       stateFailure.classList.remove("hidden");
 
       const isCancelled = paymentStatus === "cancel";
       const title = isCancelled ? "Payment Cancelled" : "Payment Incomplete";
-      const desc = isCancelled 
+      const desc = isCancelled
         ? "You cancelled the bKash checkout process. No amount was deducted."
         : "The bKash gateway was unable to complete the payment transaction. Please try again.";
 
@@ -364,5 +481,5 @@
   </script>
 
 </body>
-</html>
 
+</html>

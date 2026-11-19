@@ -368,6 +368,12 @@ const Auth = {
     let isSuccess = false;
 
     try {
+      localStorage.removeItem('viewMode');
+      sessionStorage.removeItem('viewMode');
+      sessionStorage.removeItem('ml_impersonate_user_id');
+    } catch (_) {}
+
+    try {
       let email = identifier;
       let knownMapping = null;
 
@@ -393,21 +399,33 @@ const Auth = {
 
       const emailKey = Utils.encodeEmail(email);
 
-      // Pre-warm mapping: if username was used, we already have knownMapping.
-      // If email was used, initiate mapping fetch in parallel with Supabase authentication.
-      const authPromise = auth.signInWithEmailAndPassword(email, password);
-      const mapPromise = knownMapping
-        ? Promise.resolve(knownMapping)
-        : db.ref(`userMappings/emailToDining/${emailKey}`).once('value').then(s => s.val()).catch(() => null);
-
-      // Concurrently await both Auth and Dining Mapping (zero sequential delay!)
-      const [authResult, mappingResult] = await Promise.all([authPromise, mapPromise]);
+      // Authenticate with Supabase first
+      const authResult = await auth.signInWithEmailAndPassword(email, password);
       isSuccess = true;
 
-      const finalMapping = knownMapping || mappingResult;
+      // Ensure Firebase Auth session is synced before fetching mapping
+      if (typeof window.syncFirebaseSession === 'function') {
+        try {
+          const session = authResult?.session || (await auth.client.auth.getSession())?.data?.session;
+          if (session) await window.syncFirebaseSession(session);
+        } catch (_) {}
+      }
+
+      let finalMapping = knownMapping;
+      if (!finalMapping) {
+        try {
+          const mapSnap = await db.ref(`userMappings/emailToDining/${emailKey}`).once('value');
+          finalMapping = mapSnap.val();
+        } catch (mapErr) {
+          console.warn('[Messliner] Post-auth mapping query notice:', mapErr.message);
+        }
+      }
+
       if (finalMapping && finalMapping.diningId) {
         try {
           localStorage.setItem(`ml_map_${emailKey}`, JSON.stringify(finalMapping));
+          const altKey = `ml_map_${email.toLowerCase().replace(/[\.\$#\[\]\/@]/g, '_')}`;
+          localStorage.setItem(altKey, JSON.stringify(finalMapping));
         } catch (_) {}
       }
 
@@ -474,6 +492,14 @@ const Auth = {
     // Validation
     if (!managerName || !email || !password) {
       this._showError(errorDiv, errorText, 'Please fill in all required fields.');
+      return;
+    }
+
+    // Email Domain Enforcement (@gmail.com and .edu.bd)
+    const lowerEmail = email.toLowerCase().trim();
+    const isEmailAllowed = lowerEmail.endsWith('@gmail.com') || lowerEmail.endsWith('.edu.bd');
+    if (!isEmailAllowed) {
+      this._showError(errorDiv, errorText, 'Only @gmail.com or official (.edu.bd) institutional email addresses are permitted to register.');
       return;
     }
 
@@ -644,6 +670,13 @@ const Auth = {
 
     if (!email) {
       this._showError(errorDiv, errorText, 'Please enter your email address.');
+      return;
+    }
+
+    const lowerEmail = email.toLowerCase().trim();
+    const isEmailAllowed = lowerEmail.endsWith('@gmail.com') || lowerEmail.endsWith('.edu.bd');
+    if (!isEmailAllowed) {
+      this._showError(errorDiv, errorText, 'Only @gmail.com or official (.edu.bd) institutional email accounts are supported.');
       return;
     }
 

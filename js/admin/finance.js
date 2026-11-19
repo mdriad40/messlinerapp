@@ -84,9 +84,15 @@ const FinanceModule = {
    * Show deposit modal
    */
   showDepositModal() {
-    document.getElementById('depositForm').reset();
-    document.getElementById('depositModalTitle').textContent = 'Add Deposit';
+    this._isSavingDeposit = false;
+    document.getElementById('depositForm')?.reset();
+    const btn = document.getElementById('depositSubmitBtn');
+    this.resetBtnInstantLoading(btn, 'Add Deposit');
+    const titleEl = document.getElementById('depositModalTitle');
+    if (titleEl) titleEl.textContent = 'Add deposit';
+    this.selectDepositUser('');
     this._populateUserSelect('depositUserSelect');
+    this.validateDepositForm();
     openModal('depositModal');
   },
 
@@ -94,8 +100,13 @@ const FinanceModule = {
    * Show deduct modal
    */
   showDeductModal() {
-    document.getElementById('deductForm').reset();
+    this._isSavingDeduct = false;
+    document.getElementById('deductForm')?.reset();
+    const btn = document.getElementById('deductSubmitBtn');
+    this.resetBtnInstantLoading(btn, 'Deduct Balance');
+    this.selectDeductUser('');
     this._populateUserSelect('deductUserSelect');
+    this.validateDeductForm();
     openModal('deductModal');
   },
 
@@ -103,7 +114,7 @@ const FinanceModule = {
    * Format YYYY-MM-DD to DD-MMM-YYYY (e.g. 08-Oct-2026)
    */
   formatDateToDisplay(dateStr) {
-    if (!dateStr) return '-- Select Date --';
+    if (!dateStr) return 'Select Date';
     try {
       const parts = dateStr.split('-');
       if (parts.length === 3) {
@@ -123,21 +134,158 @@ const FinanceModule = {
     return dateStr;
   },
 
+  bazarCalViewYear: undefined,
+  bazarCalViewMonth: undefined,
+
   /**
-   * Trigger native date picker for Bazar modal
+   * Toggle custom calendar popup for Bazar modal
    */
-  triggerBazarDatePicker() {
+  toggleBazarCalendar(e) {
+    if (e) e.stopPropagation();
+    const popup = document.getElementById('bazarDateCalendarPopup');
+    if (!popup) return;
+    if (popup.style.display !== 'none') {
+      this.closeBazarCalendar();
+    } else {
+      this.openBazarCalendar();
+    }
+  },
+
+  openBazarCalendar() {
+    const popup = document.getElementById('bazarDateCalendarPopup');
+    if (!popup) return;
+    const curDate = document.getElementById('bazarDateInput')?.value || Utils.today();
+    const [y, m] = curDate.split('-').map(Number);
+    this.bazarCalViewYear = y || new Date().getFullYear();
+    this.bazarCalViewMonth = (m !== undefined && !isNaN(m)) ? (m - 1) : new Date().getMonth();
+    this.renderBazarCalendarPopup();
+    popup.style.display = 'block';
+  },
+
+  closeBazarCalendar() {
+    const popup = document.getElementById('bazarDateCalendarPopup');
+    if (popup) popup.style.display = 'none';
+  },
+
+  navBazarCalendarMonth(dir, e) {
+    if (e) e.stopPropagation();
+    if (this.bazarCalViewMonth === undefined) this.bazarCalViewMonth = new Date().getMonth();
+    if (this.bazarCalViewYear === undefined) this.bazarCalViewYear = new Date().getFullYear();
+
+    this.bazarCalViewMonth += dir;
+    if (this.bazarCalViewMonth < 0) {
+      this.bazarCalViewMonth = 11;
+      this.bazarCalViewYear--;
+    } else if (this.bazarCalViewMonth > 11) {
+      this.bazarCalViewMonth = 0;
+      this.bazarCalViewYear++;
+    }
+    this.renderBazarCalendarPopup();
+  },
+
+  renderBazarCalendarPopup() {
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const titleEl = document.getElementById('bazarCalMonthYearTitle');
+    if (titleEl) {
+      titleEl.textContent = `${monthNames[this.bazarCalViewMonth]} ${this.bazarCalViewYear}`;
+    }
+
+    const gridEl = document.getElementById('bazarCalDaysGrid');
+    if (!gridEl) return;
+
+    const selectedDate = document.getElementById('bazarDateInput')?.value || Utils.today();
+    const todayDate = Utils.today();
+
+    const year = this.bazarCalViewYear;
+    const month = this.bazarCalViewMonth;
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    let html = '';
+
+    // Prev month trailing days
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      const dNum = daysInPrevMonth - i;
+      let prevM = month - 1;
+      let prevY = year;
+      if (prevM < 0) { prevM = 11; prevY--; }
+      const dateStr = `${prevY}-${String(prevM + 1).padStart(2, '0')}-${String(dNum).padStart(2, '0')}`;
+      html += `<div class="cal-day-cell muted" onclick="Messliner.finance.selectBazarCalendarDate('${dateStr}', event)">${dNum}</div>`;
+    }
+
+    // Current month days
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const isSelected = dateStr === selectedDate;
+      const isToday = dateStr === todayDate;
+
+      let cls = 'cal-day-cell';
+      if (isSelected) cls += ' selected';
+      if (isToday) cls += ' today';
+
+      html += `<div class="${cls}" onclick="Messliner.finance.selectBazarCalendarDate('${dateStr}', event)">${d}</div>`;
+    }
+
+    // Next month leading days
+    const totalCells = firstDayIndex + daysInMonth;
+    const nextDays = (totalCells % 7 === 0) ? 0 : 7 - (totalCells % 7);
+    for (let j = 1; j <= nextDays; j++) {
+      let nextM = month + 1;
+      let nextY = year;
+      if (nextM > 11) { nextM = 0; nextY++; }
+      const dateStr = `${nextY}-${String(nextM + 1).padStart(2, '0')}-${String(j).padStart(2, '0')}`;
+      html += `<div class="cal-day-cell muted" onclick="Messliner.finance.selectBazarCalendarDate('${dateStr}', event)">${j}</div>`;
+    }
+
+    gridEl.innerHTML = html;
+  },
+
+  selectBazarCalendarDate(dateStr, e) {
+    if (e) e.stopPropagation();
+    this.setBazarDate(dateStr);
+    this.closeBazarCalendar();
+  },
+
+  setBazarDate(dateStr) {
+    if (!dateStr) dateStr = Utils.today();
     const dateInput = document.getElementById('bazarDateInput');
-    if (dateInput) {
-      if (typeof dateInput.showPicker === 'function') {
-        try {
-          dateInput.showPicker();
-        } catch (e) {
-          dateInput.focus();
-        }
-      } else {
-        dateInput.focus();
-      }
+    if (dateInput) dateInput.value = dateStr;
+    const dateDisplay = document.getElementById('bazarDateFormattedDisplay');
+    if (dateDisplay) {
+      dateDisplay.textContent = this.formatDateToDisplay(dateStr);
+    }
+    this.populateBazarShopperSelect(dateStr);
+    this.validateBazarForm();
+  },
+
+  setBazarTodayDate(e) {
+    if (e) e.stopPropagation();
+    this.selectBazarCalendarDate(Utils.today(), e);
+  },
+
+  triggerBazarDatePicker(e) {
+    this.toggleBazarCalendar(e);
+  },
+
+  /**
+   * Reset bazar modal state back to default Add mode
+   */
+  resetBazarModal() {
+    const editKeyInput = document.getElementById('bazarEditKey');
+    if (editKeyInput) editKeyInput.value = '';
+    const modalTitle = document.getElementById('bazarModalTitle');
+    if (modalTitle) modalTitle.textContent = 'Log bazar';
+    const modalSubtitle = document.getElementById('bazarModalSubtitle');
+    if (modalSubtitle) modalSubtitle.textContent = 'Rate recalculates automatically once saved';
+    const submitBtn = document.getElementById('bazarSubmitBtn');
+    if (submitBtn) {
+      submitBtn.classList.remove('btn-loading-state');
+      submitBtn.innerHTML = 'Add Bazar';
     }
   },
 
@@ -148,6 +296,8 @@ const FinanceModule = {
     document.getElementById('bazarForm')?.reset();
     const dd = document.getElementById('bazarShopperDropdown');
     if (dd) dd.classList.remove('active');
+    this.closeBazarCalendar();
+    this.resetBazarModal();
 
     const targetDate = dateStr || Utils.today();
     const dateInput = document.getElementById('bazarDateInput');
@@ -161,9 +311,102 @@ const FinanceModule = {
   },
 
   /**
+   * Show edit modal for existing bazar record
+   */
+  async showEditBazarModal(bazarKey, entryData) {
+    if (!bazarKey) return;
+
+    const diningId = this.diningId || Messliner.state?.diningId;
+    let entry = entryData;
+    if (!entry) {
+      if (Messliner.bazar?.rawBazarData && Messliner.bazar.rawBazarData[bazarKey]) {
+        entry = Messliner.bazar.rawBazarData[bazarKey];
+      } else if (diningId && typeof db !== 'undefined') {
+        try {
+          const snap = await db.ref(`dinings/${diningId}/bazar/${bazarKey}`).once('value');
+          entry = snap.val();
+        } catch (e) {
+          console.error('[Finance] Error fetching bazar entry for edit:', e);
+        }
+      }
+    }
+
+    if (!entry) {
+      Notifications.toast('error', 'Not Found', 'Bazar record could not be found.');
+      return;
+    }
+
+    // Reset calendar & dropdown
+    const dd = document.getElementById('bazarShopperDropdown');
+    if (dd) dd.classList.remove('active');
+    this.closeBazarCalendar();
+
+    // Set Edit Mode
+    let editKeyInput = document.getElementById('bazarEditKey');
+    if (!editKeyInput) {
+      const form = document.getElementById('bazarForm');
+      if (form) {
+        editKeyInput = document.createElement('input');
+        editKeyInput.type = 'hidden';
+        editKeyInput.id = 'bazarEditKey';
+        form.appendChild(editKeyInput);
+      }
+    }
+    if (editKeyInput) editKeyInput.value = bazarKey;
+
+    const modalTitle = document.getElementById('bazarModalTitle');
+    if (modalTitle) modalTitle.textContent = 'Edit Bazar';
+    const modalSubtitle = document.getElementById('bazarModalSubtitle');
+    if (modalSubtitle) modalSubtitle.textContent = 'Modify details and save updates';
+
+    const submitBtn = document.getElementById('bazarSubmitBtn');
+    if (submitBtn) {
+      submitBtn.classList.remove('btn-loading-state');
+      submitBtn.innerHTML = 'Save Changes';
+    }
+
+    // Date
+    const targetDate = entry.date || (entry.timestamp ? new Date(entry.timestamp).toISOString().slice(0, 10) : Utils.today());
+    const dateInput = document.getElementById('bazarDateInput');
+    const dateDisplay = document.getElementById('bazarDateFormattedDisplay');
+    if (dateInput) dateInput.value = targetDate;
+    if (dateDisplay) dateDisplay.textContent = this.formatDateToDisplay(targetDate);
+
+    // Find shopper userId if missing
+    let targetShopperUserId = entry.userId || '';
+    if (!targetShopperUserId && entry.shopperName) {
+      const allUsers = (Messliner.users && Messliner.users.users) ||
+        (window.UsersModule && window.UsersModule.users) ||
+        (Messliner.bazar && Messliner.bazar.users) ||
+        (Messliner.state && Messliner.state.users) || {};
+      const found = Object.entries(allUsers).find(([uid, u]) => (u.name || '').toLowerCase() === (entry.shopperName || '').toLowerCase());
+      if (found) targetShopperUserId = found[0];
+    }
+
+    await this.populateBazarShopperSelect(targetDate, targetShopperUserId);
+
+    if (!targetShopperUserId && entry.shopperName) {
+      const shopperInput = document.getElementById('bazarShopperInput');
+      const valueEl = document.getElementById('bazarShopperValue');
+      if (shopperInput) shopperInput.value = entry.shopperName;
+      if (valueEl) valueEl.textContent = entry.shopperName;
+    }
+
+    // Amount & Items
+    const amtInput = document.getElementById('bazarAmountInput');
+    if (amtInput) amtInput.value = entry.amount || '';
+
+    const itemsInput = document.getElementById('bazarItemsInput');
+    if (itemsInput) itemsInput.value = entry.items || entry.title || entry.name || '';
+
+    this.validateBazarForm();
+    openModal('bazarModal');
+  },
+
+  /**
    * Populate Shopper member dropdown (sorted by join time, showing only name) and auto-select assigned duty member
    */
-  async populateBazarShopperSelect(targetDate) {
+  async populateBazarShopperSelect(targetDate, forceUserId = null) {
     const menuEl = document.getElementById('bazarShopperMenu');
     const valueEl = document.getElementById('bazarShopperValue');
     const userIdInput = document.getElementById('bazarShopperUserId');
@@ -171,9 +414,19 @@ const FinanceModule = {
     if (!menuEl) return;
 
     const diningId = this.diningId || Messliner.state?.diningId;
-    const users = (Messliner.users && Messliner.users.users) ||
+    let users = (Messliner.users && Messliner.users.users) ||
       (window.UsersModule && window.UsersModule.users) ||
-      (Messliner.bazar && Messliner.bazar.users) || {};
+      (Messliner.bazar && Messliner.bazar.users) ||
+      (window.UserDashboard && window.UserDashboard.allUsers) ||
+      (Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) ||
+      (Messliner.state && Messliner.state.users) || {};
+
+    if (Object.keys(users).length === 0 && diningId && typeof db !== 'undefined') {
+      try {
+        const uSnap = await db.ref(`dinings/${diningId}/users`).once('value');
+        if (uSnap.val()) users = uSnap.val();
+      } catch (e) {}
+    }
 
     const dateStr = targetDate || document.getElementById('bazarDateInput')?.value || Utils.today();
     const d = new Date(dateStr + 'T00:00:00');
@@ -253,8 +506,8 @@ const FinanceModule = {
     });
 
     // Try synchronous duty resolution first
-    let assignedUserId = '';
-    if (Messliner.bazar && typeof Messliner.bazar.resolveDutyForDate === 'function') {
+    let assignedUserId = forceUserId || '';
+    if (!assignedUserId && Messliner.bazar && typeof Messliner.bazar.resolveDutyForDate === 'function') {
       try {
         const duty = Messliner.bazar.resolveDutyForDate(dateStr, dayOfWeek);
         if (duty && duty.userId) {
@@ -268,7 +521,7 @@ const FinanceModule = {
     const renderItems = (activeUserId) => {
       let html = `
         <div class="custom-dropdown-item ${!activeUserId ? 'selected' : ''}" data-value=""
-             onclick="Messliner.finance.selectBazarShopper('')">-- Select Member --</div>
+             onclick="Messliner.finance.selectBazarShopper('')">Select Member</div>
       `;
 
       userEntries.forEach(([id, u]) => {
@@ -290,7 +543,7 @@ const FinanceModule = {
         if (userIdInput) userIdInput.value = activeUserId;
         if (shopperInput) shopperInput.value = memberName;
       } else {
-        if (valueEl) valueEl.textContent = '-- Select Member --';
+        if (valueEl) valueEl.textContent = 'Select Member';
         if (userIdInput) userIdInput.value = '';
         if (shopperInput) shopperInput.value = '';
       }
@@ -300,7 +553,7 @@ const FinanceModule = {
     renderItems(assignedUserId);
 
     // If no assigned user found synchronously, or if schedule data might not be loaded in BazarModule for this month, fetch from Firebase
-    if (diningId && typeof db !== 'undefined') {
+    if (!forceUserId && diningId && typeof db !== 'undefined') {
       try {
         const daySnap = await db.ref(`dinings/${diningId}/bazarSchedule/${yearMonth}/${dateStr}`).once('value');
         const dayDuty = daySnap.val();
@@ -336,7 +589,10 @@ const FinanceModule = {
 
     const users = (Messliner.users && Messliner.users.users) ||
       (window.UsersModule && window.UsersModule.users) ||
-      (Messliner.bazar && Messliner.bazar.users) || {};
+      (Messliner.bazar && Messliner.bazar.users) ||
+      (window.UserDashboard && window.UserDashboard.allUsers) ||
+      (Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) ||
+      (Messliner.state && Messliner.state.users) || {};
 
     const valueEl = document.getElementById('bazarShopperValue');
     const userIdInput = document.getElementById('bazarShopperUserId');
@@ -350,7 +606,7 @@ const FinanceModule = {
       if (userIdInput) userIdInput.value = userId;
       if (shopperInput) shopperInput.value = memberName;
     } else {
-      if (valueEl) valueEl.textContent = '-- Select Member --';
+      if (valueEl) valueEl.textContent = 'Select Member';
       if (userIdInput) userIdInput.value = '';
       if (shopperInput) shopperInput.value = '';
     }
@@ -440,17 +696,34 @@ const FinanceModule = {
   /**
    * Show Other Costing modal
    */
-  showOtherCostingModal() {
-    document.getElementById('otherCostingForm').reset();
-    document.getElementById('otherCostingSplitInfo').style.display = 'none';
+  async showOtherCostingModal() {
+    this._isSavingOtherCosting = false;
+    document.getElementById('otherCostingForm')?.reset();
+    const btn = document.getElementById('otherCostingSubmitBtn');
+    this.resetBtnInstantLoading(btn, 'Apply Costing');
+    const splitInfo = document.getElementById('otherCostingSplitInfo');
+    if (splitInfo) splitInfo.style.display = 'none';
 
     const checklist = document.getElementById('otherCostingMembersChecklist');
     const selectAll = document.getElementById('otherCostingSelectAll');
     if (selectAll) selectAll.checked = false;
 
-    const users = Messliner.users.users;
-    // Use UsersModule.settings (reliably populated for admins)
-    const settings = UsersModule.settings || {};
+    const diningId = this.diningId || Messliner.state?.diningId;
+    let users = (Messliner.users && Messliner.users.users) ||
+      (window.UsersModule && window.UsersModule.users) ||
+      (Messliner.bazar && Messliner.bazar.users) ||
+      (window.UserDashboard && window.UserDashboard.allUsers) ||
+      (Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) ||
+      (Messliner.state && Messliner.state.users) || {};
+
+    if (Object.keys(users).length === 0 && diningId && typeof db !== 'undefined') {
+      try {
+        const uSnap = await db.ref(`dinings/${diningId}/users`).once('value');
+        if (uSnap.val()) users = uSnap.val();
+      } catch (e) {}
+    }
+
+    const settings = (window.UsersModule && UsersModule.settings) || Messliner.state?.settings || {};
     const isManagerMealEnabled = !!settings.managerMealEnabled;
 
     if (!users || Object.keys(users).length === 0) {
@@ -458,23 +731,27 @@ const FinanceModule = {
       return;
     }
 
-    checklist.innerHTML = Object.entries(users)
-      .filter(([id, u]) => u.role !== 'admin' || isManagerMealEnabled)
-      .map(([id, u]) => `
-        <label class="members-checklist-item" for="member_check_${id}">
-          <div class="members-checklist-avatar" style="background:${UsersModule._avatarColor(u.name)};">
-            ${Utils.initials(u.name)}
-          </div>
-          <div class="members-checklist-info">
-            <div class="members-checklist-name">${u.name}</div>
-            <div class="members-checklist-sub">@${u.username || '—'}</div>
-          </div>
-          <input type="checkbox" id="member_check_${id}" value="${id}" class="members-checklist-checkbox"
-            onchange="Messliner.finance.updateOtherCostingSplit()">
-        </label>
-      `).join('');
+    if (checklist) {
+      checklist.innerHTML = Object.entries(users)
+        .filter(([id, u]) => (u.role !== 'admin' || isManagerMealEnabled) && u.status !== 'left' && u.status !== 'removed')
+        .map(([id, u]) => {
+          return `
+            <label class="members-checklist-item" for="member_check_${id}" style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid #E2E8F0;cursor:pointer;">
+              <div class="members-checklist-avatar member-tia-avatar" style="width:32px;height:32px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;">
+                ${Utils.initials(u.name)}
+              </div>
+              <div class="members-checklist-info" style="flex:1;min-width:0;">
+                <div class="members-checklist-name" style="font-size:0.9rem;font-weight:600;color:#1E293B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.name}</div>
+              </div>
+              <input type="checkbox" id="member_check_${id}" value="${id}" class="members-checklist-checkbox"
+                onchange="Messliner.finance.updateOtherCostingSplit(); Messliner.finance.validateOtherCostingForm();" style="accent-color:#059669;cursor:pointer;width:16px;height:16px;">
+            </label>
+          `;
+        }).join('');
+    }
 
     openModal('otherCostingModal');
+    this.validateOtherCostingForm();
   },
 
   /**
@@ -484,13 +761,15 @@ const FinanceModule = {
     const checkboxes = document.querySelectorAll('#otherCostingMembersChecklist .members-checklist-checkbox');
     checkboxes.forEach(cb => { cb.checked = source.checked; });
     this.updateOtherCostingSplit();
+    this.validateOtherCostingForm();
   },
 
   /**
    * Update real-time split info preview
    */
   updateOtherCostingSplit() {
-    const amount = parseFloat(document.getElementById('otherCostingAmountInput').value) || 0;
+    const amountVal = document.getElementById('otherCostingAmountInput')?.value?.replace(/,/g, '') || '';
+    const amount = parseFloat(amountVal) || 0;
     const checkboxes = document.querySelectorAll('#otherCostingMembersChecklist .members-checklist-checkbox:checked');
     const count = checkboxes.length;
     const splitInfo = document.getElementById('otherCostingSplitInfo');
@@ -504,124 +783,425 @@ const FinanceModule = {
       selectAll.indeterminate = (count > 0 && count < allCheckboxes.length);
     }
 
-    if (amount > 0 && count > 0) {
-      const splitAmount = amount / count;
-      splitInfo.style.display = 'flex';
-      splitText.textContent = `${Utils.currency(amount)} ÷ ${count} member${count > 1 ? 's' : ''} = ${Utils.currency(splitAmount)} each`;
-    } else {
-      splitInfo.style.display = amount > 0 || count > 0 ? 'flex' : 'none';
-      if (amount <= 0 && count > 0) {
-        splitText.textContent = 'Enter an amount to see the split';
-      } else if (amount > 0 && count === 0) {
-        splitText.textContent = 'Select at least one member';
+    if (splitInfo && splitText) {
+      if (amount > 0 && count > 0) {
+        const splitAmount = amount / count;
+        splitInfo.style.display = 'flex';
+        splitText.textContent = `${Utils.currency(amount)} ÷ ${count} member${count > 1 ? 's' : ''} = ${Utils.currency(splitAmount)} each`;
+      } else {
+        splitInfo.style.display = amount > 0 || count > 0 ? 'flex' : 'none';
+        if (amount <= 0 && count > 0) {
+          splitText.textContent = 'Enter an amount to see the split';
+        } else if (amount > 0 && count === 0) {
+          splitText.textContent = 'Select at least one member';
+        }
       }
     }
+
+    this.validateOtherCostingForm();
+  },
+
+  /**
+   * Validate Other Costing Form and toggle Apply Costing submit button disabled state
+   */
+  validateOtherCostingForm() {
+    const amountVal = parseFloat(document.getElementById('otherCostingAmountInput')?.value?.replace(/,/g, ''));
+    const reason = document.getElementById('otherCostingReasonInput')?.value?.trim() || '';
+    const checkedCount = document.querySelectorAll('#otherCostingMembersChecklist .members-checklist-checkbox:checked').length;
+
+    const isValid = Boolean(
+      checkedCount > 0 &&
+      !isNaN(amountVal) && amountVal > 0 &&
+      reason.length > 0
+    );
+
+    const submitBtn = document.getElementById('otherCostingSubmitBtn');
+    if (submitBtn) {
+      submitBtn.disabled = !isValid;
+    }
+    return isValid;
   },
 
   /**
    * Save Other Costing - splits equally across selected members
    */
   async saveOtherCosting() {
-    const amount = parseFloat(document.getElementById('otherCostingAmountInput').value);
-    const reason = document.getElementById('otherCostingReasonInput').value.trim();
+    if (this._isSavingOtherCosting) return;
+
+    if (window.MesslinerSubscription && typeof MesslinerSubscription.assertCanWrite === 'function') {
+      if (!MesslinerSubscription.assertCanWrite()) return;
+    }
+
+    const amountVal = document.getElementById('otherCostingAmountInput')?.value?.replace(/,/g, '') || '';
+    const amount = parseFloat(amountVal);
+    const reason = document.getElementById('otherCostingReasonInput')?.value?.trim();
     const checkboxes = document.querySelectorAll('#otherCostingMembersChecklist .members-checklist-checkbox:checked');
     const selectedUserIds = Array.from(checkboxes).map(cb => cb.value);
+    const submitBtn = document.getElementById('otherCostingSubmitBtn');
 
-    if (!amount || amount <= 0) {
+    if (!amount || isNaN(amount) || amount <= 0) {
+      this.resetBtnInstantLoading(submitBtn, 'Apply Costing');
+      this.validateOtherCostingForm();
       Notifications.toast('warning', 'Invalid Input', 'Please enter a valid total amount.');
       return;
     }
     if (!reason) {
+      this.resetBtnInstantLoading(submitBtn, 'Apply Costing');
+      this.validateOtherCostingForm();
       Notifications.toast('warning', 'Invalid Input', 'Please enter a reason / description.');
       return;
     }
     if (selectedUserIds.length === 0) {
+      this.resetBtnInstantLoading(submitBtn, 'Apply Costing');
+      this.validateOtherCostingForm();
       Notifications.toast('warning', 'No Members Selected', 'Please select at least one member.');
       return;
     }
 
+    const diningId = this.diningId || Messliner.state?.diningId;
+    if (!diningId) {
+      this.resetBtnInstantLoading(submitBtn, 'Apply Costing');
+      Notifications.toast('error', 'Error', 'Dining group not found.');
+      return;
+    }
+
+    this._isSavingOtherCosting = true;
+    if (submitBtn) {
+      submitBtn.classList.add('btn-loading-state');
+      submitBtn.innerHTML = `<span class="bazar-btn-spinner"></span><span>Applying Costing...</span>`;
+    }
+
     const splitAmount = amount / selectedUserIds.length;
-    const users = Messliner.users.users;
+    let users = (Messliner.users && Messliner.users.users) ||
+      (window.UsersModule && window.UsersModule.users) ||
+      (Messliner.bazar && Messliner.bazar.users) ||
+      (window.UserDashboard && window.UserDashboard.allUsers) ||
+      (Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) ||
+      (Messliner.state && Messliner.state.users) || {};
+
+    if (Object.keys(users).length === 0 && typeof db !== 'undefined') {
+      try {
+        const uSnap = await db.ref(`dinings/${diningId}/users`).once('value');
+        if (uSnap.val()) users = uSnap.val();
+      } catch (e) {}
+    }
+
     const today = Utils.today();
 
     try {
       const batchId = 'oc_' + Date.now();
-      // Write one transaction per selected member
-      const promises = selectedUserIds.map(async (userId) => {
-        const user = users[userId];
-        await db.ref(`dinings/${this.diningId}/deposits`).push().set({
+      const updates = {};
+      const now = firebase.database.ServerValue.TIMESTAMP;
+
+      // Prepare atomic multi-path update for instant write
+      selectedUserIds.forEach(userId => {
+        const user = users[userId] || {};
+        const currentDeposit = Utils.num(user.totalDeposit);
+        const newKey = db.ref(`dinings/${diningId}/deposits`).push().key;
+
+        updates[`dinings/${diningId}/deposits/${newKey}`] = {
           batchId,
           userId,
-          userName: user?.name || 'Unknown',
+          userName: user.name || 'Unknown',
           amount: -splitAmount,
           type: 'other_costing',
           note: reason,
           date: today,
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
-
-        // Update user's totalDeposit in db (subtract splitAmount)
-        const currentDeposit = Utils.num(user?.totalDeposit);
-        await db.ref(`dinings/${this.diningId}/users/${userId}/totalDeposit`).set(currentDeposit - splitAmount);
+          timestamp: now
+        };
+        updates[`dinings/${diningId}/users/${userId}/totalDeposit`] = currentDeposit - splitAmount;
       });
 
-      await Promise.all(promises);
-
-      // Log and notify
-      const memberNames = selectedUserIds.map(id => users[id]?.name || 'Unknown').join(', ');
-      await Notifications.log(
-        this.diningId, 'other_costing_added',
-        `Other Costing ৳${amount} (${reason}) split among: ${memberNames}`,
-        Messliner.state.userId
-      );
-      // Notify each selected user
-      for (const userId of selectedUserIds) {
-        await Notifications.create(
-          this.diningId, 'Other Costing Applied',
-          `${Utils.currency(splitAmount)} charged to you for: ${reason}`,
-          userId, 'finance'
-        );
-      }
+      await db.ref().update(updates);
 
       Notifications.toast('success', 'Other Costing Applied',
         `${Utils.currency(amount)} split among ${selectedUserIds.length} member${selectedUserIds.length > 1 ? 's' : ''} (${Utils.currency(splitAmount)} each).`);
       closeModal('otherCostingModal');
+      document.getElementById('otherCostingForm')?.reset();
+
+      if (window.UserDashboard && typeof UserDashboard.renderStats === 'function') {
+        UserDashboard.renderStats();
+      }
+      if (window.OverviewModule && typeof OverviewModule.refresh === 'function') {
+        OverviewModule.refresh();
+      }
+
+      // Non-blocking notifications & activity log
+      try {
+        const memberNames = selectedUserIds.map(id => users[id]?.name || 'Unknown').join(', ');
+        Notifications.log(
+          diningId, 'other_costing_added',
+          `Other Costing ৳${amount} (${reason}) split among: ${memberNames}`,
+          Messliner.state?.userId
+        ).catch(() => {});
+      } catch (e) {}
+
+      selectedUserIds.forEach(userId => {
+        try {
+          Notifications.create(
+            diningId, 'Other Costing Applied',
+            `${Utils.currency(splitAmount)} charged to you for: ${reason}`,
+            userId, 'finance'
+          ).catch(() => {});
+        } catch (e) {}
+      });
 
     } catch (error) {
       console.error('Save other costing error:', error);
       Notifications.toast('error', 'Error', 'Failed to apply other costing.');
+    } finally {
+      this._isSavingOtherCosting = false;
+      this.resetBtnInstantLoading(submitBtn, 'Apply Costing');
+      this.validateOtherCostingForm();
     }
   },
 
   /**
    * Populate user select dropdown
    */
-  _populateUserSelect(selectId) {
+  async _populateUserSelect(selectId) {
     const select = document.getElementById(selectId);
     if (!select) return;
-    const users = Messliner.users.users;
-    select.innerHTML = '<option value="">Choose a member...</option>' +
-      Object.entries(users).map(([id, u]) => `<option value="${id}">${u.name}</option>`).join('');
+    const diningId = this.diningId || Messliner.state?.diningId;
+    let users = (Messliner.users && Messliner.users.users) ||
+      (window.UsersModule && window.UsersModule.users) ||
+      (Messliner.bazar && Messliner.bazar.users) ||
+      (window.UserDashboard && window.UserDashboard.allUsers) ||
+      (Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) ||
+      (Messliner.state && Messliner.state.users) || {};
+
+    if (Object.keys(users).length === 0 && diningId && typeof db !== 'undefined') {
+      try {
+        const uSnap = await db.ref(`dinings/${diningId}/users`).once('value');
+        if (uSnap.val()) users = uSnap.val();
+      } catch (e) {}
+    }
+
+    if (select.tagName === 'SELECT') {
+      select.innerHTML = '<option value="">Choose a member...</option>' +
+        Object.entries(users)
+          .filter(([_, u]) => u && u.status !== 'left' && u.status !== 'removed')
+          .map(([id, u]) => `<option value="${id}">${u.name || 'Member'}</option>`).join('');
+    }
+
+    if (selectId === 'depositUserSelect') {
+      const menuEl = document.getElementById('depositUserMenu');
+      if (menuEl) {
+        let html = `<div class="custom-dropdown-item selected" data-value="" onclick="Messliner.finance.selectDepositUser('')">Select Member</div>`;
+        Object.entries(users)
+          .filter(([_, u]) => u && u.status !== 'left' && u.status !== 'removed')
+          .forEach(([id, u]) => {
+            html += `<div class="custom-dropdown-item" data-value="${id}" onclick="Messliner.finance.selectDepositUser('${id}')">${u.name || 'Member'}</div>`;
+          });
+        menuEl.innerHTML = html;
+      }
+    }
+
+    if (selectId === 'deductUserSelect') {
+      const menuEl = document.getElementById('deductUserMenu');
+      if (menuEl) {
+        let html = `<div class="custom-dropdown-item selected" data-value="" onclick="Messliner.finance.selectDeductUser('')">Select Member</div>`;
+        Object.entries(users)
+          .filter(([_, u]) => u && u.status !== 'left' && u.status !== 'removed')
+          .forEach(([id, u]) => {
+            html += `<div class="custom-dropdown-item" data-value="${id}" onclick="Messliner.finance.selectDeductUser('${id}')">${u.name || 'Member'}</div>`;
+          });
+        menuEl.innerHTML = html;
+      }
+    }
+  },
+
+  /**
+   * Select a member in Deposit modal custom dropdown
+   */
+  selectDepositUser(userId) {
+    const dd = document.getElementById('depositUserDropdown');
+    if (dd) dd.classList.remove('active');
+
+    const users = (Messliner.users && Messliner.users.users) ||
+      (window.UsersModule && window.UsersModule.users) ||
+      (Messliner.bazar && Messliner.bazar.users) ||
+      (window.UserDashboard && window.UserDashboard.allUsers) ||
+      (Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) ||
+      (Messliner.state && Messliner.state.users) || {};
+
+    const valueEl = document.getElementById('depositUserValue');
+    const inputEl = document.getElementById('depositUserSelect');
+    const menuEl = document.getElementById('depositUserMenu');
+
+    if (userId && users[userId]) {
+      const u = users[userId];
+      const memberName = u.name || 'Member';
+      if (valueEl) valueEl.textContent = memberName;
+      if (inputEl) inputEl.value = userId;
+    } else {
+      if (valueEl) valueEl.textContent = 'Select Member';
+      if (inputEl) inputEl.value = '';
+    }
+
+    if (menuEl) {
+      menuEl.querySelectorAll('.custom-dropdown-item').forEach(item => {
+        if (item.getAttribute('data-value') === (userId || '')) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+    }
+    this.validateDepositForm();
+  },
+
+  /**
+   * Select a member in Deduct modal custom dropdown
+   */
+  selectDeductUser(userId) {
+    const dd = document.getElementById('deductUserDropdown');
+    if (dd) dd.classList.remove('active');
+
+    const users = (Messliner.users && Messliner.users.users) ||
+      (window.UsersModule && window.UsersModule.users) ||
+      (Messliner.bazar && Messliner.bazar.users) ||
+      (window.UserDashboard && window.UserDashboard.allUsers) ||
+      (Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) ||
+      (Messliner.state && Messliner.state.users) || {};
+
+    const valueEl = document.getElementById('deductUserValue');
+    const inputEl = document.getElementById('deductUserSelect');
+    const menuEl = document.getElementById('deductUserMenu');
+
+    if (userId && users[userId]) {
+      const u = users[userId];
+      const memberName = u.name || 'Member';
+      if (valueEl) valueEl.textContent = memberName;
+      if (inputEl) inputEl.value = userId;
+    } else {
+      if (valueEl) valueEl.textContent = 'Select Member';
+      if (inputEl) inputEl.value = '';
+    }
+
+    if (menuEl) {
+      menuEl.querySelectorAll('.custom-dropdown-item').forEach(item => {
+        if (item.getAttribute('data-value') === (userId || '')) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+    }
+    this.validateDeductForm();
+  },
+
+  /**
+   * Validate Deposit Form and toggle Add Deposit submit button disabled state
+   */
+  validateDepositForm() {
+    const userId = document.getElementById('depositUserSelect')?.value;
+    const amountVal = parseFloat(document.getElementById('depositAmountInput')?.value?.replace(/,/g, ''));
+    const isValid = Boolean(userId && !isNaN(amountVal) && amountVal > 0);
+    const submitBtn = document.getElementById('depositSubmitBtn');
+    if (submitBtn) {
+      submitBtn.disabled = !isValid;
+    }
+    return isValid;
+  },
+
+  /**
+   * Validate Deduct Form and toggle Deduct Balance submit button disabled state
+   */
+  validateDeductForm() {
+    const userId = document.getElementById('deductUserSelect')?.value;
+    const amountVal = parseFloat(document.getElementById('deductAmountInput')?.value?.replace(/,/g, ''));
+    const isValid = Boolean(userId && !isNaN(amountVal) && amountVal > 0);
+    const submitBtn = document.getElementById('deductSubmitBtn');
+    if (submitBtn) {
+      submitBtn.disabled = !isValid;
+    }
+    return isValid;
+  },
+
+  /**
+   * Instantly trigger ash loading spinner on submit button on pointerdown/touch
+   */
+  showBtnInstantLoading(btn, text) {
+    if (!btn || btn.disabled || btn.dataset.submitting === 'true') return;
+    btn.dataset.submitting = 'true';
+    btn.classList.add('btn-loading-state');
+    btn.innerHTML = `<span class="bazar-btn-spinner"></span><span>${text}</span>`;
+    if (btn.form) {
+      if (typeof btn.form.requestSubmit === 'function') {
+        try {
+          btn.form.requestSubmit(btn);
+        } catch (e) {
+          btn.form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }
+      } else {
+        btn.form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    }
+  },
+
+  /**
+   * Reset submit button from loading state
+   */
+  resetBtnInstantLoading(btn, defaultText) {
+    if (!btn) return;
+    delete btn.dataset.submitting;
+    btn.classList.remove('btn-loading-state');
+    btn.innerHTML = defaultText;
   },
 
   /**
    * Save deposit
    */
   async saveDeposit() {
-    const userId = document.getElementById('depositUserSelect').value;
-    const amount = parseFloat(document.getElementById('depositAmountInput').value);
-    const note = document.getElementById('depositNoteInput').value.trim();
+    if (this._isSavingDeposit) return;
 
-    if (!userId || !amount || amount <= 0) {
+    if (window.MesslinerSubscription && typeof MesslinerSubscription.assertCanWrite === 'function') {
+      if (!MesslinerSubscription.assertCanWrite()) return;
+    }
+
+    const userId = document.getElementById('depositUserSelect')?.value;
+    const amountVal = document.getElementById('depositAmountInput')?.value?.replace(/,/g, '') || '';
+    const amount = parseFloat(amountVal);
+    const note = document.getElementById('depositNoteInput')?.value?.trim();
+    const submitBtn = document.getElementById('depositSubmitBtn');
+
+    if (!userId || !amount || isNaN(amount) || amount <= 0) {
+      this.resetBtnInstantLoading(submitBtn, 'Add Deposit');
+      this.validateDepositForm();
       Notifications.toast('warning', 'Invalid Input', 'Please select a member and enter a valid amount.');
       return;
     }
 
-    try {
-      const user = Messliner.users.users[userId];
+    const diningId = this.diningId || Messliner.state?.diningId;
+    if (!diningId) {
+      this.resetBtnInstantLoading(submitBtn, 'Add Deposit');
+      Notifications.toast('error', 'Error', 'Dining group not found.');
+      return;
+    }
 
-      // Save deposit record
-      await db.ref(`dinings/${this.diningId}/deposits`).push().set({
+    this._isSavingDeposit = true;
+    if (submitBtn) {
+      submitBtn.classList.add('btn-loading-state');
+      submitBtn.innerHTML = `<span class="bazar-btn-spinner"></span><span>Adding Deposit...</span>`;
+    }
+
+    try {
+      let users = (Messliner.users && Messliner.users.users) ||
+        (window.UsersModule && window.UsersModule.users) ||
+        (Messliner.bazar && Messliner.bazar.users) ||
+        (window.UserDashboard && window.UserDashboard.allUsers) ||
+        (Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) ||
+        (Messliner.state && Messliner.state.users) || {};
+
+      const user = users[userId] || {};
+      const currentDeposit = Utils.num(user?.totalDeposit);
+      const newBalance = currentDeposit + amount;
+
+      // Prepare atomic multi-path update for instant database write
+      const newKey = db.ref(`dinings/${diningId}/deposits`).push().key;
+      const updates = {};
+      updates[`dinings/${diningId}/deposits/${newKey}`] = {
         userId,
         userName: user?.name || 'Unknown',
         amount,
@@ -629,20 +1209,27 @@ const FinanceModule = {
         note: note || 'Deposit',
         date: Utils.today(),
         timestamp: firebase.database.ServerValue.TIMESTAMP
-      });
+      };
+      updates[`dinings/${diningId}/users/${userId}/totalDeposit`] = newBalance;
 
-      // Update user's total deposit
-      const currentDeposit = Utils.num(user?.totalDeposit);
-      const newBalance = currentDeposit + amount;
-      await db.ref(`dinings/${this.diningId}/users/${userId}/totalDeposit`).set(newBalance);
+      await db.ref().update(updates);
 
-      // Notify
-      await Notifications.create(this.diningId, 'Deposit Received', `${Utils.currency(amount)} deposited for ${user?.name || 'User'}.`, userId, 'deposit');
-      await Notifications.log(this.diningId, 'deposit_added', `Deposit ৳${amount} for ${user?.name}`, Messliner.state.userId, userId);
-      Notifications.toast('success', 'Deposit Added', `${Utils.currency(amount)} added for ${user?.name}.`);
+      // Instant UI response: close modal and notify user immediately
+      Notifications.toast('success', 'Deposit Added', `${Utils.currency(amount)} added for ${user?.name || 'Member'}.`);
       closeModal('depositModal');
+      document.getElementById('depositForm')?.reset();
 
-      // ─── SMS Alert (non-blocking) ───────────────────────────────────
+      if (window.UserDashboard && typeof UserDashboard.renderStats === 'function') {
+        UserDashboard.renderStats();
+      }
+      if (window.OverviewModule && typeof OverviewModule.refresh === 'function') {
+        OverviewModule.refresh();
+      }
+
+      // Non-blocking background notification and SMS
+      Notifications.create(diningId, 'Deposit Received', `${Utils.currency(amount)} deposited for ${user?.name || 'User'}.`, userId, 'deposit').catch(() => {});
+      Notifications.log(diningId, 'deposit_added', `Deposit ৳${amount} for ${user?.name || 'Member'}`, Messliner.state?.userId, userId).catch(() => {});
+
       if (typeof SMSAlertModule !== 'undefined' && SMSAlertModule.sendDepositSMS) {
         SMSAlertModule.sendDepositSMS({
           userId,
@@ -650,13 +1237,17 @@ const FinanceModule = {
           amount,
           newBalance,
           note: note || 'Deposit',
-          diningId: this.diningId,
+          diningId,
         }).catch(e => console.warn('[SMS] send error:', e));
       }
 
     } catch (error) {
       console.error('Save deposit error:', error);
       Notifications.toast('error', 'Error', 'Failed to save deposit.');
+    } finally {
+      this._isSavingDeposit = false;
+      this.resetBtnInstantLoading(submitBtn, 'Add Deposit');
+      this.validateDepositForm();
     }
   },
 
@@ -664,20 +1255,51 @@ const FinanceModule = {
    * Save deduction
    */
   async saveDeduction() {
-    const userId = document.getElementById('deductUserSelect').value;
-    const amount = parseFloat(document.getElementById('deductAmountInput').value);
-    const reason = document.getElementById('deductReasonInput').value.trim();
+    if (this._isSavingDeduct) return;
 
-    if (!userId || !amount || amount <= 0 || !reason) {
-      Notifications.toast('warning', 'Invalid Input', 'Please fill all fields.');
+    const userId = document.getElementById('deductUserSelect')?.value;
+    const amountVal = document.getElementById('deductAmountInput')?.value?.replace(/,/g, '') || '';
+    const amount = parseFloat(amountVal);
+    const reasonInput = document.getElementById('deductReasonInput')?.value?.trim();
+    const reason = reasonInput || 'Deduction';
+    const submitBtn = document.getElementById('deductSubmitBtn');
+
+    if (!userId || !amount || isNaN(amount) || amount <= 0) {
+      this.resetBtnInstantLoading(submitBtn, 'Deduct Balance');
+      this.validateDeductForm();
+      Notifications.toast('warning', 'Invalid Input', 'Please select a member and enter a valid amount.');
       return;
     }
 
-    try {
-      const user = Messliner.users.users[userId];
+    const diningId = this.diningId || Messliner.state?.diningId;
+    if (!diningId) {
+      this.resetBtnInstantLoading(submitBtn, 'Deduct Balance');
+      Notifications.toast('error', 'Error', 'Dining group not found.');
+      return;
+    }
 
-      // Save deduction record
-      await db.ref(`dinings/${this.diningId}/deposits`).push().set({
+    this._isSavingDeduct = true;
+    if (submitBtn) {
+      submitBtn.classList.add('btn-loading-state');
+      submitBtn.innerHTML = `<span class="bazar-btn-spinner"></span><span>Deducting...</span>`;
+    }
+
+    try {
+      let users = (Messliner.users && Messliner.users.users) ||
+        (window.UsersModule && window.UsersModule.users) ||
+        (Messliner.bazar && Messliner.bazar.users) ||
+        (window.UserDashboard && window.UserDashboard.allUsers) ||
+        (Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) ||
+        (Messliner.state && Messliner.state.users) || {};
+
+      const user = users[userId] || {};
+      const currentDeposit = Utils.num(user?.totalDeposit);
+      const newBalance = currentDeposit - amount;
+
+      // Prepare atomic multi-path update for instant database write
+      const newKey = db.ref(`dinings/${diningId}/deposits`).push().key;
+      const updates = {};
+      updates[`dinings/${diningId}/deposits/${newKey}`] = {
         userId,
         userName: user?.name || 'Unknown',
         amount: -amount,
@@ -685,20 +1307,34 @@ const FinanceModule = {
         note: reason,
         date: Utils.today(),
         timestamp: firebase.database.ServerValue.TIMESTAMP
-      });
+      };
+      updates[`dinings/${diningId}/users/${userId}/totalDeposit`] = newBalance;
 
-      // Update user's total deposit (subtract)
-      const currentDeposit = Utils.num(user?.totalDeposit);
-      await db.ref(`dinings/${this.diningId}/users/${userId}/totalDeposit`).set(currentDeposit - amount);
+      await db.ref().update(updates);
 
-      await Notifications.create(this.diningId, 'Balance Deducted', `${Utils.currency(amount)} deducted from ${user?.name}. Reason: ${reason}`, userId, 'deposit');
-      await Notifications.log(this.diningId, 'deduction_added', `Deducted ৳${amount} from ${user?.name}: ${reason}`, Messliner.state.userId, userId);
-      Notifications.toast('success', 'Deduction Applied', `${Utils.currency(amount)} deducted from ${user?.name}.`);
+      // Instant UI response: close modal and notify user immediately
+      Notifications.toast('success', 'Deduction Applied', `${Utils.currency(amount)} deducted from ${user?.name || 'Member'}.`);
       closeModal('deductModal');
+      document.getElementById('deductForm')?.reset();
+
+      if (window.UserDashboard && typeof UserDashboard.renderStats === 'function') {
+        UserDashboard.renderStats();
+      }
+      if (window.OverviewModule && typeof OverviewModule.refresh === 'function') {
+        OverviewModule.refresh();
+      }
+
+      // Non-blocking background notification & log
+      Notifications.create(diningId, 'Balance Deducted', `${Utils.currency(amount)} deducted from ${user?.name || 'Member'}. Reason: ${reason}`, userId, 'deposit').catch(() => {});
+      Notifications.log(diningId, 'deduction_added', `Deducted ৳${amount} from ${user?.name || 'Member'}: ${reason}`, Messliner.state?.userId, userId).catch(() => {});
 
     } catch (error) {
       console.error('Save deduction error:', error);
       Notifications.toast('error', 'Error', 'Failed to apply deduction.');
+    } finally {
+      this._isSavingDeduct = false;
+      this.resetBtnInstantLoading(submitBtn, 'Deduct Balance');
+      this.validateDeductForm();
     }
   },
 
@@ -706,6 +1342,10 @@ const FinanceModule = {
    * Save bazar cost
    */
   async saveBazar() {
+    if (window.MesslinerSubscription && typeof MesslinerSubscription.assertCanWrite === 'function') {
+      if (!MesslinerSubscription.assertCanWrite()) return;
+    }
+
     const date = document.getElementById('bazarDateInput')?.value;
     const amount = parseFloat(document.getElementById('bazarAmountInput')?.value);
     const items = document.getElementById('bazarItemsInput')?.value.trim() || '';
@@ -714,7 +1354,10 @@ const FinanceModule = {
 
     const users = (Messliner.users && Messliner.users.users) ||
       (window.UsersModule && window.UsersModule.users) ||
-      (Messliner.bazar && Messliner.bazar.users) || {};
+      (Messliner.bazar && Messliner.bazar.users) ||
+      (window.UserDashboard && window.UserDashboard.allUsers) ||
+      (Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) ||
+      (Messliner.state && Messliner.state.users) || {};
 
     let shopper = '';
     if (shopperUserId && users[shopperUserId]) {
@@ -734,37 +1377,120 @@ const FinanceModule = {
       return;
     }
 
+    if (Object.keys(users).length === 0 && typeof db !== 'undefined') {
+      try {
+        const uSnap = await db.ref(`dinings/${diningId}/users`).once('value');
+        if (uSnap.val()) users = uSnap.val();
+      } catch (e) {}
+    }
+
+    const editKey = document.getElementById('bazarEditKey')?.value;
+
+    const submitBtn = document.getElementById('bazarSubmitBtn');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.classList.add('btn-loading-state');
+      submitBtn.innerHTML = `<span class="bazar-btn-spinner"></span><span>${editKey ? 'Updating...' : 'Saving...'}</span>`;
+    }
+
     try {
       const entryItems = items || 'Bazar Expense';
 
-      // 1. Save bazar expense record
-      const record = {
-        amount,
-        items: entryItems,
-        shopperName: shopper || 'N/A',
-        userId: shopperUserId || null,
-        date,
-        timestamp: firebase.database.ServerValue.TIMESTAMP
-      };
-
-      await db.ref(`dinings/${diningId}/bazar`).push().set(record);
-
-      // 2. Automatically assign member to duty schedule for this specific day
-      if (shopperUserId && users[shopperUserId]) {
-        const yearMonth = date.slice(0, 7);
-        const dutyData = {
-          userId: shopperUserId,
-          userName: shopper,
-          note: 'Bazar Shopper',
-          assignedBy: Messliner.state?.userId || 'admin',
+      if (editKey) {
+        // 1. Update existing bazar expense record
+        const record = {
+          amount,
+          items: entryItems,
+          shopperName: shopper || 'N/A',
+          userId: shopperUserId || '',
+          date,
           updatedAt: firebase.database.ServerValue.TIMESTAMP
         };
-        await db.ref(`dinings/${diningId}/bazarSchedule/${yearMonth}/${date}`).set(dutyData);
+
+        await db.ref(`dinings/${diningId}/bazar/${editKey}`).update(record);
+
+        // Update local cache in BazarModule if present
+        if (Messliner.bazar && Messliner.bazar.rawBazarData && Messliner.bazar.rawBazarData[editKey]) {
+          Messliner.bazar.rawBazarData[editKey] = {
+            ...Messliner.bazar.rawBazarData[editKey],
+            ...record
+          };
+        }
+
+        // 2. Duty schedule update (best-effort, non-blocking)
+        if (shopperUserId && users[shopperUserId]) {
+          try {
+            const yearMonth = date.slice(0, 7);
+            const dutyData = {
+              userId: shopperUserId,
+              userName: shopper,
+              note: 'Bazar Shopper',
+              assignedBy: Messliner.state?.userId || 'admin',
+              updatedAt: firebase.database.ServerValue.TIMESTAMP
+            };
+            await db.ref(`dinings/${diningId}/bazarSchedule/${yearMonth}/${date}`).set(dutyData);
+          } catch (schedErr) {
+            console.warn('[Finance] bazarSchedule assignment skipped/failed:', schedErr);
+          }
+        }
+
+        // 3. Activity Log (best-effort, non-blocking)
+        try {
+          await Notifications.log(diningId, 'bazar_updated', `Updated Bazar ৳${amount}: ${entryItems}`, Messliner.state?.userId);
+        } catch (logErr) {
+          console.warn('[Finance] Bazar activity log skipped/failed:', logErr);
+        }
+
+        Notifications.toast('success', 'Bazar Updated', `Bazar of ৳${amount.toLocaleString('en-BD')} updated successfully.`);
+      } else {
+        // 1. Save new primary bazar expense record
+        const record = {
+          amount,
+          items: entryItems,
+          shopperName: shopper || 'N/A',
+          userId: shopperUserId || '',
+          date,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        await db.ref(`dinings/${diningId}/bazar`).push().set(record);
+
+        // 2. Automatically assign member to duty schedule for this specific day (best-effort, non-blocking)
+        if (shopperUserId && users[shopperUserId]) {
+          try {
+            const yearMonth = date.slice(0, 7);
+            const dutyData = {
+              userId: shopperUserId,
+              userName: shopper,
+              note: 'Bazar Shopper',
+              assignedBy: Messliner.state?.userId || 'admin',
+              updatedAt: firebase.database.ServerValue.TIMESTAMP
+            };
+            await db.ref(`dinings/${diningId}/bazarSchedule/${yearMonth}/${date}`).set(dutyData);
+          } catch (schedErr) {
+            console.warn('[Finance] bazarSchedule assignment skipped/failed:', schedErr);
+          }
+        }
+
+        // 3. Notifications & Activity Log (best-effort, non-blocking)
+        try {
+          await Notifications.create(diningId, "Today's Bazar Added", `Today's bazar has been recorded (${Utils.currency(amount)}).`, 'all', 'bazar');
+        } catch (notifErr) {
+          console.warn('[Finance] Bazar notification skipped/failed:', notifErr);
+        }
+
+        try {
+          await Notifications.log(diningId, 'bazar_added', `Bazar ৳${amount}: ${entryItems}`, Messliner.state?.userId);
+        } catch (logErr) {
+          console.warn('[Finance] Bazar activity log skipped/failed:', logErr);
+        }
+
+        Notifications.toast('success', 'Bazar Added', `Bazar of ৳${amount.toLocaleString('en-BD')} recorded successfully.`);
       }
 
-      await Notifications.create(diningId, "Today's Bazar Added", `Today's bazar has been recorded (${Utils.currency(amount)}).`, 'all', 'bazar');
-      await Notifications.log(diningId, 'bazar_added', `Bazar ৳${amount}: ${entryItems}`, Messliner.state?.userId);
       closeModal('bazarModal');
+      document.getElementById('bazarForm')?.reset();
+      this.resetBazarModal();
 
       if (window.BazarModule && typeof BazarModule.render === 'function') {
         BazarModule.render();
@@ -775,10 +1501,19 @@ const FinanceModule = {
       if (window.HistoryModule && typeof HistoryModule.loadBazarHistory === 'function') {
         HistoryModule.loadBazarHistory();
       }
+      if (window.UserDashboard && typeof UserDashboard.renderStats === 'function') {
+        UserDashboard.renderStats();
+      }
+      if (window.OverviewModule && typeof OverviewModule.refresh === 'function') {
+        OverviewModule.refresh();
+      }
 
     } catch (error) {
       console.error('Save bazar error:', error);
       Notifications.toast('error', 'Error', 'Failed to save bazar cost.');
+    } finally {
+      this.resetBazarModal();
+      this.validateBazarForm();
     }
   },
 
@@ -2866,6 +3601,15 @@ const FinanceModule = {
     }
   }
 };
+
+// Close bazar date calendar popup on outside click
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#bazarDatePickerTrigger') && !e.target.closest('#bazarDateCalendarPopup')) {
+    if (window.Messliner && Messliner.finance && typeof Messliner.finance.closeBazarCalendar === 'function') {
+      Messliner.finance.closeBazarCalendar();
+    }
+  }
+});
 
 console.log('[Messliner] Finance module loaded');
 

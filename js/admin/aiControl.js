@@ -38,24 +38,84 @@ const AIControlModule = {
   },
 
   /**
-   * Helper function to call the Gemini API
+   * Helper function to call the Gemini API securely via Supabase Cloud Edge Function
    */
   async _callGemini(prompt, systemInstruction, responseSchema = null) {
+    // 1. Try Supabase Cloud Edge Function (Secure Proxy - No API Keys exposed in browser)
+    const proxyUrl = (window.__ENV__?.FUNCTIONS?.geminiProxy) || "https://pgnjvtmofglkjplotrha.supabase.co/functions/v1/gemini-proxy";
+    const anonKey = (window.__ENV__?.SUPABASE_ANON_KEY) || "";
+
+    let token = null;
+    try {
+      if (typeof getSupabaseClient === 'function') {
+        const client = getSupabaseClient();
+        const { data: { session } } = await client.auth.getSession();
+        if (session && session.access_token) {
+          token = session.access_token;
+        }
+      }
+      if (!token && typeof _getStoredAuthToken === 'function') {
+        const raw = _getStoredAuthToken();
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          token = parsed?.access_token || parsed?.currentSession?.access_token;
+        }
+      }
+    } catch (_) {}
+
+    if (proxyUrl && token) {
+      try {
+        const edgeRes = await fetch(proxyUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+            "apikey": anonKey
+          },
+          body: JSON.stringify({
+            prompt: prompt,
+            systemInstruction: systemInstruction,
+            responseSchema: responseSchema,
+            model: (window.__ENV__ && window.__ENV__.GEMINI_MODEL) || "gemini-2.5-flash"
+          })
+        });
+
+        if (edgeRes.ok) {
+          const edgeData = await edgeRes.json();
+          if (responseSchema) {
+            if (edgeData.data) return edgeData.data;
+            let cleanJson = edgeData.text || "";
+            if (cleanJson.startsWith('```')) {
+              cleanJson = cleanJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+            }
+            return JSON.parse(cleanJson);
+          }
+          return edgeData.text || "";
+        } else {
+          const errDetail = await edgeRes.text();
+          console.warn("[AIControl] Supabase Edge Function notice (" + edgeRes.status + "):", errDetail);
+        }
+      } catch (proxyErr) {
+        console.warn("[AIControl] Edge proxy error, attempting fallback:", proxyErr.message);
+      }
+    }
+
+    // 2. Direct fallback (for local development or if Edge Function is offline)
     const apiKey = (typeof GEMINI_API_KEY !== 'undefined' && GEMINI_API_KEY && GEMINI_API_KEY !== "YOUR_GEMINI_API_KEY_HERE")
       ? GEMINI_API_KEY
       : (window.GEMINI_API_KEY || localStorage.getItem('gemini_api_key'));
 
     if (!apiKey) {
-      throw new Error("Please configure a valid Gemini API key in firebase-config.js.");
+      throw new Error("Gemini AI is securely routed through Supabase Cloud. Please ensure you are logged in or deploy the 'gemini-proxy' edge function.");
     }
 
-    const preferredModel = (typeof GEMINI_MODEL !== 'undefined' && GEMINI_MODEL) ? GEMINI_MODEL : 'gemini-3-flash-preview';
+    const preferredModel = (typeof GEMINI_MODEL !== 'undefined' && GEMINI_MODEL) ? GEMINI_MODEL : 'gemini-2.5-flash';
     const candidateModels = [
       preferredModel,
-      'gemini-3-flash-preview',
-      'gemini-3.5-flash-lite',
-      'gemini-3.5-flash',
-      'gemini-3.8-flash'
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-3-flash-preview'
     ].filter((m, idx, arr) => arr.indexOf(m) === idx);
 
     const requestBody = {
@@ -95,7 +155,6 @@ const AIControlModule = {
 
         if (!response.ok) {
           const errText = await response.text();
-          // If 503 (high demand) or 404 or 429, retry next candidate model
           if (response.status === 503 || response.status === 404 || response.status === 429) {
             console.warn(`[Gemini] Model ${model} returned ${response.status}. Trying next fallback model...`);
             lastError = new Error(`Gemini API Error: ${response.status} - ${errText}`);

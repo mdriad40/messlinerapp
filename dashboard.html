@@ -48,7 +48,10 @@
 
   <!-- Mobile App Bridge & Theme Color -->
   <meta name="theme-color" content="#FFFFFF">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <script src="js/mobile-bridge.js"></script>
+  <!-- Environment Variables & Secrets Hub -->
+  <script src="js/env.js"></script>
 
   <!-- Instant Dashboard Synchronous Fast-Boot Engine (0ms Latency) -->
   <script>
@@ -96,7 +99,8 @@
             }
           } else if (parsed.user.email) {
             const emailKey = parsed.user.email.toLowerCase().replace(/[\.\$#\[\]\/@]/g, '_');
-            const cachedMap = localStorage.getItem('ml_map_' + emailKey);
+            const commaKey = parsed.user.email.replace(/\./g, ',');
+            const cachedMap = localStorage.getItem('ml_map_' + emailKey) || localStorage.getItem('ml_map_' + commaKey);
             if (cachedMap) {
               window.__ML_BOOT_MAP = JSON.parse(cachedMap);
             }
@@ -166,7 +170,7 @@
   <!-- Bengali & English Typography (SolaimanLipi & Kalpurush matching Bangladesh Railway standard) -->
   <!-- Network Preconnect & DNS-Prefetch for Fast Database & CDN Handshake -->
   <link rel="preconnect" href="https://pgnjvtmofglkjplotrha.supabase.co" crossorigin>
-  <link rel="preconnect" href="https://meiner-3a1e5-default-rtdb.firebaseio.com" crossorigin>
+  <link rel="preconnect" href="https://meiner-6ec2e-default-rtdb.firebaseio.com" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -179,14 +183,145 @@
   <!-- CSS -->
   <link rel="stylesheet" href="css/variables.css?v=1.2">
   <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/components.css?v=2.3">
+  <link rel="stylesheet" href="css/components.css?v=2.4">
   <link rel="stylesheet" href="css/onboarding.css?v=1.3">
-  <link rel="stylesheet" href="css/dashboard.css?v=11.4">
+  <link rel="stylesheet" href="css/dashboard.css?v=11.6">
   <link rel="stylesheet" href="css/responsive.css?v=2.2">
   <link rel="stylesheet" href="css/m3-timepicker.css">
   <link rel="stylesheet" href="css/prayer.css?v=2.1">
   <style>
     /* ====== Professional Polish Overrides ====== */
+
+    /* Desktop Notification Dropdown Popover (Floating, hidden by default) */
+    .desktop-notif-popover {
+      position: absolute !important;
+      top: calc(100% + 10px) !important;
+      right: -8px !important;
+      width: 420px !important;
+      max-width: calc(100vw - 32px) !important;
+      background: #FFFFFF !important;
+      border-radius: 18px !important;
+      border: 1px solid #E2E8F0 !important;
+      box-shadow: 0 16px 40px -8px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+      z-index: 1050 !important;
+      opacity: 0 !important;
+      transform: translateY(-8px) scale(0.97) !important;
+      pointer-events: none !important;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      overflow: hidden !important;
+      display: none !important;
+      flex-direction: column !important;
+    }
+
+    .desktop-notif-popover.active {
+      display: flex !important;
+      opacity: 1 !important;
+      transform: translateY(0) scale(1) !important;
+      pointer-events: auto !important;
+    }
+
+    .desktop-notif-header {
+      padding: 14px 16px 10px !important;
+      background: #FFFFFF !important;
+      border-bottom: 1px solid #F1F5F9 !important;
+    }
+
+    .desktop-notif-title-row {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      margin-bottom: 8px !important;
+    }
+
+    .desktop-notif-title {
+      font-size: 0.96rem !important;
+      font-weight: 700 !important;
+      color: #0F172A !important;
+      margin: 0 !important;
+    }
+
+    .desktop-notif-actions {
+      display: flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+    }
+
+    .desktop-notif-feed-list {
+      max-height: 420px !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      padding: 10px 12px 16px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    .notif-m-card {
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px !important;
+      padding: 10px 14px !important;
+      background: #FFFFFF !important;
+      border: 1px solid #E2E8F0 !important;
+      border-radius: 10px !important;
+      box-sizing: border-box !important;
+      width: 100% !important;
+      cursor: pointer !important;
+    }
+
+    .notif-m-card.is-unread {
+      background: #F0FDF4 !important;
+      border: 1.2px solid rgba(16, 185, 129, 0.5) !important;
+    }
+
+    .notif-m-body {
+      flex: 1 !important;
+      min-width: 0 !important;
+    }
+
+    .notif-m-row-top {
+      display: flex !important;
+      align-items: baseline !important;
+      justify-content: space-between !important;
+      gap: 8px !important;
+    }
+
+    .notif-m-title {
+      font-size: 0.85rem !important;
+      font-weight: 700 !important;
+      color: #0F172A !important;
+    }
+
+    .notif-m-time {
+      font-size: 0.72rem !important;
+      color: #94A3B8 !important;
+    }
+
+    .notif-m-subtitle {
+      font-size: 0.78rem !important;
+      color: #64748B !important;
+      margin-top: 2px !important;
+      line-height: 1.35 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+
+    .notif-m-del-btn {
+      background: transparent !important;
+      border: none !important;
+      color: #94A3B8 !important;
+      cursor: pointer !important;
+      padding: 3px !important;
+      border-radius: 4px !important;
+    }
+
+    .notif-m-del-btn:hover {
+      color: #EF4444 !important;
+      background: #FEE2E2 !important;
+    }
 
     /* Section title bars with a subtle green left accent */
     .section-title-bar h3 {
@@ -398,8 +533,8 @@
         background: #6EE7B7;
       }
 
-      /* Firefox-only support (does not trigger Windows 11 Chrome Fluent collapse) */
-      @-moz-document url-prefix() {
+      /* Firefox scrollbar styling using standard @supports */
+      @supports (scrollbar-color: #6EE7B7 #F1F5F9) {
         * {
           scrollbar-width: thin;
           scrollbar-color: #6EE7B7 #F1F5F9;
@@ -978,121 +1113,7 @@
       }
     }
 
-    /* ========================================================
-       DINING MANAGER (ADMIN) DESKTOP ONLY GUARD STYLES
-       Enforces minimum 1024px desktop width for Admin Panel
-       ======================================================== */
-    #adminDesktopOnlyModal {
-      display: none !important;
-    }
-
-    @media (max-width: 1023px) {
-      html.ml-is-admin #adminDesktopOnlyModal,
-      body.role-admin #adminDesktopOnlyModal,
-      html.admin-view-active #adminDesktopOnlyModal {
-        display: flex !important;
-      }
-
-      html.ml-is-admin #pageLoader,
-      body.role-admin #pageLoader,
-      html.admin-view-active #pageLoader {
-        display: none !important;
-      }
-
-      html.ml-is-admin,
-      html.ml-is-admin body,
-      body.role-admin,
-      html.admin-view-active body {
-        overflow: hidden !important;
-        height: 100vh !important;
-        height: 100dvh !important;
-      }
-    }
-
-    .admin-desktop-only-gate {
-      position: fixed;
-      inset: 0;
-      width: 100vw !important;
-      width: 100% !important;
-      height: 100vh !important;
-      height: 100dvh !important;
-      min-height: 100vh !important;
-      min-height: 100dvh !important;
-      z-index: 99999999;
-      background: #ffffff !important;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 !important;
-      margin: 0 !important;
-      overflow-y: auto;
-      box-sizing: border-box;
-    }
-
-    .admin-desktop-card {
-      width: 100% !important;
-      max-width: 100% !important;
-      min-height: 100vh !important;
-      min-height: 100dvh !important;
-      height: 100% !important;
-      background: #ffffff !important;
-      border: none !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      padding: 2.5rem 1.5rem !important;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      box-sizing: border-box;
-      margin: 0 !important;
-    }
-
-    .admin-desktop-content-wrap {
-      max-width: 440px;
-      width: 100%;
-      margin: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
-
-    @keyframes gatePopIn {
-      0% {
-        opacity: 0;
-        transform: scale(0.93) translateY(12px);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
-    }
-
-    .gate-device-anim {
-      width: 90px;
-      height: 90px;
-      margin: 0.75rem auto 1.15rem auto;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .gate-device-circle {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      background: linear-gradient(135deg, rgba(5, 150, 105, 0.12), rgba(8, 145, 178, 0.1));
-      border: 1px solid rgba(5, 150, 105, 0.2);
-      animation: gatePulse 2.5s infinite ease-in-out;
-    }
-
-    @keyframes gatePulse {
-      0%, 100% { transform: scale(1); opacity: 0.8; }
-      50% { transform: scale(1.1); opacity: 0.4; }
-    }
+    /* Dining Manager Mobile Access Enabled */
   </style>
 
   <!-- Favicon -->
@@ -1101,116 +1122,9 @@
 
 <body>
 
-  <!-- ======== DESKTOP-ONLY GUARD FOR DINING MANAGER (ADMIN) ======== -->
-  <div id="adminDesktopOnlyModal" class="admin-desktop-only-gate" style="display:none;">
-    <div class="admin-desktop-card">
-      <div class="admin-desktop-content-wrap">
-        <!-- Brand & Role Header -->
-        <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:6px;">
-          <img src="assets/messLiner-logo.png" alt="Messliner Logo" style="width:32px; height:32px; object-fit:contain; border-radius:8px;">
-          <span style="font-size:1.2rem; font-weight:800; color:#0f172a; letter-spacing:-0.02em;">Messliner</span>
-        </div>
+  <!-- Dining Manager Mobile Access Enabled -->
 
-        <div style="display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:9999px; background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:1rem;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          Dining Manager Portal
-        </div>
 
-        <!-- Animated Device Visual (Laptop Illustration) -->
-        <div class="gate-device-anim">
-          <div class="gate-device-circle"></div>
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="position:relative; z-index:2;">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" stroke="#059669" fill="rgba(209, 250, 229, 0.6)"></rect>
-            <line x1="8" y1="21" x2="16" y2="21" stroke="#047857" stroke-width="2"></line>
-            <line x1="12" y1="17" x2="12" y2="21" stroke="#047857" stroke-width="2"></line>
-            <line x1="6" y1="8" x2="10" y2="8" stroke="#059669"></line>
-            <line x1="6" y1="11" x2="14" y2="11" stroke="#059669"></line>
-          </svg>
-        </div>
-
-        <!-- Main Message -->
-        <h2 style="font-size:1.35rem; font-weight:800; color:#0f172a; margin:0 0 0.5rem 0; line-height:1.3;">Desktop Device Required</h2>
-        
-        <p style="font-size:0.9rem; color:#475569; line-height:1.6; margin:0 0 1.25rem 0;">
-          The <strong>Messliner Dining Manager Panel</strong> is strictly optimized for desktop and laptop screens to ensure accurate financial ledger tracking, meal calculations, and multi-column member management.
-        </p>
-
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:0.75rem 1rem; margin-bottom:1.35rem; display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.8rem; color:#64748b; font-weight:600;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-          <span>Please log in on a PC or laptop (min. 1024px width)</span>
-        </div>
-
-        <!-- Actions -->
-        <div style="display:flex; flex-direction:column; gap:0.65rem; width:100%;">
-          <button onclick="localStorage.setItem('viewMode', 'user'); sessionStorage.setItem('viewMode', 'user'); window.location.reload();"
-            style="width:100%; padding:0.8rem 1.25rem; font-weight:700; border-radius:14px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:0.925rem; cursor:pointer; border:none; background:linear-gradient(135deg, #059669, #0891b2); color:#ffffff; box-shadow:0 4px 14px rgba(5, 150, 105, 0.3); transition:all 0.2s ease;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            Switch to Member Mobile View
-          </button>
-
-          <div style="display:flex; gap:8px; margin-top:2px; width:100%;">
-            <a href="index.html" style="flex:1; padding:0.65rem 0.75rem; border-radius:12px; background:#f1f5f9; border:1px solid #e2e8f0; color:#334155; font-size:0.825rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-              Home
-            </a>
-            <button onclick="if(window.AuthService && AuthService.logout){ AuthService.logout(); } else { try{ localStorage.removeItem('sb-pgnjvtmofglkjplotrha-auth-token'); }catch(_){} window.location.href='/login'; }"
-              style="flex:1; padding:0.65rem 0.75rem; border-radius:12px; background:#fee2e2; border:1px solid #fecaca; color:#dc2626; font-size:0.825rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-              Log Out
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    (function () {
-      function evaluateAdminMobileGate() {
-        try {
-          var isSmall = window.innerWidth < 1024;
-          var viewMode = localStorage.getItem('viewMode') || sessionStorage.getItem('viewMode');
-          var isAdmin = document.documentElement.classList.contains('ml-is-admin') ||
-                        document.body.classList.contains('role-admin') ||
-                        (window.App && window.App.state && window.App.state.role === 'admin');
-
-          if (!isAdmin && viewMode !== 'user') {
-            var token = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
-            if (token) {
-              var p = JSON.parse(token);
-              var email = p && p.user && p.user.email;
-              if (email) {
-                var c = localStorage.getItem('ml_cache_v2_' + email.toLowerCase().replace(/[\.\$#\[\]\/@]/g, '_'));
-                if (c) {
-                  var role = JSON.parse(c)?.userData?.role;
-                  if (role === 'admin' || role === 'manager') isAdmin = true;
-                }
-              }
-            }
-          }
-
-          var modal = document.getElementById('adminDesktopOnlyModal');
-          if (modal) {
-            if (isAdmin && isSmall && viewMode !== 'user') {
-              modal.style.setProperty('display', 'flex', 'important');
-              document.documentElement.classList.add('admin-view-active');
-              var pl = document.getElementById('pageLoader');
-              if (pl) pl.style.setProperty('display', 'none', 'important');
-            } else {
-              modal.style.setProperty('display', 'none', 'important');
-              document.documentElement.classList.remove('admin-view-active');
-            }
-          }
-        } catch (_) {}
-      }
-
-      window.addEventListener('resize', evaluateAdminMobileGate);
-      window.addEventListener('DOMContentLoaded', evaluateAdminMobileGate);
-      evaluateAdminMobileGate();
-      var checkTimer = setInterval(evaluateAdminMobileGate, 350);
-      setTimeout(function () { clearInterval(checkTimer); }, 12000);
-    })();
-  </script>
 
   <!-- ======== PAGE LOADER ======== -->
   <div id="pageLoader" class="page-loader">
@@ -2832,10 +2746,10 @@
 
           <!-- User Profile Block on right header matching picture -->
           <div class="header-user-block" onclick="Messliner.router.navigate('profile')" title="View Profile">
-            <div class="avatar header-user-avatar" id="headerAvatar">?</div>
+            <div class="avatar header-user-avatar" id="headerAvatar">M</div>
             <div class="header-user-info">
-              <div class="header-user-name" id="headerUserName">Totok Michael</div>
-              <div class="header-user-role" id="headerUserRole">tmichael20@gmail.com</div>
+              <div class="header-user-name" id="headerUserName">Loading...</div>
+              <div class="header-user-role" id="headerUserRole">Please wait...</div>
             </div>
           </div>
         </div>
@@ -2844,29 +2758,92 @@
       <!-- Content Area -->
       <div class="content-area">
 
+        <!-- Grace Period Notification Banner -->
+        <div id="subGracePeriodBanner" class="hidden"
+          style="display:none; margin: 12px 16px; padding: 12px 18px; border-radius: 14px; background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; font-size: 13px; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.08);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 18px;">⚠️</span>
+            <div>
+              <strong style="color: #b45309;">Grace Period Active:</strong>
+              <span id="subGracePeriodText">Your plan expired. 3 days remaining in grace period. Renew to avoid
+                lockout.</span>
+            </div>
+          </div>
+          <a href="checkout.html"
+            style="padding: 7px 16px; border-radius: 10px; background: #d97706; color: white; font-weight: 800; text-decoration: none; font-size: 12px; white-space: nowrap; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.25);">
+            Renew with bKash
+          </a>
+        </div>
+
+        <!-- Full-Screen Subscription Expired Lock Modal (Read-Only Gate) -->
+        <div id="subExpiredLockModal"
+          style="display:none; position: fixed; inset: 0; z-index: 999999; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 16px;">
+          <div
+            style="background: white; border-radius: 24px; max-width: 480px; width: 100%; padding: 32px 28px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); border: 1px solid #e2e8f0;">
+            <div
+              style="width: 64px; height: 64px; border-radius: 50%; background: #fef2f2; border: 2px solid #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <span
+              style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 9999px;">
+              Subscription Expired
+            </span>
+            <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 12px 0 6px;">Mess Access Restricted
+            </h2>
+            <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin-bottom: 24px;">
+              Your mess subscription and 3-day grace period have concluded. Your historical ledgers, member accounts,
+              and meal records are safely preserved in Read-Only mode. Please renew your plan to log meals, bazar
+              entries, and deposits.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <a href="checkout.html"
+                style="width: 100%; padding: 14px; border-radius: 14px; background: linear-gradient(135deg, #059669, #047857); color: white; font-weight: 800; font-size: 14px; text-decoration: none; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);">
+                Renew / Upgrade with bKash
+              </a>
+              <button type="button" onclick="document.getElementById('subExpiredLockModal').style.display='none'"
+                style="background: none; border: none; font-size: 12px; color: #94a3b8; font-weight: 600; cursor: pointer; padding: 6px;">
+                Continue in Read-Only Mode
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- ======== DASHBOARD PAGE ======== -->
         <section id="page-dashboard" class="page-section active">
-          <!-- Upgrade to Premium Banner Card -->
-          <div class="premium-banner-card hidden" style="display:none !important;">
+          <!-- Dynamic Enterprise Subscription Banner Card (Admin Only) -->
+          <a href="checkout.html?plan=pro" id="dynamicSubCard" class="premium-banner-card sub-theme-trial hidden"
+            style="display:none !important;" title="Manage Subscription">
             <div class="premium-banner-left">
-              <div class="premium-banner-icon">
+              <div class="premium-banner-icon" id="subCardIcon">
+                <!-- Custom Crown SVG Icon -->
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
                   <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
                 </svg>
               </div>
               <div class="premium-banner-text">
-                <h4 class="premium-banner-title">Upgrade to Premium</h4>
-                <p class="premium-banner-subtitle">Unlimited members & bills · Ai assist — from ৳50/month</p>
+                <div class="premium-banner-header-row">
+                  <h4 class="premium-banner-title" id="subCardTitle">Upgrade to Premium</h4>
+                  <span class="sub-status-pill" id="subCardBadge" style="display:none;">
+                    <span class="sub-status-dot"></span>
+                    <span id="subCardBadgeText">30 Days Trial</span>
+                  </span>
+                </div>
+                <p class="premium-banner-subtitle" id="subCardSubtitle">Unlimited members & bills · Ai assist — from
+                  ৳50/month</p>
               </div>
             </div>
-            <div class="premium-banner-arrow">
+            <div class="premium-banner-arrow" id="subCardArrow">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </div>
-          </div>
+          </a>
 
           <!-- Manager Dining Overview Section (visible to Admin only) -->
           <div id="managerOverviewSection" class="hidden" style="margin-bottom: var(--space-6);"></div>
@@ -3575,6 +3552,13 @@
                     <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
                   </div>
                   <div class="cal-days-grid" id="calDaysGrid"></div>
+                  <div class="cal-popup-footer"
+                    style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.06); display:flex; justify-content:space-between; align-items:center;">
+                    <button type="button" class="date-today-pill" onclick="Messliner.meals.setTodayDate(event)"
+                      style="background:rgba(5, 150, 105, 0.12); color:#059669; border:none; padding:4px 12px; border-radius:12px; font-weight:700; font-size:12px; cursor:pointer;">Today</button>
+                    <button type="button" onclick="Messliner.meals.closeCalendarPopup()"
+                      style="background:none; border:none; color:#64748B; font-weight:600; font-size:12px; cursor:pointer;">Close</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -4082,6 +4066,13 @@
                         <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
                       </div>
                       <div class="cal-days-grid" id="slipCalDaysGrid"></div>
+                      <div class="cal-popup-footer"
+                        style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.06); display:flex; justify-content:space-between; align-items:center;">
+                        <button type="button" class="date-today-pill" onclick="Messliner.meals.setSlipTodayDate(event)"
+                          style="background:rgba(5, 150, 105, 0.12); color:#059669; border:none; padding:4px 12px; border-radius:12px; font-weight:700; font-size:12px; cursor:pointer;">Today</button>
+                        <button type="button" onclick="Messliner.meals.closeSlipCalendarPopup()"
+                          style="background:none; border:none; color:#64748B; font-weight:600; font-size:12px; cursor:pointer;">Close</button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -5623,9 +5614,9 @@
 
                   </div>
 
-                  <!-- Custom Interactive Calendar Popup (Identical to Meals Page Calendar) -->
-                  <div class="custom-calendar-popup" id="historyCalendarPopup"
-                    style="display:none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 99999; min-width: 280px; width: 100%; box-sizing: border-box; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18); background: #ffffff; border-radius: 16px;"
+                  <!-- Custom Interactive Calendar Popup (Ledger Add Bill Style) -->
+                  <div class="custom-calendar-popup ledger-calendar-popup" id="historyCalendarPopup"
+                    style="display:none; position: absolute; top: calc(100% + 6px); left: 0; right: auto; z-index: 99999; box-sizing: border-box;"
                     onclick="event.stopPropagation()">
                     <div class="cal-popup-header">
                       <button type="button" class="cal-header-arrow"
@@ -5648,6 +5639,14 @@
                       <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
                     </div>
                     <div class="cal-days-grid" id="historyCalDaysGrid"></div>
+                    <div class="cal-popup-footer"
+                      style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.06); display:flex; justify-content:space-between; align-items:center;">
+                      <button type="button" class="date-today-pill"
+                        onclick="Messliner.settings.selectHistoryCalendarDate(Utils.today(), event)"
+                        style="background:rgba(5, 150, 105, 0.12); color:#059669; border:none; padding:4px 12px; border-radius:12px; font-weight:700; font-size:12px; cursor:pointer;">Today</button>
+                      <button type="button" onclick="Messliner.settings.closeHistoryCalendarPopup()"
+                        style="background:none; border:none; color:#64748B; font-weight:600; font-size:12px; cursor:pointer;">Close</button>
+                    </div>
                   </div>
 
                 </div>
@@ -8350,18 +8349,17 @@
               <div class="mymeal-master-title-block">
                 <div class="mymeal-master-icon"
                   style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(5, 150, 105, 0.25)); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2);">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                  <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"
                     stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="4" width="20" height="16" rx="3"></rect>
-                    <path d="M22 7l-10 7L2 7"></path>
-                    <path d="M18 11l3 3-3 3"></path>
+                    <rect x="2" y="4" width="20" height="16" rx="2.5"></rect>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
                   </svg>
                 </div>
                 <div>
                   <div class="mymeal-title-row">
                     <h3 class="mymeal-master-title">More Tools &amp; SMS Gateway</h3>
                   </div>
-                  <p class="mymeal-master-subtitle">Automated deposit SMS alerts, API integration &amp; balance logs</p>
+                  <p class="mymeal-master-subtitle">Automated deposit SMS alerts, &amp; balance logs</p>
                 </div>
               </div>
             </div>
@@ -8408,16 +8406,16 @@
                     </svg>
                   </div>
                   <div>
-                    <h4 class="more-card-title">Instant Member SMS Notifications</h4>
+                    <h4 class="more-card-title">Instant Deposit SMS Notifications</h4>
                     <p class="more-card-desc">Automatically send SMS notifications to members upon deposit confirmation
                     </p>
                   </div>
                 </div>
                 <div class="sms-toggle-action">
-                  <label class="toggle-switch">
-                    <input type="checkbox" id="smsAlertToggle" onchange="Messliner.smsAlert.toggleEnable(this.checked)">
+                  <div class="toggle-switch" id="smsAlertToggleSwitch" onclick="Messliner.smsAlert.requestToggleEnable(event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Messliner.smsAlert.requestToggleEnable(event);}" role="button" tabindex="0" style="cursor: pointer;">
+                    <input type="checkbox" id="smsAlertToggle" tabindex="-1" style="pointer-events: none;" readonly>
                     <span class="toggle-slider"></span>
-                  </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -8545,6 +8543,8 @@
                         <input type="number" id="bkashRechargeAmount" class="form-input"
                           placeholder="Enter amount (min ৳10)" min="10" step="1" value="100"
                           oninput="Messliner.smsAlert.calcBkashEstimatedSms(this.value)"
+                          onkeyup="Messliner.smsAlert.calcBkashEstimatedSms(this.value)"
+                          onchange="Messliner.smsAlert.calcBkashEstimatedSms(this.value)"
                           style="font-weight: 700; font-size: 15px; -moz-appearance: textfield; appearance: textfield;">
                       </div>
                     </div>
@@ -8573,8 +8573,7 @@
                     <div
                       style="display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: rgba(255,255,255,0.9); border: 1px solid rgba(226, 19, 110, 0.15); border-radius: 10px; margin-bottom: 14px;">
                       <span style="font-size: 11px; color: #64748b; font-weight: 600;">Estimated Credits:</span>
-                      <span id="bkashEstSmsCount" style="font-size: 12px; font-weight: 800; color: #E2136E;">≈ 333 SMS
-                        Credits</span>
+                      <span id="bkashEstSmsCount" style="font-size: 12px; font-weight: 800; color: #E2136E;">≈ 142 SMS Credits</span>
                     </div>
                   </div>
 
@@ -9782,8 +9781,8 @@
                       </span>
                       Today's status
                     </span>
-                    <span class="ai-chip chip-teal"
-                      onclick="Messliner.history.triggerMessAnalysis()" title="মেস অডিট ও সম্পূর্ণ বিশ্লেষণ">
+                    <span class="ai-chip chip-teal" onclick="Messliner.history.triggerMessAnalysis()"
+                      title="Mess Audit & Full Analysis">
                       <span class="ai-chip-icon-plate">
                         <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4"
                           viewBox="0 0 24 24">
@@ -9840,11 +9839,6 @@
               window._aiRefreshGreeting = updateAiGreeting;
 
               // Greeting with username
-              function updateAiGreeting() {
-                const nameEl = document.getElementById('aiGreetingName');
-                const timeEl = document.getElementById('aiGreetingTime');
-                const welcomeTitleEl = document.getElementById('aiWelcomeTitle');
-
                 const userName = (window.Messliner && Messliner.history && Messliner.history.currentUserData && Messliner.history.currentUserData.name)
                   || (window.Messliner && window.Messliner.state && window.Messliner.state.userName)
                   || (window._aiLastUserName)
@@ -10258,7 +10252,7 @@
           </svg>
           <span>Home</span>
         </button>
-        <button class="bottom-nav-item" data-page="meals">
+        <button class="bottom-nav-item" id="bottomNavMeals" data-page="meals">
           <svg class="icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
             stroke-linecap="round" stroke-linejoin="round">
             <path
@@ -10276,7 +10270,7 @@
           </svg>
           <span id="bottomNavMealsLabel">Meals</span>
         </button>
-        <button class="bottom-nav-item" data-page="finance">
+        <button class="bottom-nav-item" id="bottomNavFinance" data-page="finance">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
             stroke-linejoin="round">
             <line x1="12" y1="1" x2="12" y2="23" />
@@ -10284,7 +10278,7 @@
           </svg>
           <span>Finance</span>
         </button>
-        <button class="bottom-nav-item" data-page="overview">
+        <button class="bottom-nav-item" id="bottomNavOverview" data-page="overview">
           <svg class="icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
             stroke-linecap="round" stroke-linejoin="round">
             <path
@@ -10320,7 +10314,7 @@
           </svg>
           <span>My Meal</span>
         </button>
-        <button class="bottom-nav-item" data-page="user-bills">
+        <button class="bottom-nav-item" id="bottomNavBills" data-page="user-bills">
           <svg class="icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
             stroke-linecap="round" stroke-linejoin="round" style="stroke-width: 1.5px !important;">
             <path d="M4.7 16.2V5.2a1.5 1.5 0 0 1 1.5-1.5h11.6" />
@@ -10348,7 +10342,7 @@
           </svg>
           <span>Bills</span>
         </button>
-        <button class="bottom-nav-item" data-page="profile">
+        <button class="bottom-nav-item" id="bottomNavProfile" data-page="profile">
           <svg class="icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
             stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="7.5" r="4" />
@@ -10360,12 +10354,218 @@
           </svg>
           <span>Profile</span>
         </button>
+        <button class="bottom-nav-item" id="bottomNavMore" data-page="more-sheet" style="display:none;">
+          <svg class="icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+          </svg>
+          <svg class="icon-filled" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+          </svg>
+          <span>More</span>
+        </button>
+      </div>
+    </nav>
+
+  </div> <!-- /app-shell -->
+
+  <!-- ======== MORE MENU BOTTOM SHEET (Mobile Manager Panel) ======== -->
+  <div class="more-sheet-overlay" id="moreSheetOverlay" onclick="if(event.target===this) Messliner.closeMoreSheet()">
+    <div class="more-bottom-sheet" id="moreBottomSheet" onclick="event.stopPropagation()">
+      <div class="more-sheet-handle-bar" onclick="Messliner.closeMoreSheet(true)">
+        <div class="more-sheet-pill"></div>
+      </div>
+      <div class="more-sheet-grid">
+        <!-- Row 1: Bazar, Ledger, Member -->
+        <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('bazar');">
+          <div class="more-card-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+          </div>
+          <span class="more-card-label">Bazar</span>
+        </div>
+
+        <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('ledger');">
+          <div class="more-card-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+          </div>
+          <span class="more-card-label">Ledger</span>
+        </div>
+
+        <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('users');">
+          <div class="more-card-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <span class="more-card-label">Member</span>
+        </div>
+
+        <!-- Row 2: History, SMS, ML AI -->
+        <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('mealhistory');">
+          <div class="more-card-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <span class="more-card-label">History</span>
+        </div>
+
+        <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('more');">
+          <div class="more-card-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2.5"></rect>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+            </svg>
+          </div>
+          <span class="more-card-label">SMS</span>
+        </div>
+
+        <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('aiassistant');">
+          <div class="more-card-icon-box" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+          </div>
+          <span class="more-card-label">ML AI</span>
+        </div>
+
+        <!-- Row 3: Notice, Mess Task, Messliner Pro -->
+        <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('notices');">
+          <div class="more-card-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+          </div>
+          <span class="more-card-label">Notice</span>
+        </div>
+
+        <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('tasks');">
+          <div class="more-card-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+          </div>
+          <span class="more-card-label">Mess Task</span>
+        </div>
+
+        <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('pro');">
+          <div class="more-card-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #d97706;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/>
+            </svg>
+          </div>
+          <span class="more-card-label">Messliner Pro</span>
+        </div>
+      </div>
+
+      <div class="more-sheet-bottom-actions">
+        <button type="button" class="more-sheet-action-btn" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('profile');">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7.5" r="4"/><path d="M5 21a7 7 0 0 1 14 0H5z"/></svg>
+          <span>Profile</span>
+        </button>
+        <button type="button" class="more-sheet-action-btn" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('settings');">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Settings</span>
+        </button>
+      </div>
+    </div>
+  </div>
       </div>
     </nav>
 
   </div> <!-- /app-shell -->
 
   <!-- ======== MODALS ======== -->
+
+  <!-- ============================================================ -->
+  <!-- MEMBER LIMIT REACHED POPUP MODAL (Modern Minimal UI)        -->
+  <!-- ============================================================ -->
+  <div id="memberLimitModal" class="modal-overlay" onclick="if(event.target===this) closeModal('memberLimitModal')"
+    style="z-index: 100000; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+    <div class="modal"
+      style="max-width: 440px; width: 92%; border-radius: 24px; padding: 28px 24px 22px; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); border: 1px solid #E2E8F0; text-align: center; position: relative; box-sizing: border-box;"
+      onclick="event.stopPropagation()">
+
+      <!-- Close ✕ Icon -->
+      <button type="button" class="modal-close-btn" onclick="closeModal('memberLimitModal')"
+        style="position: absolute; top: 16px; right: 16px;" aria-label="Close">
+        ✕
+      </button>
+
+      <!-- Top Badge / Icon -->
+      <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 14px;">
+        <div
+          style="width: 58px; height: 58px; border-radius: 18px; background: linear-gradient(135deg, #FEF3C7 0%, #FEE2E2 100%); border: 1.5px solid #FDE68A; display: flex; align-items: center; justify-content: center; color: #D97706; margin-bottom: 12px; box-shadow: 0 8px 16px -4px rgba(217, 119, 6, 0.2);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </div>
+
+        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; background: #FEF3C7; border: 1px solid #FCD34D;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background: #D97706;"></span>
+          <span id="memberLimitPlanBadge" style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #92400E;">
+            Plan Limit Reached
+          </span>
+        </div>
+      </div>
+
+      <!-- Title & Subtitle -->
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: #0F172A; margin: 0 0 6px; letter-spacing: -0.01em;">
+        Member Limit Reached
+      </h3>
+      <p id="memberLimitDescText" style="font-size: 0.85rem; color: #64748B; line-height: 1.6; margin: 0 auto 18px; text-align: center;">
+        You've reached the <strong>25-member limit</strong> on <strong>Messliner Pro</strong>.<br style="display: block; margin-top: 3px;">
+        Please upgrade your plan to add more dining members.
+      </p>
+
+      <!-- Capacity Usage Meter Card -->
+      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 12px 14px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Capacity Utilized</span>
+          <span id="memberLimitCountText" style="font-size: 0.82rem; font-weight: 800; color: #D97706;">25 / 25 Members</span>
+        </div>
+        <div style="width: 100%; height: 8px; background: #E2E8F0; border-radius: 99px; overflow: hidden;">
+          <div id="memberLimitBarFill" style="width: 100%; height: 100%; background: linear-gradient(90deg, #F59E0B, #EF4444); border-radius: 99px; transition: width 0.4s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <a id="btnUpgradeFromLimit" href="checkout.html?plan=pay_as_you_go" class="btn"
+          style="width: 100%; height: 46px; padding: 0 20px; border-radius: 14px; font-weight: 800; font-size: 0.94rem; letter-spacing: -0.01em; display: inline-flex; align-items: center; justify-content: center; gap: 9px; text-decoration: none; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: #ffffff; box-shadow: 0 6px 20px -3px rgba(5, 150, 105, 0.4); border: none; cursor: pointer; transition: all 0.2s ease;"
+          onmouseover="this.style.boxShadow='0 8px 24px -2px rgba(5, 150, 105, 0.5)'; this.style.transform='translateY(-1px)';"
+          onmouseout="this.style.boxShadow='0 6px 20px -3px rgba(5, 150, 105, 0.4)'; this.style.transform='translateY(0)';"
+          onclick="closeModal('memberLimitModal')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+          </svg>
+          <span>Upgrade to Add More Members</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.85;">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </a>
+
+        <button type="button" onclick="closeModal('memberLimitModal')" class="btn"
+          style="width: 100%; height: 38px; border-radius: 10px; font-weight: 600; font-size: 0.85rem; border: none; background: transparent; color: #64748B; cursor: pointer;">
+          Dismiss
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Add User Modal -->
   <div id="addUserModal" class="modal-overlay">
@@ -10504,140 +10704,219 @@
   </div>
 
   <!-- Deposit Modal -->
-  <div id="depositModal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="depositModalTitle">Add Deposit</h3>
-        <button class="modal-close" onclick="closeModal('depositModal')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+  <div id="depositModal" class="modal-overlay" onclick="if(event.target===this) closeModal('depositModal')">
+    <div class="modal bazar-modal-dialog"
+      style="max-width: 480px; border-radius: 24px; padding: 0; overflow: visible; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.15);"
+      onclick="event.stopPropagation()">
+      <div class="modal-header"
+        style="display: flex; justify-content: space-between; align-items: flex-start; padding: 22px 24px 16px; border-bottom: 1px solid #F1F5F9; background: #FFFFFF; border-top-left-radius: 24px; border-top-right-radius: 24px;">
+        <div>
+          <h3 class="modal-title" id="depositModalTitle"
+            style="font-size: 1.22rem; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.01em;">Add deposit
+          </h3>
+          <p style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Instantly credits balance to member account</p>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('depositModal')" title="Close"
+          style="cursor: pointer; width: 32px; height: 32px; border-radius: 50%; border: none; background: #F1F5F9; color: #64748B; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; transition: all 0.2s;">✕</button>
       </div>
-      <div class="modal-body">
-        <form id="depositForm">
-          <div class="form-group">
-            <label class="form-label">Select Member</label>
-            <select class="form-input form-select" id="depositUserSelect" required>
-              <option value="">Choose a member...</option>
-            </select>
+      <div class="modal-body" style="padding: 20px 24px 24px; background: #FFFFFF; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;">
+        <form id="depositForm" onsubmit="event.preventDefault(); Messliner.finance.saveDeposit();">
+          <!-- Member Select (Custom Bazar Dropdown) -->
+          <div class="form-group mb-3" style="margin-bottom: 16px;">
+            <label class="bazar-field-label">Select Member</label>
+            <div class="custom-dropdown" id="depositUserDropdown" style="width: 100%;">
+              <button type="button" class="custom-dropdown-trigger bazar-select-box"
+                onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                <span id="depositUserValue"
+                  style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; font-weight: 500; color: #1E293B;">Select Member</span>
+                <div class="bazar-dropdown-chevron-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+              </button>
+              <div class="custom-dropdown-menu" id="depositUserMenu" style="width: 100%; max-height: 220px;"></div>
+            </div>
+            <input type="hidden" id="depositUserSelect" value="">
           </div>
-          <div class="form-group">
-            <label class="form-label">Amount (৳)</label>
-            <input type="number" class="form-input" id="depositAmountInput" placeholder="Enter amount" min="1" required>
+
+          <!-- Total Amount Input -->
+          <div class="form-group mb-3" style="margin-bottom: 16px;">
+            <label class="bazar-field-label">Deposit Amount</label>
+            <div class="bazar-amount-input-group">
+              <div class="bazar-currency-symbol">৳</div>
+              <input type="text" inputmode="decimal" class="bazar-amount-input" id="depositAmountInput"
+                placeholder="1,500" autocomplete="off" onkeydown="Messliner.finance.filterNumberKey(event)"
+                oninput="Messliner.finance.sanitizeAmountInput(this); Messliner.finance.validateDepositForm();" required>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Note (Optional)</label>
-            <input type="text" class="form-input" id="depositNoteInput" placeholder="e.g. Monthly deposit">
+
+          <!-- Note (Optional) -->
+          <div class="form-group mb-4" style="margin-bottom: 16px;">
+            <label class="bazar-field-label">Note / Reference (Optional)</label>
+            <input type="text" class="form-input" id="depositNoteInput" placeholder="e.g. Monthly deposit, bKash"
+              style="width: 100%; height: 48px; border-radius: 14px; border: 1.5px solid #D1E7DD; background: #FFFFFF; padding: 0 14px; font-size: 0.94rem; font-weight: 500; color: #1E293B; outline: none; box-sizing: border-box; transition: all 0.2s ease;">
+          </div>
+
+          <!-- Submit Button -->
+          <div style="margin-top: 10px;">
+            <button type="submit" id="depositSubmitBtn" class="bazar-submit-btn" disabled
+              onpointerdown="Messliner.finance.showBtnInstantLoading(this, 'Adding Deposit...')">
+              Add Deposit
+            </button>
           </div>
         </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal('depositModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="Messliner.finance.saveDeposit()">Add Deposit</button>
       </div>
     </div>
   </div>
 
   <!-- Deduct Modal -->
-  <div id="deductModal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>Deduct Balance</h3>
-        <button class="modal-close" onclick="closeModal('deductModal')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+  <div id="deductModal" class="modal-overlay" onclick="if(event.target===this) closeModal('deductModal')">
+    <div class="modal bazar-modal-dialog"
+      style="max-width: 480px; border-radius: 24px; padding: 0; overflow: visible; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.15);"
+      onclick="event.stopPropagation()">
+      <div class="modal-header"
+        style="display: flex; justify-content: space-between; align-items: flex-start; padding: 22px 24px 16px; border-bottom: 1px solid #F1F5F9; background: #FFFFFF; border-top-left-radius: 24px; border-top-right-radius: 24px;">
+        <div>
+          <h3 class="modal-title"
+            style="font-size: 1.22rem; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.01em;">Deduct balance
+          </h3>
+          <p style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Deducts amount directly from member's balance</p>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('deductModal')" title="Close"
+          style="cursor: pointer; width: 32px; height: 32px; border-radius: 50%; border: none; background: #F1F5F9; color: #64748B; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; transition: all 0.2s;">✕</button>
       </div>
-      <div class="modal-body">
-        <form id="deductForm">
-          <div class="form-group">
-            <label class="form-label">Select Member</label>
-            <select class="form-input form-select" id="deductUserSelect" required>
-              <option value="">Choose a member...</option>
-            </select>
+      <div class="modal-body" style="padding: 20px 24px 24px; background: #FFFFFF; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;">
+        <form id="deductForm" onsubmit="event.preventDefault(); Messliner.finance.saveDeduction();">
+          <!-- Member Select (Custom Bazar Dropdown) -->
+          <div class="form-group mb-3" style="margin-bottom: 16px;">
+            <label class="bazar-field-label">Select Member</label>
+            <div class="custom-dropdown" id="deductUserDropdown" style="width: 100%;">
+              <button type="button" class="custom-dropdown-trigger bazar-select-box"
+                onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                <span id="deductUserValue"
+                  style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; font-weight: 500; color: #1E293B;">Select Member</span>
+                <div class="bazar-dropdown-chevron-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+              </button>
+              <div class="custom-dropdown-menu" id="deductUserMenu" style="width: 100%; max-height: 220px;"></div>
+            </div>
+            <input type="hidden" id="deductUserSelect" value="">
           </div>
-          <div class="form-group">
-            <label class="form-label">Amount (৳)</label>
-            <input type="number" class="form-input" id="deductAmountInput" placeholder="Enter amount" min="1" required>
+
+          <!-- Total Amount Input (Ash Border & Neutral Currency Symbol) -->
+          <div class="form-group mb-3" style="margin-bottom: 16px;">
+            <label class="bazar-field-label">Deduction Amount</label>
+            <div class="bazar-amount-input-group">
+              <div class="bazar-currency-symbol">৳</div>
+              <input type="text" inputmode="decimal" class="bazar-amount-input" id="deductAmountInput"
+                placeholder="200" autocomplete="off" onkeydown="Messliner.finance.filterNumberKey(event)"
+                oninput="Messliner.finance.sanitizeAmountInput(this); Messliner.finance.validateDeductForm();" required>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Reason</label>
-            <input type="text" class="form-input" id="deductReasonInput" placeholder="e.g. Extra charges" required>
+
+          <!-- Reason (Ash Border) -->
+          <div class="form-group mb-4" style="margin-bottom: 16px;">
+            <label class="bazar-field-label">Reason / Penalty Note</label>
+            <input type="text" class="form-input" id="deductReasonInput" placeholder="e.g. Mess rule fine, late fee, extra charge"
+              oninput="Messliner.finance.validateDeductForm();"
+              style="width: 100%; height: 48px; border-radius: 14px; border: 1.5px solid #D1E7DD; background: #FFFFFF; padding: 0 14px; font-size: 0.94rem; font-weight: 500; color: #1E293B; outline: none; box-sizing: border-box; transition: all 0.2s ease;">
+          </div>
+
+          <!-- Submit Button -->
+          <div style="margin-top: 10px;">
+            <button type="submit" id="deductSubmitBtn" class="bazar-submit-btn" disabled
+              onpointerdown="Messliner.finance.showBtnInstantLoading(this, 'Deducting...')"
+              style="background: #EF4444; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.28);">
+              Deduct Balance
+            </button>
           </div>
         </form>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal('deductModal')">Cancel</button>
-        <button class="btn btn-danger" onclick="Messliner.finance.saveDeduction()">Deduct</button>
-      </div>
     </div>
   </div>
+
   <!-- Other Costing Modal -->
-  <div id="otherCostingModal" class="modal-overlay">
-    <div class="modal" style="max-width:500px;">
-      <div class="modal-header">
-        <h3>Add Other Costing</h3>
-        <button class="modal-close" onclick="closeModal('otherCostingModal')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+  <div id="otherCostingModal" class="modal-overlay" onclick="if(event.target===this) closeModal('otherCostingModal')">
+    <div class="modal bazar-modal-dialog"
+      style="max-width: 500px; border-radius: 24px; padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.15);"
+      onclick="event.stopPropagation()">
+      <div class="modal-header"
+        style="display: flex; justify-content: space-between; align-items: flex-start; padding: 22px 24px 16px; border-bottom: 1px solid #F1F5F9; background: #FFFFFF; border-top-left-radius: 24px; border-top-right-radius: 24px; flex-shrink: 0;">
+        <div>
+          <h3 class="modal-title"
+            style="font-size: 1.22rem; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.01em;">Other costing
+          </h3>
+          <p style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Equally splits utility/shared expense among selected members</p>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('otherCostingModal')" title="Close"
+          style="cursor: pointer; width: 32px; height: 32px; border-radius: 50%; border: none; background: #F1F5F9; color: #64748B; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; transition: all 0.2s;">✕</button>
       </div>
-      <div class="modal-body">
-        <form id="otherCostingForm">
-          <div class="form-group">
-            <label class="form-label">Total Amount (৳)</label>
-            <input type="number" class="form-input" id="otherCostingAmountInput" placeholder="Enter total amount"
-              min="1" required oninput="Messliner.finance.updateOtherCostingSplit()">
+      <form id="otherCostingForm" onsubmit="event.preventDefault(); Messliner.finance.saveOtherCosting();"
+        style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
+        <div class="modal-body" style="padding: 20px 24px 16px; background: #FFFFFF; overflow-y: auto; flex: 1;">
+          <!-- Total Amount Input (Ash Border & Neutral Currency Symbol) -->
+          <div class="form-group mb-3" style="margin-bottom: 16px;">
+            <label class="bazar-field-label">Total Amount</label>
+            <div class="bazar-amount-input-group">
+              <div class="bazar-currency-symbol">৳</div>
+              <input type="text" inputmode="decimal" class="bazar-amount-input" id="otherCostingAmountInput"
+                placeholder="1,200" autocomplete="off" onkeydown="Messliner.finance.filterNumberKey(event)"
+                oninput="Messliner.finance.sanitizeAmountInput(this); Messliner.finance.updateOtherCostingSplit(); Messliner.finance.validateOtherCostingForm();" required>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Reason / Description</label>
+
+          <!-- Reason / Description -->
+          <div class="form-group mb-3" style="margin-bottom: 16px;">
+            <label class="bazar-field-label">Reason / Description</label>
             <input type="text" class="form-input" id="otherCostingReasonInput"
-              placeholder="e.g. Gas bill, utility, rent" required>
+              placeholder="e.g. Gas cylinder, Wi-Fi, electricity bill"
+              oninput="Messliner.finance.validateOtherCostingForm();"
+              style="width: 100%; height: 48px; border-radius: 14px; border: 1.5px solid #D1E7DD; background: #FFFFFF; padding: 0 14px; font-size: 0.94rem; font-weight: 500; color: #1E293B; outline: none; box-sizing: border-box; transition: all 0.2s ease;" required>
           </div>
-          <div class="form-group">
-            <div class="members-checklist-header">
-              <label class="form-label" style="margin-bottom:0;">Select Members</label>
-              <label class="checklist-select-all">
+
+          <!-- Member Checklist -->
+          <div class="form-group mb-3" style="margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label class="bazar-field-label" style="margin-bottom: 0;">Select Members</label>
+              <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: #059669; cursor: pointer; user-select: none;">
                 <input type="checkbox" id="otherCostingSelectAll"
-                  onchange="Messliner.finance.toggleSelectAllOtherCosting(this)">
+                  onchange="Messliner.finance.toggleSelectAllOtherCosting(this)" style="accent-color: #059669; cursor: pointer; width: 16px; height: 16px;">
                 <span>Select All</span>
               </label>
             </div>
-            <div id="otherCostingMembersChecklist" class="members-checklist">
+            <div id="otherCostingMembersChecklist" class="members-checklist"
+              style="border: 1.5px solid #D1E7DD; border-radius: 14px; max-height: 180px; overflow-y: auto; padding: 8px 12px; background: #F8FAFC;">
               <!-- Populated by JS -->
             </div>
           </div>
+
           <!-- Split Info Banner -->
-          <div id="otherCostingSplitInfo" class="other-costing-split-info" style="display:none;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
+          <div id="otherCostingSplitInfo" class="other-costing-split-info"
+            style="display:none; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; background:#F0FDF4; border:1px solid #BBF7D0; color:#166534; font-size:0.86rem; font-weight:600; margin-bottom: 4px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             <span id="otherCostingSplitText">Select members and enter amount to see split</span>
           </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal('otherCostingModal')">Cancel</button>
-        <button class="btn" style="background:var(--warning-600);color:#fff;border-color:var(--warning-600);"
-          onclick="Messliner.finance.saveOtherCosting()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          Apply Costing
-        </button>
-      </div>
+        </div>
+
+        <!-- Fixed Footer for Apply Button -->
+        <div class="modal-footer"
+          style="padding: 16px 24px 20px; background: #FFFFFF; border-top: 1px solid #F1F5F9; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; flex-shrink: 0;">
+          <button type="submit" id="otherCostingSubmitBtn" class="bazar-submit-btn" disabled
+            onpointerdown="Messliner.finance.showBtnInstantLoading(this, 'Applying Costing...')"
+            style="background: #F59E0B; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.28);">
+            Apply Costing
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -11246,40 +11525,78 @@
 
 
   <!-- Bazar Modal (Log Bazar / Add Bazar) -->
-  <div id="bazarModal" class="modal-overlay" onclick="if(event.target===this) closeModal('bazarModal')">
+  <div id="bazarModal" class="modal-overlay"
+    onclick="if(event.target===this) { Messliner.finance.closeBazarCalendar(); Messliner.finance.resetBazarModal?.(); closeModal('bazarModal'); }">
     <div class="modal bazar-modal-dialog"
-      style="max-width: 480px; border-radius: 24px; padding: 0; overflow: hidden; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.15);"
+      style="max-width: 480px; border-radius: 24px; padding: 0; overflow: visible; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.15);"
       onclick="event.stopPropagation()">
       <div class="modal-header"
-        style="display: flex; justify-content: space-between; align-items: flex-start; padding: 22px 24px 16px; border-bottom: 1px solid #F1F5F9; background: #FFFFFF;">
+        style="display: flex; justify-content: space-between; align-items: flex-start; padding: 22px 24px 16px; border-bottom: 1px solid #F1F5F9; background: #FFFFFF; border-top-left-radius: 24px; border-top-right-radius: 24px;">
         <div>
-          <h3 class="modal-title"
+          <h3 class="modal-title" id="bazarModalTitle"
             style="font-size: 1.22rem; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.01em;">Log bazar
           </h3>
-          <p style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Rate recalculates
+          <p id="bazarModalSubtitle" style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Rate recalculates
             automatically once saved</p>
         </div>
-        <button type="button" class="btn-close" onclick="closeModal('bazarModal')" title="Close"
+        <button type="button" class="btn-close"
+          onclick="Messliner.finance.closeBazarCalendar(); Messliner.finance.resetBazarModal?.(); closeModal('bazarModal')" title="Close"
           style="cursor: pointer;">✕</button>
       </div>
-      <div class="modal-body" style="padding: 20px 24px 24px; background: #FFFFFF;">
+      <div class="modal-body"
+        style="padding: 20px 24px 24px; background: #FFFFFF; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;">
         <form id="bazarForm" onsubmit="event.preventDefault(); Messliner.finance.saveBazar();">
+          <input type="hidden" id="bazarEditKey" value="">
           <!-- Row 1: Date & Shopper -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
-            <div class="form-group" style="margin-bottom: 0;">
+            <div class="form-group" style="margin-bottom: 0; position: relative;">
               <label class="bazar-field-label">Date</label>
               <div class="bazar-date-picker-wrap" id="bazarDatePickerTrigger"
-                onclick="Messliner.finance.triggerBazarDatePicker()">
-                <span id="bazarDateFormattedDisplay" class="bazar-date-display-text">-- Select Date --</span>
-                <svg class="bazar-date-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <input type="date" id="bazarDateInput" class="bazar-date-native-hidden"
-                  onchange="Messliner.finance.onBazarDateChange(this.value)" required>
+                onclick="Messliner.finance.toggleBazarCalendar(event)">
+                <span id="bazarDateFormattedDisplay" class="bazar-date-display-text">Select Date</span>
+                <div class="bazar-date-icon-badge">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </div>
+                <input type="hidden" id="bazarDateInput" value="">
+              </div>
+              <!-- Custom Calendar Popup (Ledger Add Bill Style) -->
+              <div class="custom-calendar-popup ledger-calendar-popup bazar-calendar-popup" id="bazarDateCalendarPopup"
+                style="display:none; position:absolute; z-index:99999; top:calc(100% + 6px); left:0; right:auto; transform:none;"
+                onclick="event.stopPropagation()">
+                <div class="cal-popup-header">
+                  <button type="button" class="cal-header-arrow"
+                    onclick="Messliner.finance.navBazarCalendarMonth(-1, event)" title="Previous Month">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </button>
+                  <span class="cal-header-title" id="bazarCalMonthYearTitle">Select Month</span>
+                  <button type="button" class="cal-header-arrow"
+                    onclick="Messliner.finance.navBazarCalendarMonth(1, event)" title="Next Month">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
+                </div>
+                <div class="cal-weekdays-row">
+                  <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                </div>
+                <div class="cal-days-grid" id="bazarCalDaysGrid"></div>
+                <div class="cal-popup-footer"
+                  style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.06); display:flex; justify-content:space-between; align-items:center;">
+                  <button type="button" class="date-today-pill" onclick="Messliner.finance.setBazarTodayDate(event)"
+                    style="background:rgba(5, 150, 105, 0.12); color:#059669; border:none; padding:4px 12px; border-radius:12px; font-weight:700; font-size:12px; cursor:pointer;">Today</button>
+                  <button type="button" onclick="Messliner.finance.closeBazarCalendar()"
+                    style="background:none; border:none; color:#64748B; font-weight:600; font-size:12px; cursor:pointer;">Close</button>
+                </div>
               </div>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
@@ -11288,12 +11605,14 @@
                 <button type="button" class="custom-dropdown-trigger bazar-select-box"
                   onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
                   <span id="bazarShopperValue"
-                    style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; font-weight: 500; color: #1E293B;">--
-                    Select Member --</span>
-                  <svg class="bazar-dropdown-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
+                    style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; font-weight: 500; color: #1E293B;">Select
+                    Member</span>
+                  <div class="bazar-dropdown-chevron-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </div>
                 </button>
                 <div class="custom-dropdown-menu" id="bazarShopperMenu" style="width: 100%; max-height: 220px;"></div>
               </div>
@@ -11477,6 +11796,58 @@
     </div>
   </div>
 
+  <!-- Instant Deposit SMS Toggle Confirmation Modal -->
+  <div id="smsToggleConfirmModal" class="modal-overlay zero-meal-confirm-overlay"
+    onclick="Messliner.smsAlert.cancelToggleConfirm(event)">
+    <div class="zero-meal-card sms-toggle-modal-card" onclick="event.stopPropagation()">
+      <button type="button" class="zero-modal-close-btn" onclick="Messliner.smsAlert.cancelToggleConfirm()" title="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+
+      <div class="zero-modal-hero">
+        <div class="zero-modal-icon-ring" id="smsToggleModalIconRing">
+          <div class="zero-modal-icon-inner" id="smsToggleModalIconInner">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+          </div>
+        </div>
+        <h3 class="zero-modal-title" id="smsToggleModalTitle">Enable Deposit SMS Notifications?</h3>
+        <p class="zero-modal-desc" id="smsToggleModalDesc">
+          Automated SMS notifications will be sent to members upon deposit confirmation.
+        </p>
+      </div>
+
+      <div class="zero-modal-info-strip">
+        <div class="zero-info-item">
+          <span class="zero-info-label">Service</span>
+          <span class="zero-info-value" style="font-weight: 600;">Deposit SMS</span>
+        </div>
+        <div class="zero-info-sep"></div>
+        <div class="zero-info-item">
+          <span class="zero-info-label">Status</span>
+          <span class="zero-info-value" id="smsToggleModalStatusTag" style="color: #059669; font-weight: 700;">OFF → ON</span>
+        </div>
+      </div>
+
+      <div class="zero-modal-actions">
+        <button type="button" class="btn-zero-cancel" onclick="Messliner.smsAlert.cancelToggleConfirm()">
+          Cancel
+        </button>
+        <button type="button" class="btn-zero-confirm" id="btnSmsToggleConfirmAction"
+          onclick="Messliner.smsAlert.confirmToggleEnable()">
+          <span id="btnSmsToggleConfirmActionText">OK, Turn ON</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Meal Slip Preview Modal -->
   <div id="mealSlipModal" class="meal-slip-modal-overlay" style="display:none;"
     onclick="Messliner.meals.closeMealSlipModal(event)">
@@ -11585,8 +11956,7 @@
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
         <h3 style="font-size: var(--font-md); font-weight: 700; color: var(--text-primary); margin: 0;">Extra Slip
           Entries</h3>
-        <button type="button" onclick="Messliner.meals.closeExtraSlipModal()"
-          style="background: none; border: none; cursor: pointer; color: var(--text-tertiary);">
+        <button type="button" class="modal-close-btn" onclick="Messliner.meals.closeExtraSlipModal()" title="Close">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
@@ -11610,8 +11980,7 @@
         style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #F1F5F9;">
         <h4 id="settingInfoModalTitle" style="font-size: 1.05rem; font-weight: 800; color: #0F172A; margin: 0;">Info
           Title</h4>
-        <button type="button" onclick="closeSettingInfoModal()"
-          style="background: #F1F5F9; border: none; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748B; font-size: 0.85rem; font-weight: 700;">
+        <button type="button" class="modal-close-btn" onclick="closeSettingInfoModal()" aria-label="Close">
           ✕
         </button>
       </div>
@@ -12813,10 +13182,8 @@
       onclick="event.stopPropagation()">
 
       <!-- Close Button -->
-      <button type="button" onclick="Messliner.settings.closeResetSecurityModal()"
-        style="position: absolute; top: 16px; right: 16px; width: 30px; height: 30px; border-radius: 50%; background: #F1F5F9; border: none; color: #64748B; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s;"
-        onmouseenter="this.style.background='#E2E8F0'; this.style.color='#0F172A';"
-        onmouseleave="this.style.background='#F1F5F9'; this.style.color='#64748B';">
+      <button type="button" class="modal-close-btn" onclick="Messliner.settings.closeResetSecurityModal()"
+        style="position: absolute; top: 16px; right: 16px;" aria-label="Close">
         ✕
       </button>
 
@@ -13162,8 +13529,8 @@
       style="max-width: 480px; width: 90%; border-radius: 22px; background: #ffffff; padding: 26px 24px 22px; border: 1px solid #E2E8F0; box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.18); position: relative; box-sizing: border-box;"
       onclick="event.stopPropagation()">
 
-      <button type="button" onclick="closeModal('termsModal')"
-        style="position: absolute; top: 16px; right: 16px; width: 30px; height: 30px; border-radius: 50%; background: #F1F5F9; border: none; color: #64748B; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+      <button type="button" class="modal-close-btn" onclick="closeModal('termsModal')"
+        style="position: absolute; top: 16px; right: 16px;" aria-label="Close">
         ✕
       </button>
 
@@ -13206,8 +13573,8 @@
       style="max-width: 480px; width: 90%; border-radius: 22px; background: #ffffff; padding: 26px 24px 22px; border: 1px solid #E2E8F0; box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.18); position: relative; box-sizing: border-box;"
       onclick="event.stopPropagation()">
 
-      <button type="button" onclick="closeModal('privacyModal')"
-        style="position: absolute; top: 16px; right: 16px; width: 30px; height: 30px; border-radius: 50%; background: #F1F5F9; border: none; color: #64748B; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+      <button type="button" class="modal-close-btn" onclick="closeModal('privacyModal')"
+        style="position: absolute; top: 16px; right: 16px;" aria-label="Close">
         ✕
       </button>
 
@@ -13327,7 +13694,7 @@
           <div class="form-group mb-3">
             <label class="form-label font-bold">Assign Member</label>
             <select class="form-input" id="bazarAssignUserSelect" required>
-              <option value="">-- Select Member --</option>
+              <option value="">Select Member</option>
             </select>
           </div>
 
@@ -13866,14 +14233,53 @@
     </div>
   </div>
 
+  <!-- ============================================================ -->
+  <!-- SUBSCRIPTION EXPIRED LOCK MODAL (Read-Only Warning / Renewal) -->
+  <!-- ============================================================ -->
+  <div id="subExpiredLockModal" class="modal-overlay"
+    style="display:none; z-index:99999; background:rgba(15, 23, 42, 0.7); backdrop-filter:blur(6px); align-items:center; justify-content:center;">
+    <div class="modal"
+      style="max-width:440px; border-radius:24px; padding:28px 24px; text-align:center; background:#ffffff; box-shadow:0 20px 40px rgba(0,0,0,0.25); border:1px solid #E2E8F0;"
+      onclick="event.stopPropagation()">
+      <div
+        style="width:64px; height:64px; border-radius:50%; background:#FEF2F2; border:2px solid #FEE2E2; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; color:#DC2626;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      </div>
+      <span
+        style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; background:#FEE2E2; color:#B91C1C; padding:3px 10px; border-radius:99px;">
+        Access Restricted · Read Only
+      </span>
+      <h3 style="font-size:1.25rem; font-weight:800; color:#0F172A; margin:12px 0 6px;">Subscription Expired</h3>
+      <p style="font-size:0.86rem; color:#64748B; line-height:1.55; margin-bottom:20px;">
+        Your mess plan (<strong id="subLockPlanName" style="color:#0F172A;">Free Trial</strong>) and 3-day grace period
+        have concluded. New meal entries and bazar records are currently locked.
+      </p>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <a href="checkout.html?plan=pro" class="btn btn-primary"
+          style="background:#059669; border-color:#059669; border-radius:12px; font-weight:800; padding:12px; justify-content:center; text-decoration:none; box-shadow:0 4px 12px rgba(5, 150, 105, 0.25);">
+          Renew with Messliner Pro (৳60/mo)
+        </a>
+        <a href="checkout.html?plan=pay_as_you_go" class="btn btn-secondary"
+          style="border-radius:12px; font-weight:700; padding:11px; justify-content:center; text-decoration:none; border:1.5px solid #E2E8F0; color:#334155; background:#F8FAFC;">
+          Choose Pay As You Go (৳2.49/member)
+        </a>
+        <button type="button" onclick="closeModal('subExpiredLockModal')" class="btn"
+          style="background:transparent; border:none; color:#94A3B8; font-size:0.8rem; font-weight:600; padding:6px; cursor:pointer;">
+          Continue in Read-Only View
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ======== TOAST CONTAINER ======== -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- Supabase JS SDK & Config -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-config.js"></script>
-
-  <!-- Firebase SDK -->
+  <!-- Firebase SDKs (Required for Realtime Database & Auth Bridge) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -13884,16 +14290,22 @@
   <!-- App Environment Variables & Secrets -->
   <script src="js/env.js"></script>
 
-  <!-- App Scripts -->
+  <!-- Firebase Configuration & Init -->
   <script src="js/firebase-config.js?v=2.1"></script>
+
+  <!-- Supabase JS SDK & Auth Config -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
   <script src="js/shared/utils.js?v=2.1"></script>
+  <script src="js/shared/payment.js"></script>
+  <script src="js/shared/subscription.js"></script>
   <script src="js/shared/notifications.js?v=3.2"></script>
   <script src="js/shared/charts.js"></script>
   <script src="js/shared/m3-timepicker.js"></script>
   <script src="js/router.js?v=3.0"></script>
   <script src="js/admin/users.js"></script>
   <script src="js/admin/meals.js?v=3.1"></script>
-  <script src="js/admin/finance.js"></script>
+  <script src="js/admin/finance.js?v=2.2"></script>
   <script src="js/admin/ledger.js"></script>
   <script src="js/admin/settings.js"></script>
   <script src="js/user/dashboard.js?v=2.1"></script>
@@ -13901,7 +14313,7 @@
   <script src="js/user/bills.js?v=5.5"></script>
   <script src="js/user/mealchart.js?v=2.2"></script>
   <script src="js/user/bazarHistory.js"></script>
-  <script src="js/user/bazar.js"></script>
+  <script src="js/user/bazar.js?v=2.2"></script>
   <script src="js/user/summary.js?v=2.1"></script>
   <script src="js/shared/overview.js"></script>
   <script src="js/user/onboarding.js"></script>
@@ -14156,7 +14568,7 @@
     /* Header page icons map */
     const _headerIcons = {
       dashboard: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
-      overview: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+      overview: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
       users: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
       meals: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>',
       finance: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',

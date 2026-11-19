@@ -68,11 +68,15 @@
         }, 220);
       }
 
-      // If on login page and authPage is hidden, show it; if on dashboard, ensure appShell is visible
+      // If on login page and authPage is hidden, show it; if on dashboard, ensure appShell is visible (only when NOT in onboarding)
       if (isDashboardPage) {
-        const appShell = document.getElementById('appShell');
-        if (appShell && appShell.style.display === 'none') {
-          appShell.style.display = 'flex';
+        const onboardingPage = document.getElementById('onboardingPage');
+        const isOnboarding = (onboardingPage && onboardingPage.style.display !== 'none') || document.body.classList.contains('onboarding-active');
+        if (!isOnboarding) {
+          const appShell = document.getElementById('appShell');
+          if (appShell && appShell.style.display === 'none') {
+            appShell.style.display = 'flex';
+          }
         }
       } else {
         const authPage = document.getElementById('authPage');

@@ -346,7 +346,7 @@ const BazarHistoryModule = {
       <div class="bazar-day-card ${isExpanded ? 'expanded' : ''}" id="${cardId}">
 
         <!-- Clickable header row -->
-        <div class="bazar-day-card-header" onclick="Messliner.bazarHistory.toggleCard('${date}', '${cardId}')">
+        <div class="bazar-day-card-header" onclick="window.toggleBazarHistoryCard ? window.toggleBazarHistoryCard('${date}', '${cardId}') : BazarHistoryModule.toggleCard('${date}', '${cardId}')">
 
           <!-- Date badge -->
           <div class="bazar-date-badge">${dayNum}</div>
@@ -405,7 +405,7 @@ const BazarHistoryModule = {
     const card = document.getElementById(cardId);
     if (!card) return;
 
-    const isCurrentlyExpanded = this.expandedCard === date;
+    const isCurrentlyExpanded = card.classList.contains('expanded');
     this._lastRenderedHtml = null;
 
     // Collapse all cards first
@@ -438,6 +438,13 @@ const BazarHistoryModule = {
 };
 
 window.BazarHistoryModule = BazarHistoryModule;
+window.toggleBazarHistoryCard = function(date, cardId) {
+  if (window.BazarHistoryModule && typeof window.BazarHistoryModule.toggleCard === 'function') {
+    window.BazarHistoryModule.toggleCard(date, cardId);
+  } else if (window.Messliner && Messliner.bazarHistory && typeof Messliner.bazarHistory.toggleCard === 'function') {
+    Messliner.bazarHistory.toggleCard(date, cardId);
+  }
+};
 if (typeof Messliner !== 'undefined') {
   Messliner.bazarHistory = BazarHistoryModule;
 }

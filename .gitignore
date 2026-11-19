@@ -1,26 +1,19 @@
-# Editor/IDE configs
-.gemini/
-.vscode/
-.idea/
-
-# System files
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Build and cache
-.vite/
-node_modules/
-
-# Admin console (separate repo/deployment)
+# Admin Dashboard (Separate Project)
 Messliner_Admin/
 
-# Environment Variables & Secrets (Prevent GitHub Push)
+# Secrets & Environment variables
 .env
-.env.*
 .env.local
-!.env.example
+.env.*.local
 js/env.js
-js/*.env.js
-!js/env.example.js
 
+# Dependencies
+node_modules/
+
+# Operating System files
+Thumbs.db
+.DS_Store
+
+# IDE & Editor configs
+.vscode/
+.idea/

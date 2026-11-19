@@ -115,13 +115,22 @@ function initNavbarScroll() {
   const navbar = document.getElementById('navbar');
   if (!navbar) return;
 
+  let isScrolled = false;
+  let ticking = false;
+
   window.addEventListener('scroll', () => {
-    if (window.scrollY > 40) {
-      navbar.classList.add('scrolled');
-    } else {
-      navbar.classList.remove('scrolled');
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        const scrolled = window.scrollY > 40;
+        if (scrolled !== isScrolled) {
+          isScrolled = scrolled;
+          navbar.classList.toggle('scrolled', isScrolled);
+        }
+        ticking = false;
+      });
+      ticking = true;
     }
-  });
+  }, { passive: true });
 
   // Smooth scroll links
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -184,32 +193,10 @@ function initBazarCalculator() {
 
 /* ==========================================
    3. PRICING MONTHLY / ANNUALLY TOGGLE
+   (Managed dynamically by Supabase in index.html)
    ========================================== */
 function initPricingToggle() {
-  const toggleBtn = document.getElementById('pricingToggle');
-  const priceFree = document.getElementById('priceFree');
-  const pricePro = document.getElementById('pricePro');
-  const priceEnterprise = document.getElementById('priceEnterprise');
-  const periodLabels = document.querySelectorAll('.plan-price-period');
-
-  if (!toggleBtn) return;
-
-  let isAnnual = false;
-
-  toggleBtn.addEventListener('click', () => {
-    isAnnual = !isAnnual;
-    toggleBtn.classList.toggle('active', isAnnual);
-
-    if (isAnnual) {
-      if (pricePro) pricePro.textContent = '৳ 399';
-      if (priceEnterprise) priceEnterprise.textContent = '৳ 999';
-      periodLabels.forEach(lbl => lbl.textContent = '/ month (billed yearly)');
-    } else {
-      if (pricePro) pricePro.textContent = '৳ 499';
-      if (priceEnterprise) priceEnterprise.textContent = '৳ 1,299';
-      periodLabels.forEach(lbl => lbl.textContent = '/ month (billed monthly)');
-    }
-  });
+  // Handled dynamically via window.togglePricingCycle in index.html to reflect live Supabase rates.
 }
 
 /* ==========================================
@@ -502,6 +489,10 @@ function switchMockupView(mode) {
     if (btnDesktop) btnDesktop.classList.add('active');
     if (btnMobile) btnMobile.classList.remove('active');
   }
+
+  if (typeof window.__refreshDemoScrollMetrics === 'function') {
+    window.__refreshDemoScrollMetrics();
+  }
 }
 
 // Auto-switch to Mobile view on smaller screens
@@ -541,37 +532,38 @@ function initPinnedDemoScroll() {
   if (!pinTrack || !pinnedContent) return;
 
   let ticking = false;
+  let cachedTrackTop = 0;
+  let cachedPinDistance = 0;
+  let cachedMaxScroll = 0;
+  let currentActiveContent = null;
 
-  function getActiveContent() {
+  function recalculateMetrics() {
     const isMobileVisible = phoneWrapper && phoneWrapper.style.display !== 'none';
-    return isMobileVisible
+    currentActiveContent = isMobileVisible
       ? document.querySelector('.phone-scroll-content')
       : document.querySelector('.mockup-main-content');
+
+    if (!currentActiveContent) return;
+
+    const stickyTop = window.innerWidth <= 768 ? 65 : 80;
+    const windowHeight = window.innerHeight;
+    const trackRect = pinTrack.getBoundingClientRect();
+    cachedTrackTop = trackRect.top + window.scrollY;
+    cachedPinDistance = pinTrack.offsetHeight - (windowHeight - stickyTop);
+    cachedMaxScroll = currentActiveContent.scrollHeight - currentActiveContent.clientHeight;
   }
 
   function updateMockupScroll() {
-    const activeContent = getActiveContent();
-    if (!activeContent) return;
+    if (!currentActiveContent || cachedPinDistance <= 0 || cachedMaxScroll <= 0) return;
 
-    const trackRect = pinTrack.getBoundingClientRect();
     const stickyTop = window.innerWidth <= 768 ? 65 : 80;
-    const windowHeight = window.innerHeight;
+    const scrolledDistance = (window.scrollY + stickyTop) - cachedTrackTop;
+    const progress = Math.max(0, Math.min(1, scrolledDistance / cachedPinDistance));
 
-    // Total distance the track scrolls while pinned
-    const pinDistance = pinTrack.offsetHeight - (windowHeight - stickyTop);
-    if (pinDistance <= 0) return;
-
-    const scrolledDistance = stickyTop - trackRect.top;
-    let progress = scrolledDistance / pinDistance;
-    progress = Math.max(0, Math.min(1, progress));
-
-    const maxScroll = activeContent.scrollHeight - activeContent.clientHeight;
-    if (maxScroll > 0) {
-      activeContent.scrollTop = Math.round(progress * maxScroll);
-    }
+    currentActiveContent.scrollTop = Math.round(progress * cachedMaxScroll);
   }
 
-  function onScrollOrResize() {
+  function onScroll() {
     if (!ticking) {
       requestAnimationFrame(() => {
         updateMockupScroll();
@@ -581,11 +573,21 @@ function initPinnedDemoScroll() {
     }
   }
 
-  window.addEventListener('scroll', onScrollOrResize, { passive: true });
-  window.addEventListener('resize', onScrollOrResize, { passive: true });
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', () => {
+    recalculateMetrics();
+    onScroll();
+  }, { passive: true });
+  window.addEventListener('orientationchange', recalculateMetrics, { passive: true });
 
-  // Initial sync
-  updateMockupScroll();
+  window.__refreshDemoScrollMetrics = () => {
+    recalculateMetrics();
+    updateMockupScroll();
+  };
+
+  // Initial calculation after render settles
+  setTimeout(recalculateMetrics, 120);
+  window.addEventListener('load', recalculateMetrics, { passive: true });
 }
 
 /* ==========================================
@@ -659,8 +661,8 @@ async function initiateProPreorderBkash() {
     callbackURL = new URL('preorder-callback.html', window.location.href).href;
   } catch (_) {}
 
-  const GATEWAY_URL = "https://mygateway.netlify.app";
-  const LICENSE_KEY = "bklc_6bnDy4ZuSb0ERQPMlzq2LhH1N7Q11ttV";
+  const GATEWAY_URL = (window.__ENV__ && window.__ENV__.BKASH_GATEWAY && window.__ENV__.BKASH_GATEWAY.gatewayUrl) || "https://mygateway.netlify.app";
+  const LICENSE_KEY = (window.__ENV__ && window.__ENV__.BKASH_GATEWAY && window.__ENV__.BKASH_GATEWAY.licenseKey) || "bklc_6bnDy4ZuSb0ERQPMlzq2LhH1N7Q11ttV";
 
   try {
     const res = await fetch(`${GATEWAY_URL}/api/gateway/create-payment`, {

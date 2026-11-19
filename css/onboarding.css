@@ -2,6 +2,21 @@
    Messliner — Onboarding & Setup Wizard Styles
    ============================================ */
 
+/* Strictly suppress Bottom Navigation, Sidebar & App Shell during Onboarding */
+body.onboarding-active #appShell,
+body.onboarding-active #bottomNav,
+body.onboarding-active .bottom-nav,
+body.onboarding-active aside#sidebar,
+body.onboarding-active header.top-bar,
+#onboardingPage:not([style*="display: none"]):not([style*="display:none"]) ~ #appShell,
+#onboardingPage:not([style*="display: none"]):not([style*="display:none"]) ~ #appShell #bottomNav,
+#onboardingPage:not([style*="display: none"]):not([style*="display:none"]) ~ #appShell .bottom-nav {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
 .onboarding-page {
   display: flex;
   min-height: 100vh;

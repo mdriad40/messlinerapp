@@ -630,6 +630,10 @@ const MealsModule = {
    * Save bulk meals to database
    */
   async saveBulkMeals() {
+    if (window.MesslinerSubscription && typeof MesslinerSubscription.assertCanWrite === 'function') {
+      if (!MesslinerSubscription.assertCanWrite()) return;
+    }
+
     if (this.selectedTypes.size === 0) {
       Notifications.toast('warning', 'No Meal Type Selected', 'Please select at least one meal type (Breakfast, Lunch, Dinner).');
       return;
@@ -1232,7 +1236,15 @@ const MealsModule = {
         validLockedMeals.push(m.key);
       }
     });
-    this.selectedLockedMeals = (this.selectedLockedMeals || []).filter(key => validLockedMeals.includes(key));
+
+    // Default selection: Automatically pre-select all valid locked meals on load or date switch
+    if (this._lockedSelectionDate !== targetDate || this._userHasModifiedLockedSelection !== true) {
+      this._lockedSelectionDate = targetDate;
+      this._userHasModifiedLockedSelection = false;
+      this.selectedLockedMeals = [...validLockedMeals];
+    } else {
+      this.selectedLockedMeals = (this.selectedLockedMeals || []).filter(key => validLockedMeals.includes(key));
+    }
 
     // Clear and build the HTML
     container.innerHTML = '';
@@ -1256,8 +1268,10 @@ const MealsModule = {
         isSelected = this.selectedLockedMeals.includes(m.key);
         if (isSelected) {
           statusClass += ' selected';
+        } else {
+          statusClass += ' unselected';
         }
-        clickAttr = `onclick="Messliner.meals.toggleLockedMealSelection('${m.key}')"`;
+        clickAttr = `onclick="Messliner.meals.toggleLockedMealSelection('${m.key}')" role="checkbox" aria-checked="${isSelected}" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Messliner.meals.toggleLockedMealSelection('${m.key}');}"`;
       }
 
       // Calculate meal count for this type
@@ -1289,20 +1303,21 @@ const MealsModule = {
       const statusBadgeIcon = isAlreadyCompleted
         ? `<span class="glass-status-badge badge-completed"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Completed</span></span>`
         : (isLocked
-          ? `<span class="glass-status-badge badge-locked"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Locked</span><span class="badge-sep">•</span><span>Deadline ${m.deadline}</span></span>`
+          ? `<span class="glass-status-badge badge-locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Locked</span><span class="badge-sep">•</span><span>Deadline ${m.deadline}</span></span>`
           : `<span class="glass-status-badge badge-open"><span class="open-dot"></span><span>Open</span><span class="badge-sep">•</span><span>Deadline ${m.deadline}</span></span>`);
 
-      const checkBadgeHtml = isSelected
-        ? `<div class="glass-selected-check-badge">
-             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      const cardTitle = isLocked
+        ? (isSelected ? `${m.label} is selected. Click to deselect.` : `${m.label} is locked. Click to select.`)
+        : `${m.label} is currently ${statusLabel}`;
+
+      const checkboxHtml = isLocked
+        ? `<div class="glass-option-checkbox ${isSelected ? 'checked' : 'unchecked'}" title="${isSelected ? 'Selected (Click to deselect)' : 'Click to select'}">
+             ${isSelected ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
            </div>`
         : '';
 
-      const cardTitle = `${m.label} is currently ${statusLabel}`;
-
       container.innerHTML += `
         <div class="glass-option-row card-${m.key} ${statusClass}" ${clickAttr} title="${cardTitle}">
-          ${checkBadgeHtml}
           <div class="glass-option-left">
             <div class="glass-option-circle circle-${m.key}">
               ${m.icon}
@@ -1314,8 +1329,11 @@ const MealsModule = {
               </div>
             </div>
           </div>
-          <div class="glass-option-count-box">
-            ${mealCount}
+          <div class="glass-option-right">
+            <div class="glass-option-count-box" title="Expected total meals">
+              ${mealCount}
+            </div>
+            ${checkboxHtml}
           </div>
         </div>
       `;
@@ -1373,6 +1391,10 @@ const MealsModule = {
    * Toggle a locked meal option selection
    */
   toggleLockedMealSelection(mealKey) {
+    this._userHasModifiedLockedSelection = true;
+    if (!Array.isArray(this.selectedLockedMeals)) {
+      this.selectedLockedMeals = [];
+    }
     const index = this.selectedLockedMeals.indexOf(mealKey);
     if (index > -1) {
       this.selectedLockedMeals.splice(index, 1);
@@ -1517,6 +1539,7 @@ const MealsModule = {
 
       // Clear selection
       this.selectedLockedMeals = [];
+      this._userHasModifiedLockedSelection = false;
       this.updateCompleteMealSelect();
 
     } catch (error) {
@@ -1682,6 +1705,7 @@ const MealsModule = {
 
       // Clear selection & refresh UI immediately
       this.selectedLockedMeals = [];
+      this._userHasModifiedLockedSelection = false;
       this.updateCompleteMealSelect();
       this.renderUserGrid();
       this.renderMealLog();
@@ -1946,6 +1970,7 @@ const MealsModule = {
 
       // Refresh UI immediately
       this.selectedLockedMeals = [];
+      this._userHasModifiedLockedSelection = false;
       this.updateCompleteMealSelect();
       this.renderUserGrid();
       this.renderMealLog();

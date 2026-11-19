@@ -856,11 +856,13 @@ const BazarModule = {
     const dayNum = String(dateObj.getDate()).padStart(2, '0');
     const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
     const formattedDate = Utils.formatDate(date);
+    const isAdmin = (this.role === 'admin' || Messliner.state?.role === 'admin' || Messliner.state?.role === 'manager' || Messliner.users?.isAdmin);
 
     // Build detail item rows for the expanded panel
     const itemRows = entries.map((e, idx) => {
       const shopperName = e.shopperName || (this.users[e.userId]?.name) || e.userName || 'N/A';
       const itemsFormatted = Utils.formatBazarItems(e.items || e.title || e.name || 'Bazar Item');
+      const entryKey = e.key || e.id || '';
       return `
         <div class="bazar-item-row">
           <div class="bazar-item-index">${idx + 1}</div>
@@ -874,7 +876,17 @@ const BazarModule = {
               ${shopperName}
             </div>
           </div>
-          <div class="bazar-item-amount">${Utils.currency(parseFloat(e.amount) || 0)}</div>
+          <div class="bazar-item-right-wrap">
+            <div class="bazar-item-amount">${Utils.currency(parseFloat(e.amount) || 0)}</div>
+            ${isAdmin && entryKey ? `
+              <button type="button" class="bazar-item-edit-btn" onclick="event.stopPropagation(); Messliner.bazar.openEditBazarModal('${entryKey}')" title="Edit Bazar Entry">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
+            ` : ''}
+          </div>
         </div>
       `;
     }).join('');
@@ -1122,7 +1134,7 @@ const BazarModule = {
     if (!select) return;
 
     const eligibleUsers = this.getEligibleBazarMembers();
-    let html = '<option value="">-- Select Member --</option>';
+    let html = '<option value="">Select Member</option>';
     eligibleUsers.forEach(([uid, u]) => {
       const isSel = (uid === selectedUserId) ? 'selected' : '';
       html += `<option value="${uid}" ${isSel}>${u?.name || 'Member'}</option>`;
@@ -1134,6 +1146,11 @@ const BazarModule = {
    * Save Single Date Bazar Duty Assignment
    */
   async submitAssignDuty() {
+    // Assert active subscription before write operations
+    if (window.MesslinerSubscription && typeof MesslinerSubscription.assertCanWrite === 'function') {
+      if (!MesslinerSubscription.assertCanWrite()) return;
+    }
+
     const dateInput = document.getElementById('bazarAssignDate');
     const userSelect = document.getElementById('bazarAssignUserSelect');
     const noteInput = document.getElementById('bazarAssignNote');
@@ -1599,6 +1616,16 @@ const BazarModule = {
   quickLogBazarForDate(dateStr) {
     closeModal('bazarDayDetailsModal');
     this.openAddBazarModal(dateStr);
+  },
+
+  /**
+   * Open Edit Bazar Entry Modal
+   */
+  openEditBazarModal(bazarKey) {
+    if (!bazarKey) return;
+    if (Messliner.finance && Messliner.finance.showEditBazarModal) {
+      Messliner.finance.showEditBazarModal(bazarKey);
+    }
   }
 };
 
