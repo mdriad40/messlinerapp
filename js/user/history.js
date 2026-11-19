@@ -121,10 +121,14 @@ const HistoryModule = {
 
     // Render Impersonation View Switcher Button if actual database role is admin
     const currentViewRole = Messliner.state.role || 'user';
-    const actualRole = Messliner.state.actualRole || (Messliner.state.user && user.role) || 'user';
     const switchArea = document.getElementById('profileViewSwitchArea');
     if (switchArea) {
       const isImpersonating = (Messliner.state && Messliner.state.isImpersonating) || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ml_impersonate_user_id'));
+      const isActualAdmin = !isImpersonating && (
+        (user && (user.role === 'admin' || user.role === 'manager')) ||
+        (Messliner.state && (Messliner.state.actualRole === 'admin' || Messliner.state.actualRole === 'manager') && (!user || (user.role !== 'user' && user.role !== 'member')))
+      );
+
       if (isImpersonating) {
         switchArea.style.display = 'flex';
         switchArea.innerHTML = `
@@ -140,7 +144,7 @@ const HistoryModule = {
             <span class="profile-switch-card-label">Return to Admin</span>
           </button>
         `;
-      } else if (actualRole === 'admin') {
+      } else if (isActualAdmin) {
         const isCurrentlyAdminMode = currentViewRole === 'admin';
         switchArea.style.display = 'flex';
         switchArea.innerHTML = `
@@ -157,6 +161,7 @@ const HistoryModule = {
           </button>
         `;
       } else {
+        // Strictly blocked for regular dining members
         switchArea.style.display = 'none';
         switchArea.innerHTML = '';
       }
@@ -2778,17 +2783,27 @@ Persona rules:
    * Toggle between admin and user views (for admins only)
    */
   toggleViewMode() {
-    const currentMode = localStorage.getItem('viewMode') || sessionStorage.getItem('viewMode') || 'admin';
+    const actualRole = (Messliner.state && Messliner.state.actualRole) || '';
+    const userRole = (this.currentUserData && this.currentUserData.role) || (Messliner.state?.userData?.role) || '';
+    const isActualAdmin = (actualRole === 'admin' || actualRole === 'manager') || (userRole === 'admin' || userRole === 'manager');
+    if (!isActualAdmin) {
+      console.warn('[Messliner] Access denied: Dining members cannot switch views.');
+      return;
+    }
+
+    const currentMode = localStorage.getItem('viewMode') || sessionStorage.getItem('viewMode') || (Messliner.state.role === 'user' ? 'user' : 'admin');
     const nextMode = currentMode === 'user' ? 'admin' : 'user';
     sessionStorage.setItem('viewMode', nextMode);
     try {
       localStorage.setItem('viewMode', nextMode);
+      localStorage.setItem('ml_user_role', nextMode);
     } catch (_) { }
 
     const loader = document.getElementById('pageLoader');
     if (loader) {
       loader.style.opacity = '1';
       loader.style.display = 'flex';
+      loader.classList.remove('fade-out');
     }
 
     setTimeout(() => {

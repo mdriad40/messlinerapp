@@ -92,6 +92,11 @@ const Router = {
       return this.role;
     }
     try {
+      const viewMode = localStorage.getItem('viewMode') || sessionStorage.getItem('viewMode');
+      if (viewMode === 'user') {
+        this.role = 'user';
+        return 'user';
+      }
       const explicitRole = localStorage.getItem('ml_user_role');
       if (explicitRole === 'admin' || explicitRole === 'manager') {
         this.role = 'admin';

@@ -239,6 +239,7 @@ window.Messliner = window.DineDesk = {
           key === 'dining_id' ||
           key === 'user_id' ||
           key === 'ml_user_role' ||
+          key === 'viewMode' ||
           key === 'messliner_dining_id'
         ) {
           keysToRemove.push(key);
@@ -262,10 +263,6 @@ window.Messliner = window.DineDesk = {
    */
   async init() {
     console.log('[Messliner] Initializing app...');
-    try {
-      localStorage.removeItem('viewMode');
-      sessionStorage.removeItem('viewMode');
-    } catch (_) { }
 
     // Fast synchronous boot check from localStorage / window cache (0ms latency!)
     let syncUser = null;
@@ -744,15 +741,28 @@ _renderDashboardPayload(data, isFromCache) {
 
   const userData = data.userData || { name: 'User', role: 'user', status: 'active' };
   const rawRole = userData.role || (data.mapping && data.mapping.role) || 'user';
-  this.state.actualRole = (rawRole === 'admin' || rawRole === 'manager') ? 'admin' : rawRole;
+  const isActualAdmin = (rawRole === 'admin' || rawRole === 'manager');
+  this.state.actualRole = isActualAdmin ? 'admin' : 'user';
+  this.state.userData = userData;
+
   const impActive = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ml_impersonate_user_id')) || new URLSearchParams(window.location.search).get('impersonate');
   if (impActive) {
     this.state.role = userData.role || 'user';
     this.state.isImpersonating = true;
     this.state.impersonatedUserId = impActive;
-  } else {
-    this.state.role = this.state.actualRole;
+  } else if (isActualAdmin) {
+    // For actual admins: check viewMode switch (admin <-> user)
+    const viewPref = localStorage.getItem('viewMode') || sessionStorage.getItem('viewMode') || 'admin';
+    this.state.role = (viewPref === 'user') ? 'user' : 'admin';
     this.state.isImpersonating = false;
+  } else {
+    // Strictly regular dining member - completely block admin mode & clear viewMode
+    this.state.role = 'user';
+    this.state.isImpersonating = false;
+    try {
+      localStorage.removeItem('viewMode');
+      sessionStorage.removeItem('viewMode');
+    } catch (_) { }
   }
   if (this.state.role === 'admin') {
     try { localStorage.setItem('ml_user_role', 'admin'); } catch (_) { }
@@ -1194,6 +1204,7 @@ _setupUI(userData, diningInfo = null, settings = null) {
     try { localStorage.setItem('ml_user_role', 'admin'); } catch (_) { }
   } else {
     document.documentElement.classList.remove('ml-is-admin');
+    try { localStorage.setItem('ml_user_role', 'user'); } catch (_) { }
   }
 
   // Sync role-based layout immediately (Admin = Overview on Dashboard; Member = My Meal on Dashboard)
@@ -1723,8 +1734,7 @@ _recalcMealRate: Utils.debounce(async function () {
 // Early instant layout sync before full init to prevent any flicker of member view
 (function () {
   try {
-    localStorage.removeItem('viewMode');
-    sessionStorage.removeItem('viewMode');
+    const viewMode = localStorage.getItem('viewMode') || sessionStorage.getItem('viewMode');
     const rawToken = localStorage.getItem('sb-pgnjvtmofglkjplotrha-auth-token');
     const em = rawToken ? JSON.parse(rawToken)?.user?.email : null;
     let role = localStorage.getItem('ml_user_role');
@@ -1736,12 +1746,23 @@ _recalcMealRate: Utils.debounce(async function () {
         if (m) role = JSON.parse(m)?.role;
       }
     }
-    if (role === 'admin' || role === 'manager' || document.documentElement.classList.contains('ml-is-admin')) {
+    const isActualAdmin = (role === 'admin' || role === 'manager');
+    if (isActualAdmin && viewMode === 'user') {
+      role = 'user';
+    }
+    if ((role === 'admin' || role === 'manager' || document.documentElement.classList.contains('ml-is-admin')) && viewMode !== 'user') {
       document.documentElement.classList.add('ml-is-admin');
       document.body.classList.add('role-admin');
       document.body.classList.remove('role-user');
       if (window.Messliner && typeof window.Messliner.syncRoleLayout === 'function') {
         window.Messliner.syncRoleLayout('admin');
+      }
+    } else {
+      document.documentElement.classList.remove('ml-is-admin');
+      document.body.classList.remove('role-admin');
+      document.body.classList.add('role-user');
+      if (window.Messliner && typeof window.Messliner.syncRoleLayout === 'function') {
+        window.Messliner.syncRoleLayout('user');
       }
     }
   } catch (_) { }
