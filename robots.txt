@@ -1,0 +1,11 @@
+# Robots.txt for Messliner (https://messliner.com)
+User-agent: *
+Allow: /
+
+# Private token callbacks
+Disallow: /callback.html
+Disallow: /preorder-callback.html
+Disallow: /subscription-callback.html
+
+# Sitemap XML Declaration for Search Engines
+Sitemap: https://messliner.com/sitemap.xml

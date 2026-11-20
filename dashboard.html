@@ -20,8 +20,35 @@
       } catch (_) { }
     })();
   </script>
-  <meta name="description" content="Messliner Dashboard — Manage your dining meals, finances, and members.">
-  <title>Messliner — Dashboard</title>
+  <meta name="description"
+    content="MessLiner Dashboard — Smart dining, mess, and hostel meal management platform. Track daily meals, bazaar expenses, and member balances effortlessly.">
+  <title>MessLiner — Dashboard</title>
+  <meta name="keywords"
+    content="MessLiner, Mess Management, Meal Rate Calculator, Bachelor Mess App, Dining Management Bangladesh">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://messliner.com/dashboard">
+
+  <!-- Open Graph / Facebook / WhatsApp -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="MessLiner">
+  <meta property="og:url" content="https://messliner.com/dashboard">
+  <meta property="og:title" content="MessLiner — Dashboard">
+  <meta property="og:description"
+    content="MessLiner Dashboard — Manage your dining meals, finances, and members effortlessly.">
+  <meta property="og:image" content="https://messliner.com/assets/hero_banner.png">
+  <meta property="og:image:secure_url" content="https://messliner.com/assets/hero_banner.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="MessLiner Dashboard">
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://messliner.com/dashboard">
+  <meta name="twitter:title" content="MessLiner — Dashboard">
+  <meta name="twitter:description"
+    content="MessLiner Dashboard — Manage your dining meals, finances, and members effortlessly.">
+  <meta name="twitter:image" content="https://messliner.com/assets/hero_banner.png">
 
   <!-- Instant Route Shimmer Detection (Synchronous 0ms - Zero Home Shimmer Flash on Reload) -->
   <script>
@@ -52,6 +79,12 @@
   <script src="js/mobile-bridge.js"></script>
   <!-- Environment Variables & Secrets Hub -->
   <script src="js/env.js"></script>
+
+  <!-- Vercel Web Analytics -->
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
 
   <!-- Instant Dashboard Synchronous Fast-Boot Engine (0ms Latency) -->
   <script>
@@ -9784,32 +9817,10 @@
                     <span class="ai-chip chip-amber"
                       onclick="document.getElementById('aiChatInput').value='Mess rules'; document.getElementById('aiChatInput').focus()">
                       <span class="ai-chip-icon-plate">
-                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"
-                          viewBox="0 0 24 24">
-                          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                          <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-                        </svg>
-                      </span>
-                      Mess rules
-                    </span>
-                    <span class="ai-chip chip-purple"
-                      onclick="document.getElementById('aiChatInput').value='Meal status of today'; document.getElementById('aiChatInput').focus()">
-                      <span class="ai-chip-icon-plate">
-                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"
-                          viewBox="0 0 24 24">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </span>
-                      Today's status
-                    </span>
-                    <span class="ai-chip chip-teal" onclick="Messliner.history.triggerMessAnalysis()"
-                      title="Mess Audit & Full Analysis">
-                      <span class="ai-chip-icon-plate">
-                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4"
-                          viewBox="0 0 24 24">
-                          <line x1="18" y1="20" x2="18" y2="10" stroke-linecap="round" />
-                          <line x1="12" y1="20" x2="12" y2="4" stroke-linecap="round" />
-                          <line x1="6" y1="20" x2="6" y2="14" stroke-linecap="round" />
+                        viewBox="0 0 24 24">
+                        <line x1="18" y1="20" x2="18" y2="10" stroke-linecap="round" />
+                        <line x1="12" y1="20" x2="12" y2="4" stroke-linecap="round" />
+                        <line x1="6" y1="20" x2="6" y2="14" stroke-linecap="round" />
                         </svg>
                       </span>
                       Analyze
@@ -13032,37 +13043,46 @@
       <div class="modal-body">
         <form id="ledgerAutoPaymentForm" onsubmit="event.preventDefault(); Messliner.ledger.saveAutoPaymentSettings();">
           <!-- Gateway Highlight Card -->
-          <div style="background: linear-gradient(135deg, #fdf2f8 0%, #ffffff 100%); border: 1px solid #fce7f3; border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background: #E2136E; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+          <div
+            style="background: linear-gradient(135deg, #fdf2f8 0%, #ffffff 100%); border: 1px solid #fce7f3; border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px;">
+            <div
+              style="width: 38px; height: 38px; border-radius: 10px; background: #E2136E; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
               ⚡
             </div>
             <div>
               <div style="font-size: 0.85rem; font-weight: 800; color: #9d174d;">Official bKash Tokenized Checkout</div>
-              <div style="font-size: 0.72rem; color: #64748B;">Members pay securely via PIN &amp; OTP with instant auto-approval. No personal number required.</div>
+              <div style="font-size: 0.72rem; color: #64748B;">Members pay securely via PIN &amp; OTP with instant
+                auto-approval. No personal number required.</div>
             </div>
           </div>
 
           <!-- Charge % -->
           <div class="form-group">
-            <label class="form-label" for="autoPaymentChargePercent" style="font-size:0.8rem; font-weight:700;">Charge % (0 = Free Gateway Fee)</label>
+            <label class="form-label" for="autoPaymentChargePercent" style="font-size:0.8rem; font-weight:700;">Charge %
+              (0 = Free Gateway Fee)</label>
             <div class="input-addon-group">
-              <input type="number" id="autoPaymentChargePercent" class="form-input" placeholder="0" min="0" max="100" step="0.1" value="0" style="padding-right:32px;" />
+              <input type="number" id="autoPaymentChargePercent" class="form-input" placeholder="0" min="0" max="100"
+                step="0.1" value="0" style="padding-right:32px;" />
               <span class="input-addon-suffix">%</span>
             </div>
-            <div style="font-size: 0.72rem; color: #94A3B8; margin-top: 3px;">Extra percentage fee paid by the member during checkout.</div>
+            <div style="font-size: 0.72rem; color: #94A3B8; margin-top: 3px;">Extra percentage fee paid by the member
+              during checkout.</div>
           </div>
 
           <!-- Description (Optional) -->
           <div class="form-group">
-            <label class="form-label" for="autoPaymentDescription" style="font-size:0.8rem; font-weight:700;">Description (Optional)</label>
-            <input type="text" id="autoPaymentDescription" class="form-input" placeholder="e.g. Instant balance credit" />
+            <label class="form-label" for="autoPaymentDescription"
+              style="font-size:0.8rem; font-weight:700;">Description (Optional)</label>
+            <input type="text" id="autoPaymentDescription" class="form-input"
+              placeholder="e.g. Instant balance credit" />
           </div>
 
           <!-- Active Switch Toggle -->
           <div class="toggle-card-row">
             <div>
               <div style="font-size:0.88rem; font-weight:800; color:#0F172A;">Active Status</div>
-              <div style="font-size:0.75rem; color:#64748B;">Show bKash Auto Pay in members' Add Money and Bills panel</div>
+              <div style="font-size:0.75rem; color:#64748B;">Show bKash Auto Pay in members' Add Money and Bills panel
+              </div>
             </div>
             <label class="toggle-switch" style="margin:0;">
               <input type="checkbox" id="autoPaymentActiveToggle" checked />
@@ -13071,9 +13091,12 @@
           </div>
 
           <!-- Actions -->
-          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:16px; border-top:1px solid #F1F5F9;">
-            <button type="button" class="btn btn-secondary" style="border-radius:10px; font-weight:700;" onclick="Messliner.ledger.closeAutoPaymentModal()">Cancel</button>
-            <button type="submit" id="btnSaveAutoPaymentSubmit" class="btn btn-primary" style="border-radius:10px; font-weight:700; background:#E2136E; border-color:#E2136E;">
+          <div
+            style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:16px; border-top:1px solid #F1F5F9;">
+            <button type="button" class="btn btn-secondary" style="border-radius:10px; font-weight:700;"
+              onclick="Messliner.ledger.closeAutoPaymentModal()">Cancel</button>
+            <button type="submit" id="btnSaveAutoPaymentSubmit" class="btn btn-primary"
+              style="border-radius:10px; font-weight:700; background:#E2136E; border-color:#E2136E;">
               Save Changes
             </button>
           </div>
@@ -13127,13 +13150,23 @@
     }
 
     @keyframes soOverlayIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
     }
 
     @keyframes soSheetUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
+      from {
+        transform: translateY(100%);
+      }
+
+      to {
+        transform: translateY(0);
+      }
     }
 
     @keyframes soCardIn {
@@ -13141,6 +13174,7 @@
         opacity: 0;
         transform: translateY(20px) scale(0.97);
       }
+
       to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -13162,11 +13196,15 @@
     }
 
     @keyframes soOverlayOut {
-      to { opacity: 0; }
+      to {
+        opacity: 0;
+      }
     }
 
     @keyframes soSheetDown {
-      to { transform: translateY(100%); }
+      to {
+        transform: translateY(100%);
+      }
     }
 
     @keyframes soCardOut {
@@ -13404,6 +13442,184 @@
 
     </div>
   </div>
+
+  <!-- ============================================================ -->
+  <!-- USER PROFILE BOTTOM POPUP STYLES (Full-Width Bottom Sheets) -->
+  <!-- ============================================================ -->
+  <style>
+    /* Full-width bottom popup sheet overlays */
+    #editProfileModal.modal-overlay,
+    #changePasswordModal.modal-overlay,
+    #supportModal.modal-overlay {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 100050 !important;
+      background: rgba(15, 23, 42, 0.55) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+      display: flex !important;
+      align-items: flex-end !important;
+      justify-content: center !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s ease !important;
+    }
+
+    #editProfileModal.modal-overlay.active,
+    #changePasswordModal.modal-overlay.active,
+    #supportModal.modal-overlay.active {
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+
+    #editProfileModal.modal-overlay.sheet-closing,
+    #changePasswordModal.modal-overlay.sheet-closing,
+    #supportModal.modal-overlay.sheet-closing {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    /* Bottom sheet dialog containers */
+    #editProfileModal .edit-profile-modal-dialog,
+    #changePasswordModal .change-password-modal-dialog,
+    #supportModal .support-modal-dialog {
+      width: 100% !important;
+      max-width: 520px !important;
+      max-height: 88vh !important;
+      background: #ffffff !important;
+      border-radius: 28px 28px 0 0 !important;
+      border: 1px solid rgba(226, 232, 240, 0.9) !important;
+      border-bottom: none !important;
+      box-shadow: 0 -12px 48px rgba(15, 23, 42, 0.22) !important;
+      padding: 10px 20px max(24px, env(safe-area-inset-bottom, 24px)) 20px !important;
+      margin: 0 auto !important;
+      box-sizing: border-box !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain !important;
+      -webkit-overflow-scrolling: touch !important;
+      transform: translateY(105%) !important;
+      transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      will-change: transform;
+      position: relative !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+
+    /* Mobile screens: true full-width edge-to-edge */
+    @media (max-width: 640px) {
+
+      #editProfileModal .edit-profile-modal-dialog,
+      #changePasswordModal .change-password-modal-dialog,
+      #supportModal .support-modal-dialog {
+        max-width: 100% !important;
+        border-radius: 26px 26px 0 0 !important;
+        padding: 8px 16px max(20px, env(safe-area-inset-bottom, 20px)) 16px !important;
+      }
+    }
+
+    /* Slide up when active */
+    #editProfileModal.modal-overlay.active .edit-profile-modal-dialog,
+    #changePasswordModal.modal-overlay.active .change-password-modal-dialog,
+    #supportModal.modal-overlay.active .support-modal-dialog {
+      transform: translateY(0) !important;
+    }
+
+    /* Slide down when closing */
+    #editProfileModal.modal-overlay.sheet-closing .edit-profile-modal-dialog,
+    #changePasswordModal.modal-overlay.sheet-closing .change-password-modal-dialog,
+    #supportModal.modal-overlay.sheet-closing .support-modal-dialog {
+      transform: translateY(105%) !important;
+      transition: transform 0.24s cubic-bezier(0.4, 0, 1, 1) !important;
+    }
+
+    /* Top drag pill handle */
+    .edit-profile-drag-indicator,
+    .change-password-drag-indicator,
+    .support-modal-drag-indicator {
+      display: block !important;
+      width: 44px !important;
+      height: 4.5px !important;
+      border-radius: 99px !important;
+      background: #CBD5E1 !important;
+      margin: 4px auto 14px auto !important;
+      flex-shrink: 0 !important;
+      cursor: pointer !important;
+      transition: background 0.2s ease !important;
+    }
+
+    .edit-profile-drag-indicator:hover,
+    .change-password-drag-indicator:hover,
+    .support-modal-drag-indicator:hover {
+      background: #94A3B8 !important;
+    }
+
+    /* Top close buttons */
+    .edit-profile-close-btn,
+    .change-password-close-btn,
+    .support-modal-close-btn {
+      position: absolute !important;
+      top: 14px !important;
+      right: 16px !important;
+      width: 32px !important;
+      height: 32px !important;
+      border-radius: 50% !important;
+      background: #F1F5F9 !important;
+      border: none !important;
+      color: #64748B !important;
+      font-size: 0.85rem !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      transition: all 0.18s ease !important;
+      z-index: 10 !important;
+      outline: none !important;
+    }
+
+    .edit-profile-close-btn:hover,
+    .change-password-close-btn:hover,
+    .support-modal-close-btn:hover {
+      background: #E2E8F0 !important;
+      color: #0F172A !important;
+      transform: rotate(90deg) scale(1.05) !important;
+    }
+
+    /* Dark theme support */
+    body.dark-theme #editProfileModal .edit-profile-modal-dialog,
+    body.dark-theme #changePasswordModal .change-password-modal-dialog,
+    body.dark-theme #supportModal .support-modal-dialog,
+    [data-theme="dark"] #editProfileModal .edit-profile-modal-dialog,
+    [data-theme="dark"] #changePasswordModal .change-password-modal-dialog,
+    [data-theme="dark"] #supportModal .support-modal-dialog {
+      background: #0F172A !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+      box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    body.dark-theme .edit-profile-drag-indicator,
+    body.dark-theme .change-password-drag-indicator,
+    body.dark-theme .support-modal-drag-indicator,
+    [data-theme="dark"] .edit-profile-drag-indicator,
+    [data-theme="dark"] .change-password-drag-indicator,
+    [data-theme="dark"] .support-modal-drag-indicator {
+      background: rgba(255, 255, 255, 0.22) !important;
+    }
+
+    body.dark-theme .edit-profile-close-btn,
+    body.dark-theme .change-password-close-btn,
+    body.dark-theme .support-modal-close-btn,
+    [data-theme="dark"] .edit-profile-close-btn,
+    [data-theme="dark"] .change-password-close-btn,
+    [data-theme="dark"] .support-modal-close-btn {
+      background: #1E293B !important;
+      color: #94A3B8 !important;
+    }
+  </style>
 
   <!-- ============================================================ -->
   <!-- EDIT PROFILE MODAL (Clean & Minimal)                         -->
@@ -14479,11 +14695,22 @@
     /* Global modal helpers */
     function closeModal(id) {
       const modal = document.getElementById(id);
-      if (modal) modal.classList.remove('active');
+      if (!modal) return;
+      if (['editProfileModal', 'changePasswordModal', 'supportModal'].includes(id)) {
+        modal.classList.add('sheet-closing');
+        setTimeout(() => {
+          modal.classList.remove('active', 'sheet-closing');
+        }, 240);
+      } else {
+        modal.classList.remove('active');
+      }
     }
     function openModal(id) {
       const modal = document.getElementById(id);
-      if (modal) modal.classList.add('active');
+      if (modal) {
+        modal.classList.remove('sheet-closing');
+        modal.classList.add('active');
+      }
     }
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('open');

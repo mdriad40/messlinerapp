@@ -334,7 +334,7 @@ const Router = {
     // If already on this page, smoothly scroll to top without re-rendering or interrupting transitions
     if (this.currentPage === page) {
       // Prevent synthetic click from scrolling to top immediately after a tab navigation
-      if (Date.now() - (this._lastNavTime || 0) < 400) {
+      if (Date.now() - (this._lastNavTime || 0) < 500) {
         return;
       }
       const contentArea = document.querySelector('.content-area');
@@ -434,6 +434,10 @@ const Router = {
         ? contentArea.scrollTop
         : (window.scrollY || document.documentElement.scrollTop || 0);
       this.scrollPositions[prevPage] = scrollY;
+    }
+    if (this._restoreScrollTimer) {
+      clearTimeout(this._restoreScrollTimer);
+      this._restoreScrollTimer = null;
     }
     this._isRestoringScroll = true;
 
@@ -886,13 +890,21 @@ const Router = {
       // Re-apply after layout settles without any animation
       requestAnimationFrame(() => {
         restoreInstantScroll();
-        this._isRestoringScroll = false;
       });
       setTimeout(() => {
         restoreInstantScroll();
-        this._isRestoringScroll = false;
       }, 50);
+      setTimeout(() => {
+        restoreInstantScroll();
+      }, 150);
+
+      if (this._restoreScrollTimer) clearTimeout(this._restoreScrollTimer);
+      this._restoreScrollTimer = setTimeout(() => {
+        this._isRestoringScroll = false;
+        this._restoreScrollTimer = null;
+      }, 250);
     } else {
+      if (this._restoreScrollTimer) clearTimeout(this._restoreScrollTimer);
       this._isRestoringScroll = false;
     }
   },
@@ -901,6 +913,13 @@ const Router = {
    * Called when a page becomes active — trigger any page-specific setup
    */
   _onPageEnter(page) {
+    // Track tab / screen view event in Vercel Analytics
+    try {
+      if (typeof window.va === 'function') {
+        window.va('event', { name: 'tab_view', data: { tab: page } });
+      }
+    } catch (_) { }
+
     switch (page) {
       case 'dashboard':
         if (Messliner.syncRoleLayout) Messliner.syncRoleLayout(this.getRole());
@@ -1066,7 +1085,8 @@ const Router = {
 
     // Fast zero-latency touch response via pointerdown (native mobile app response)
     container.querySelectorAll('.bottom-nav-item').forEach(btn => {
-      let lastTrigger = 0;
+      let lastPointerDownTime = 0;
+      let lastTriggerTime = 0;
       const handleTrigger = (e) => {
         const page = btn.dataset.page;
         if (!page) return;
@@ -1082,8 +1102,8 @@ const Router = {
             } catch (_) { }
           }
           const now = Date.now();
-          if (now - lastTrigger < 350) return; // Debounce clicks
-          lastTrigger = now;
+          if (now - lastTriggerTime < 350) return; // Debounce clicks
+          lastTriggerTime = now;
 
           if (window.Messliner && typeof Messliner.toggleMoreSheet === 'function') {
             Messliner.toggleMoreSheet();
@@ -1091,10 +1111,20 @@ const Router = {
           return;
         }
 
-        if (e.type === 'pointerdown' && e.button !== 0) return;
+        if (e.type === 'pointerdown') {
+          if (e.button !== 0) return;
+          lastPointerDownTime = Date.now();
+        } else if (e.type === 'click') {
+          // Prevent synthetic click from firing after pointerdown
+          if (Date.now() - lastPointerDownTime < 600) {
+            if (e.cancelable) e.preventDefault();
+            return;
+          }
+        }
+
         const now = Date.now();
-        if (now - lastTrigger < 300) return; // Prevent double trigger from pointerdown + synthetic click
-        lastTrigger = now;
+        if (now - lastTriggerTime < 350) return; // Prevent double triggers
+        lastTriggerTime = now;
 
         // Close More sheet if open when tapping any standard nav tab
         if (window.Messliner && typeof Messliner.closeMoreSheet === 'function') {
@@ -1113,15 +1143,9 @@ const Router = {
         } else if (page === 'finance') {
           targetPage = this.role === 'admin' ? 'finance' : 'overview';
         }
-        if (this.currentPage !== targetPage) {
-          this.navigate(targetPage);
-        } else {
-          // If already on this page and user taps again, smoothly scroll to top
-          const contentArea = document.querySelector('.content-area');
-          if (contentArea && contentArea.scrollTop > 0) {
-            contentArea.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        }
+
+        // Delegate all navigation and scroll-to-top logic to navigate() safely
+        this.navigate(targetPage);
       };
 
       btn.addEventListener('pointerdown', handleTrigger, { passive: true });

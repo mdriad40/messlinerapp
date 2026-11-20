@@ -4,19 +4,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Messliner — Smart Dining & Mess Management Platform</title>
+  <title>MessLiner - Smart Dining & Mess Management Platform</title>
   <meta name="description"
-    content="Messliner is the ultimate smart dining, mess, and hostel management platform. Track daily meals, split bazar expenses, calculate meal rate (Bazar Ratio) automatically, and run your mess stress-free. Available on Web, Android, iOS & Desktop.">
+    content="MessLiner is the ultimate smart dining, mess, and hostel meal management platform. Track daily meals, bazaar expenses, and member balances effortlessly.">
   <meta name="keywords"
     content="Messliner, Mess Management, Meal Rate Calculator, Bazar Ratio, Dining App, Hostel Management, Bill Splitting, Meal Manager">
-  <link rel="canonical" href="https://www.messliner.com/">
-  <meta property="og:url" content="https://www.messliner.com/">
-  <meta property="og:site_name" content="Messliner">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://messliner.com/">
+
+  <!-- Structured Data / JSON-LD for Google Sitelinks & Brand Knowledge Graph -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://messliner.com/#website",
+        "url": "https://messliner.com/",
+        "name": "MessLiner",
+        "alternateName": ["Messliner", "Messliner App", "MessLiner Smart Dining"],
+        "description": "Smart dining, mess, and hostel meal management platform. Track daily meals, bazaar expenses, and compute real-time Bazar Ratio.",
+        "publisher": {
+          "@id": "https://messliner.com/#organization"
+        },
+        "inLanguage": "en-US"
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://messliner.com/#organization",
+        "name": "MessLiner",
+        "url": "https://messliner.com/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://messliner.com/assets/messLiner-logo.png",
+          "caption": "Messliner Logo"
+        },
+        "contactPoint": [
+          {
+            "@type": "ContactPoint",
+            "contactType": "customer support",
+            "email": "support@messliner.com"
+          }
+        ]
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://messliner.com/#webapp",
+        "name": "MessLiner",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "All (Web, Android, iOS, Windows)",
+        "url": "https://messliner.com/",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "BDT"
+        },
+        "description": "Smart dining and mess management application with automated meal counts, daily bazar expense tracking, and instant meal rate calculation."
+      },
+      {
+        "@type": "ItemList",
+        "@id": "https://messliner.com/#sitelinks",
+        "name": "Messliner Sitelinks Navigation",
+        "itemListElement": [
+          {
+            "@type": "SiteNavigationElement",
+            "position": 1,
+            "name": "Log In",
+            "description": "Access your Messliner account, meal manager, and member dashboard.",
+            "url": "https://messliner.com/login"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 2,
+            "name": "How it Works",
+            "description": "Learn how Messliner works step-by-step for Mess Managers and Members.",
+            "url": "https://messliner.com/how-it-works.html"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 3,
+            "name": "Features",
+            "description": "Explore Messliner features including Bazar Ratio calculation, automated deposits, and instant reports.",
+            "url": "https://messliner.com/#features"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 4,
+            "name": "Pricing",
+            "description": "Affordable and transparent pricing plans for bachelor messes and hostels.",
+            "url": "https://messliner.com/#pricing"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 5,
+            "name": "What is Messliner",
+            "description": "Discover Messliner, the complete automated meal and dining management platform.",
+            "url": "https://messliner.com/#about"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 6,
+            "name": "Data Safety & Security",
+            "description": "Enterprise-grade cloud encryption and privacy compliance for all mess records.",
+            "url": "https://messliner.com/data-safety.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <!-- Open Graph / Facebook / WhatsApp -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Messliner — Smart Dining & Mess Management Platform">
+  <meta property="og:site_name" content="MessLiner">
+  <meta property="og:url" content="https://messliner.com/">
+  <meta property="og:title" content="MessLiner - Smart Dining & Mess Management Platform">
   <meta property="og:description"
-    content="Messliner is the ultimate smart dining, mess, and hostel management platform. Track daily meals, split bazar expenses, calculate meal rate (Bazar Ratio) automatically, and run your mess stress-free.">
-  <meta name="support-email" content="support@messliner.com">
+    content="MessLiner is the ultimate smart dining, mess, and hostel meal management platform. Track daily meals, bazaar expenses, and member balances effortlessly.">
+  <meta property="og:image" content="https://messliner.com/assets/hero_banner.png">
+  <meta property="og:image:secure_url" content="https://messliner.com/assets/hero_banner.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="MessLiner - Smart Dining & Mess Management Platform">
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://messliner.com/">
+  <meta name="twitter:title" content="MessLiner - Smart Dining & Mess Management Platform">
+  <meta name="twitter:description"
+    content="MessLiner is the ultimate smart dining, mess, and hostel meal management platform. Track daily meals, bazaar expenses, and member balances effortlessly.">
+  <meta name="twitter:image" content="https://messliner.com/assets/hero_banner.png">
 
   <!-- Live Server & Localhost Clean URL Adapter (0ms Immediate Interceptor) -->
   <script>
@@ -48,6 +166,12 @@
 
   <!-- Favicon -->
   <link rel="icon" href="assets/messLiner-logo.png" type="image/png">
+
+  <!-- Vercel Web Analytics -->
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 
 <body>
@@ -1511,7 +1635,8 @@
         <div class="glass-panel pricing-card" data-animate="fade-up" data-delay="100">
           <div class="plan-header">
             <div class="plan-name">Free Trial</div>
-            <div class="plan-desc" id="trialPlanDesc">Experience 100% full-featured automated dining management for 30 days.</div>
+            <div class="plan-desc" id="trialPlanDesc">Experience 100% full-featured automated dining management for 30
+              days.</div>
           </div>
 
           <div class="plan-price-wrap">
@@ -1576,7 +1701,8 @@
             </li>
           </ul>
 
-          <a href="checkout.html?plan=trial" id="btnLinkTrial" class="btn btn-glass btn-pricing" style="margin-top:auto;">Start 30-Day
+          <a href="checkout.html?plan=trial" id="btnLinkTrial" class="btn btn-glass btn-pricing"
+            style="margin-top:auto;">Start 30-Day
             Free Trial</a>
         </div>
 
@@ -1764,7 +1890,7 @@
             if (cp.trialDays !== undefined) livePricing.trialDays = parseInt(cp.trialDays) || livePricing.trialDays;
             if (cp.gracePeriodDays !== undefined) livePricing.graceDays = parseInt(cp.gracePeriodDays) || livePricing.graceDays;
           }
-        } catch (_) {}
+        } catch (_) { }
 
         async function fetchLivePlansFromSupabase() {
           try {
@@ -1801,7 +1927,7 @@
                     trialDays: livePricing.trialDays,
                     gracePeriodDays: livePricing.graceDays
                   }));
-                } catch (_) {}
+                } catch (_) { }
 
                 renderPricingCards();
 
@@ -2211,8 +2337,13 @@
             splits.
           </p>
           <div style="margin-top: 1rem;">
-            <a href="mailto:support@messliner.com" style="color: var(--primary, #10b981); text-decoration: none; font-size: 0.92rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <a href="mailto:support@messliner.com"
+              style="color: var(--primary, #10b981); text-decoration: none; font-size: 0.92rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
               support@messliner.com
             </a>
           </div>
@@ -2221,6 +2352,7 @@
         <div>
           <div class="footer-column-title">Product</div>
           <ul class="footer-links">
+            <li class="footer-link-item"><a href="/login">Login / Register</a></li>
             <li class="footer-link-item"><a href="#about">What is Messliner</a></li>
             <li class="footer-link-item"><a href="#bazar-ratio">Bazar Ratio Guide</a></li>
             <li class="footer-link-item"><a href="#features">Features</a></li>
@@ -2251,7 +2383,8 @@
       </div>
 
       <div class="footer-bottom">
-        <div>© 2026 <a href="https://www.messliner.com/" style="color:inherit; text-decoration:none; font-weight:600;">Messliner</a> Inc. All rights reserved.</div>
+        <div>© 2026 <a href="https://www.messliner.com/"
+            style="color:inherit; text-decoration:none; font-weight:600;">Messliner</a> Inc. All rights reserved.</div>
         <div style="display:flex; gap:1.5rem;">
           <a href="mailto:support@messliner.com" style="color:var(--text-subtle);">support@messliner.com</a>
           <a href="privacy-policy.html" style="color:var(--text-subtle);">Privacy</a>
@@ -2344,9 +2477,14 @@
       </div>
       <div class="modal-body">
         <p>Need assistance setting up your mess or installing native apps? Our support team is here to help.</p>
-        <div style="margin: 14px 0 16px; padding: 12px 14px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; font-size: 0.9rem;">
-          <div style="margin-bottom: 4px;"><strong>Support Email:</strong> <a href="mailto:support@messliner.com" style="color: var(--primary, #10b981); font-weight: 600; text-decoration: underline;">support@messliner.com</a></div>
-          <div><strong>Official Website:</strong> <a href="https://www.messliner.com/" target="_blank" style="color: var(--primary, #10b981); font-weight: 600; text-decoration: underline;">https://www.messliner.com/</a></div>
+        <div
+          style="margin: 14px 0 16px; padding: 12px 14px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; font-size: 0.9rem;">
+          <div style="margin-bottom: 4px;"><strong>Support Email:</strong> <a href="mailto:support@messliner.com"
+              style="color: var(--primary, #10b981); font-weight: 600; text-decoration: underline;">support@messliner.com</a>
+          </div>
+          <div><strong>Official Website:</strong> <a href="https://www.messliner.com/" target="_blank"
+              style="color: var(--primary, #10b981); font-weight: 600; text-decoration: underline;">https://www.messliner.com/</a>
+          </div>
         </div>
 
         <form onsubmit="event.preventDefault(); triggerAppDownload('Support Ticket'); closeAllModals();">
