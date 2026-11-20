@@ -23,7 +23,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script src="js/firebase-config.js"></script>
-  <script src="js/shared/payment.js"></script>
+  <script src="js/shared/payment.js?v=3.6"></script>
 
   <style>
     body {
@@ -82,7 +82,7 @@
         <div class="w-14 h-14 rounded-full border-4 border-pink-100 border-t-[#E2136E] animate-spin"></div>
         <div class="text-center">
           <h3 class="text-base font-bold text-slate-900">Verifying bKash Transaction...</h3>
-          <p class="text-xs text-slate-500 mt-1">Please wait while your SMS balance is updated.</p>
+          <p class="text-xs text-slate-500 mt-1">Please wait while your transaction is verified.</p>
         </div>
       </div>
 
@@ -118,12 +118,19 @@
       // Retrieve pending transaction details from localStorage
       let pending = {};
       try {
-        pending = JSON.parse(localStorage.getItem("ml_pending_bkash_recharge") || "{}");
+        pending = JSON.parse(localStorage.getItem("ml_pending_member_payment") || localStorage.getItem("ml_pending_universal_payment") || localStorage.getItem("ml_pending_bkash_recharge") || "{}");
       } catch (_) { }
       let pendingPreorder = {};
       try {
         pendingPreorder = JSON.parse(localStorage.getItem("ml_pending_pro_preorder") || "{}");
       } catch (_) { }
+
+      // Forward member deposit / bill payment to in-app Ledger modal on dashboard.html
+      if (pending.type === 'member_deposit' || pending.type === 'bill_payment' || localStorage.getItem('ml_pending_member_payment')) {
+        const dest = 'dashboard.html?bkashPayment=auto&paymentID=' + encodeURIComponent(paymentID) + '&status=' + encodeURIComponent(paymentStatus) + '&trxID=' + encodeURIComponent(trxID);
+        window.location.replace(dest);
+        return;
+      }
 
       const diningId = pending.diningId || localStorage.getItem("currentDiningId") || "";
       const rechargeAmount = parseFloat(pending.amount) || 0;
@@ -136,11 +143,12 @@
       // ─── 1. SUCCESS FLOW (SECURE GATEWAY VERIFIED) ────────────────
       if (paymentStatus === "success") {
         const dedupeKey = "ml_bkash_done_" + (paymentID || trxID);
-        const isSubscription = Boolean(pending.type && pending.type.startsWith('subscription'));
-        const isPreorder = !isSubscription && (pendingPreorder.type === 'pro_preorder' || pending.type === 'pro_preorder');
+        const isMemberPayment = Boolean(pending.type === 'member_deposit' || pending.type === 'bill_payment');
+        const isSubscription = !isMemberPayment && Boolean(pending.type && pending.type.startsWith('subscription'));
+        const isPreorder = !isMemberPayment && !isSubscription && (pendingPreorder.type === 'pro_preorder' || pending.type === 'pro_preorder');
         const preData = pendingPreorder.type === 'pro_preorder' ? pendingPreorder : pending;
-        const targetType = isSubscription ? pending.type : (isPreorder ? 'pro_preorder' : 'sms_recharge');
-        const targetAmount = isSubscription ? (parseFloat(pending.amount) || 60) : (isPreorder ? (parseFloat(preData.amount) || 499) : rechargeAmount);
+        const targetType = isMemberPayment ? pending.type : (isSubscription ? pending.type : (isPreorder ? 'pro_preorder' : 'sms_recharge'));
+        const targetAmount = isMemberPayment ? (parseFloat(pending.amount) || 0) : (isSubscription ? (parseFloat(pending.amount) || 60) : (isPreorder ? (parseFloat(preData.amount) || 499) : rechargeAmount));
 
         let verifyResult = null;
         if (window.MesslinerPayment && paymentID) {
@@ -152,12 +160,12 @@
               diningId: diningId,
               amount: targetAmount,
               customerPhone: customerPhone || preData.phone || '',
-              metadata: isSubscription ? (pending.metadata || {}) : (isPreorder ? {
+              metadata: isSubscription ? (pending.metadata || {}) : (isMemberPayment ? (pending.metadata || {}) : (isPreorder ? {
                 name: preData.name || 'Valued Customer',
                 messName: preData.messName || 'Your Mess',
                 email: preData.email || 'N/A',
                 phone: preData.phone || customerPhone || 'N/A'
-              } : {})
+              } : {}))
             });
 
             if (verifyResult && verifyResult.alreadyProcessed) {
@@ -174,6 +182,9 @@
           stateLoading.classList.add("hidden");
           stateFailure.classList.remove("hidden");
           const errorMsg = (verifyResult && verifyResult.error) ? verifyResult.error : 'Payment could not be verified by the official bKash gateway. No balance was credited.';
+          const returnUrl = isMemberPayment ? 'dashboard.html#user-bills' : 'dashboard.html#more';
+          const returnLabel = isMemberPayment ? 'Return to Bills & Ledger' : 'Return to SMS Dashboard';
+
           stateFailure.innerHTML = `
             <div class="flex flex-col items-center text-center">
               <div class="w-16 h-16 rounded-full bg-rose-50 border-rose-200 text-rose-600 border-2 flex items-center justify-center mb-4 shadow-md">
@@ -196,9 +207,9 @@
               </div>` : ''}
 
               <div class="w-full mt-4 space-y-2">
-                <a href="dashboard.html#more" class="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-white font-bold text-xs bg-slate-900 hover:bg-slate-800 transition-all shadow-md">
+                <a href="${returnUrl}" class="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-white font-bold text-xs bg-slate-900 hover:bg-slate-800 transition-all shadow-md">
                   <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i>
-                  <span>Return to SMS Dashboard</span>
+                  <span>${returnLabel}</span>
                 </a>
               </div>
             </div>
@@ -210,9 +221,90 @@
         const verifiedTrx = (verifyResult && verifyResult.trxID) || trxID || 'BKASH_CONFIRMED';
         const finalAmount = (verifyResult && verifyResult.amount) || targetAmount;
 
-        // 0. SUBSCRIPTION ACTIVATION FLOW
-        if (isSubscription) {
-          const subMeta = pending.metadata || {};
+        // 0. MEMBER DEPOSIT / BILL PAYMENT FLOW
+        if (isMemberPayment) {
+          localStorage.setItem(dedupeKey, "1");
+          localStorage.removeItem("ml_pending_member_payment");
+
+          const isBill = pending.type === 'bill_payment';
+          const meta = pending.metadata || {};
+          const memberName = meta.userName || 'Member';
+          const diningMess = meta.messName || 'Your Mess';
+          const billName = meta.billTitle || 'Shared Bill';
+
+          const now = new Date();
+          const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+          stateLoading.classList.add("hidden");
+          stateSuccess.classList.remove("hidden");
+          stateSuccess.innerHTML = `
+            <div class="flex flex-col items-center text-center">
+              <div class="w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-200 text-emerald-600 flex items-center justify-center mb-4 animate-bounce-in shadow-lg">
+                <i data-lucide="check" class="h-9 w-9 stroke-[3]"></i>
+              </div>
+
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 border border-pink-200 text-[#E2136E] text-xs font-bold mb-2">
+                <i data-lucide="zap" class="h-3.5 w-3.5"></i>
+                <span>bKash Auto Checkout</span>
+              </div>
+
+              <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">
+                ${isBill ? 'Bill Payment Successful!' : 'Balance Credited Instantly!'}
+              </h2>
+              <p class="text-xs text-slate-500 mt-1 max-w-sm">
+                ${isBill ? 'Your shared bill has been verified and settled in the mess ledger.' : 'Your deposit was verified and automatically added to your mess balance.'}
+              </p>
+
+              <!-- Amount Card -->
+              <div class="w-full bg-gradient-to-r from-pink-50/50 via-white to-pink-50/50 border border-pink-100 rounded-2xl p-4 my-5 text-center shadow-xs">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Amount Paid (bKash)</span>
+                <div class="text-3xl font-black text-[#E2136E] mt-0.5">৳${finalAmount.toFixed(2)}</div>
+                <span class="inline-block mt-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+                  ${isBill ? '✓ Status: Ledger Cleared' : '✓ Balance Added Instantly'}
+                </span>
+              </div>
+
+              <!-- Breakdown Receipt -->
+              <div class="w-full rounded-2xl bg-slate-50 border border-slate-200/80 p-4 space-y-2.5 text-xs text-left">
+                <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span class="text-slate-500 font-medium">Member Name</span>
+                  <span class="font-bold text-slate-900">${memberName}</span>
+                </div>
+                <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span class="text-slate-500 font-medium">Mess / Dining</span>
+                  <span class="font-bold text-slate-900">${diningMess}</span>
+                </div>
+                ${isBill ? `
+                <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span class="text-slate-500 font-medium">Bill Title</span>
+                  <span class="font-bold text-purple-700">${billName}</span>
+                </div>` : ''}
+                <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span class="text-slate-500 font-medium">Transaction ID (TrxID)</span>
+                  <span class="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">${verifiedTrx}</span>
+                </div>
+                <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span class="text-slate-500 font-medium">bKash Payment ID</span>
+                  <span class="font-mono text-slate-700">${paymentID || 'N/A'}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-500 font-medium">Date &amp; Time</span>
+                  <span class="text-slate-700 font-medium">${dateStr}</span>
+                </div>
+              </div>
+
+              <!-- Action Button -->
+              <div class="w-full mt-6 space-y-2">
+                <a href="dashboard.html#user-bills" class="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl text-white font-bold text-sm bg-bkash hover:opacity-95 shadow-bkash transition-all transform active:scale-[0.98]">
+                  <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                  <span>Return to Bills &amp; Ledger History</span>
+                </a>
+              </div>
+            </div>
+          `;
+          renderIcons();
+          return;
+        }
           const planName = subMeta.planName || (subMeta.plan === 'pay_as_you_go' ? 'Pay As You Go' : 'Messliner Pro');
           const billingCycle = subMeta.billingCycle || 'monthly';
           const cycleLabel = billingCycle === 'yearly' ? '1 Year (365 Days)' : '1 Month (30 Days)';
@@ -441,11 +533,15 @@
       stateLoading.classList.add("hidden");
       stateFailure.classList.remove("hidden");
 
+      const isMemberPayment = Boolean(pending.type === 'member_deposit' || pending.type === 'bill_payment');
       const isCancelled = paymentStatus === "cancel";
       const title = isCancelled ? "Payment Cancelled" : "Payment Incomplete";
       const desc = isCancelled
-        ? "You cancelled the bKash checkout process. No amount was deducted."
+        ? "You cancelled the bKash checkout process. No money was deducted from your account."
         : "The bKash gateway was unable to complete the payment transaction. Please try again.";
+
+      const returnUrl = isMemberPayment ? 'dashboard.html#user-bills' : 'dashboard.html#more';
+      const tryAgainLabel = isMemberPayment ? 'Try Again from Bills Tab' : 'Try Again from SMS Dashboard';
 
       stateFailure.innerHTML = `
         <div class="flex flex-col items-center text-center">
@@ -459,6 +555,10 @@
 
           <h2 class="text-xl font-extrabold text-slate-900">${title}</h2>
           <p class="text-xs text-slate-500 mt-1 max-w-sm">${desc}</p>
+          <div class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/70 mt-2">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+            <span>আপনার বিকাশ একাউন্ট থেকে কোনো টাকা কাটা হয়নি</span>
+          </div>
 
           ${paymentID ? `
           <div class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 my-5 text-xs text-left">
@@ -469,10 +569,14 @@
           </div>` : '<div class="my-3"></div>'}
 
           <div class="w-full mt-4 space-y-2">
-            <a href="dashboard.html#more" class="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-white font-bold text-xs bg-slate-900 hover:bg-slate-800 transition-all shadow-md">
+            <a href="${returnUrl}" class="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-white font-bold text-xs bg-slate-900 hover:bg-slate-800 transition-all shadow-md">
               <i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i>
-              <span>Try Again from SMS Dashboard</span>
+              <span>${tryAgainLabel}</span>
             </a>
+            ${isMemberPayment ? `
+            <a href="dashboard.html" class="w-full flex items-center justify-center py-2.5 px-6 rounded-xl text-slate-600 font-semibold text-xs hover:bg-slate-100 transition-all">
+              <span>Back to Home Dashboard</span>
+            </a>` : ''}
           </div>
         </div>
       `;

@@ -619,7 +619,8 @@ body.auth-body {
   .auth-right-pane.view-register,
   .auth-right-pane.view-forgot {
     padding: 0;
-    background-color: transparent !important;
+    background-color: #ffffff !important;
+    border-radius: 28px 28px 0 0;
     align-items: flex-start;
     margin-top: -36px;
     position: relative;
@@ -634,6 +635,7 @@ body.auth-body {
     padding: 30px 22px 40px 22px;
     box-shadow: none;
     border: none;
+    background: #ffffff;
     min-height: calc(100vh - 180px);
   }
 

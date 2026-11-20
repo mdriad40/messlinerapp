@@ -13,6 +13,7 @@ const UserBillsModule = {
   bills: {},
   paymentRequests: {},
   paymentMethods: {},
+  autoPaymentEnabled: false,
   userDeposits: {},
   mealsData: {},
   selectedMethod: 'cash',
@@ -75,6 +76,9 @@ const UserBillsModule = {
     if (initialData?.settings?.paymentMethods) {
       this.paymentMethods = initialData.settings.paymentMethods;
     }
+    if (initialData?.settings?.autoPaymentEnabled !== undefined) {
+      this.autoPaymentEnabled = Boolean(initialData.settings.autoPaymentEnabled);
+    }
     if (initialData?.settings?.historyStartDate) {
       this.historyStartDate = initialData.settings.historyStartDate;
     }
@@ -118,6 +122,9 @@ const UserBillsModule = {
     if (Router.currentPage === 'user-bills') {
       this.render();
     }
+
+    // Check for bKash Auto Payment callback over Ledger
+    this.checkBkashCallback();
   },
 
   /**
@@ -144,7 +151,20 @@ const UserBillsModule = {
 
     // 2. Listen to Deposits
     db.ref(`dinings/${diningId}/deposits`).on('value', (snap) => {
-      this.userDeposits = snap.val() || {};
+      const remoteDeposits = snap.val() || {};
+      if (this._optimisticBkashDeposits) {
+        Object.entries(this._optimisticBkashDeposits).forEach(([optK, optV]) => {
+          const alreadyInRemote = Object.values(remoteDeposits).some(
+            d => (d && optV && ((d.paymentID && d.paymentID === optV.paymentID) || (d.trxID && d.trxID === optV.trxID)))
+          );
+          if (!alreadyInRemote) {
+            remoteDeposits[optK] = optV;
+          } else {
+            delete this._optimisticBkashDeposits[optK];
+          }
+        });
+      }
+      this.userDeposits = remoteDeposits;
       this.renderOverview();
       this.renderHistory();
       if (this._resolveReady) { this._resolveReady(); this._resolveReady = null; }
@@ -168,6 +188,19 @@ const UserBillsModule = {
     // 5. Listen to Payment Methods config
     db.ref(`dinings/${diningId}/settings/paymentMethods`).on('value', (snap) => {
       this.paymentMethods = snap.val() || {};
+      if (document.getElementById('addMoneyModal')?.classList.contains('active')) {
+        this.renderPaymentMethodPills();
+        this.updatePaymentMethodView();
+      }
+      if (document.getElementById('payBillModal')?.classList.contains('active')) {
+        this.renderPayBillMethodPills();
+        this.updatePayBillMethodView();
+      }
+    });
+
+    // 5b. Listen to Auto Payment Permission (Super Admin toggle)
+    db.ref(`dinings/${diningId}/settings/autoPaymentEnabled`).on('value', (snap) => {
+      this.autoPaymentEnabled = Boolean(snap.val());
       if (document.getElementById('addMoneyModal')?.classList.contains('active')) {
         this.renderPaymentMethodPills();
         this.updatePaymentMethodView();
@@ -605,14 +638,37 @@ const UserBillsModule = {
       `;
     }
 
-    // 4. Rejected State
-    if (s === 'rejected') {
+    // 4. Processing State (In-flight auto payments)
+    if (s === 'processing' || s === 'in_process') {
+      return `
+        <span class="user-history-status-pill pending" style="background:#FDF2F8; color:#BE185D; border-color:#FCE7F3;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 15 14"/>
+          </svg>
+          <span>Processing</span>
+        </span>
+      `;
+    }
+
+    // 5. Cancelled State
+    if (s === 'cancelled' || s === 'canceled') {
+      return `
+        <span class="user-history-status-pill rejected" style="background:#FEF3C7; color:#92400E; border-color:#FDE68A;">
+          <span>Cancelled</span>
+        </span>
+      `;
+    }
+
+    // 6. Rejected / Failed State
+    if (s === 'rejected' || s === 'failed') {
+      const label = s === 'failed' ? 'Failed' : 'Rejected';
       return `
         <span class="user-history-status-pill rejected">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
-          <span>Rejected</span>
+          <span>${label}</span>
         </span>
       `;
     }
@@ -1231,16 +1287,46 @@ const UserBillsModule = {
     });
 
     // 3. User's deposit/deduction records in selected month (Admin deductions, account balance deductions)
-    // Deduplicate Add Money records that are already shown as approved paymentRequests
-    const approvedAddMoneyKeys = new Set(
-      myRequests
-        .filter(r => r.type !== 'bill_payment' && (r.status === 'approved' || r.status === 'collected'))
-        .map(r => `${Math.round(Utils.num(r.amount))}_${String(r.method || 'cash').toLowerCase()}`)
-    );
+    // Deduplicate records that are already shown in approved paymentRequests or duplicated
+    const coveredPaymentIds = new Set();
+    const coveredTrxIds = new Set();
+    const approvedAddMoneyKeys = new Set();
+
+    myRequests.forEach(r => {
+      if (r.status === 'approved' || r.status === 'collected') {
+        if (r.paymentID) coveredPaymentIds.add(String(r.paymentID).trim());
+        if (r.trxId) coveredTrxIds.add(String(r.trxId).trim());
+        if (r.trxID) coveredTrxIds.add(String(r.trxID).trim());
+        if (r.type !== 'bill_payment') {
+          approvedAddMoneyKeys.add(`${Math.round(Utils.num(r.amount))}_${String(r.method || 'cash').toLowerCase()}`);
+        }
+      }
+    });
+
+    const seenDepositPaymentIds = new Set();
+    const seenDepositTrxIds = new Set();
 
     const myDeposits = Object.entries(this.userDeposits || {})
-      .filter(([_, d]) => {
+      .filter(([id, d]) => {
         if (!d || String(d.userId || '').trim() !== currentUid) return false;
+        if (!isMatchTargetMonth(d)) return false;
+
+        const pId = d.paymentID ? String(d.paymentID).trim() : null;
+        const tId = (d.trxId || d.trxID) ? String(d.trxId || d.trxID).trim() : null;
+
+        // Skip if this deposit matches an approved Payment Request already in the list
+        if (pId && coveredPaymentIds.has(pId)) return false;
+        if (tId && coveredTrxIds.has(tId)) return false;
+
+        // Deduplicate multiple duplicate deposit records with identical paymentID or trxID
+        if (pId) {
+          if (seenDepositPaymentIds.has(pId)) return false;
+          seenDepositPaymentIds.add(pId);
+        }
+        if (tId) {
+          if (seenDepositTrxIds.has(tId)) return false;
+          seenDepositTrxIds.add(tId);
+        }
 
         // If this is an Add Money deposit record created when admin approved an Add Money request, skip duplicate
         if (d.type === 'deposit' && d.note && d.note.toLowerCase().includes('add money')) {
@@ -1251,7 +1337,15 @@ const UserBillsModule = {
           }
         }
 
-        return isMatchTargetMonth(d);
+        // Auto payments: if an auto payment request already exists with same amount/method in same month, skip duplicate
+        if ((d.isAutoPayment || d.method === 'bkash_auto') && d.type === 'deposit') {
+          const autoKey = `${Math.round(Math.abs(Utils.num(d.amount)))}_bkash_auto`;
+          if (approvedAddMoneyKeys.has(autoKey)) {
+            return false;
+          }
+        }
+
+        return true;
       })
       .map(([id, d]) => ({
         id,
@@ -1352,8 +1446,8 @@ const UserBillsModule = {
             ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
             : (item.date || 'Recently');
 
-          const statusLabel = isApproved ? 'Ledger Cleared ✓' : (isRejected ? 'Rejected ✕' : 'Pending ⏳');
-          const statusClass = isApproved ? 'ledger-cleared' : (isRejected ? 'rejected' : 'pending');
+          const statusLabel = isApproved ? 'Ledger Cleared ✓' : (isRejected ? 'Rejected ✕' : (item.status === 'processing' ? 'Processing...' : 'Pending ⏳'));
+          const statusClass = isApproved ? 'ledger-cleared' : (isRejected ? 'rejected' : (item.status || 'pending'));
 
           return `
             <div class="user-history-card single-line ledger-bill-payment ${statusClass}"
@@ -1381,28 +1475,33 @@ const UserBillsModule = {
                 <div class="user-history-amount negative">
                   -<span class="tk-symbol"></span>${Utils.num(item.amount)}
                 </div>
-                ${this.getStatusPillHtml(isApproved ? 'approved' : (isRejected ? 'rejected' : 'pending'), 'bill_payment', false)}
+                ${this.getStatusPillHtml(item.status || (isApproved ? 'approved' : (isRejected ? 'rejected' : 'pending')), 'bill_payment', false)}
               </div>
             </div>
           `;
         }
 
         // Add Money / Other Payment Request
-        const titleText = 'Add Money';
+        const isAuto = item.method === 'bkash_auto' || item.isAutoPayment || (item.note && item.note.toLowerCase().includes('bkash auto'));
+        const titleText = isAuto ? 'bKash Deposit' : 'Add Money';
         const dateStr = item.createdAt
           ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
           : (item.date || 'Recently');
 
+        const bkashBirdSvg = `<svg viewBox="165 0 165 150" width="19" height="17" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;"><polygon fill="#FFFFFF" points="225.42,71.2 234.67,112.76 295.16,82.13" opacity="0.95"/><polygon fill="#FFFFFF" points="242.63,9.1 225.43,71.21 295.18,82.13"/><polygon fill="#FFFFFF" points="168.73,0 240.86,8.62 223.81,70.36" opacity="0.9"/><polygon fill="#FFFFFF" points="168.15,12.15 176.19,12.15 198.73,40.96" opacity="0.75"/><polygon fill="#FFFFFF" points="297.09,81.74 276.12,52.72 310.04,46.65" opacity="0.95"/><polygon fill="#FFFFFF" points="293.59,90.24 295.74,83.78 242.81,110.64"/><polygon fill="#FFFFFF" points="223.94,72.84 234.98,122.49 202.2,149.14" opacity="0.75"/><polygon fill="#FFFFFF" points="306.73,61.4 325.98,61.07 312.07,46.92"/></svg>`;
+
         return `
-          <div class="user-history-card single-line paymentRequest ${item.status}"
+          <div class="user-history-card single-line paymentRequest ${item.status || 'pending'}"
                onclick="Messliner.userBills.openHistoryDetailModal('${item.id}')"
                title="Click to view details">
             <div class="user-history-left">
-              <div class="user-history-icon-badge deposit">
-                +
+              <div class="user-history-icon-badge deposit" style="${isAuto ? 'background: linear-gradient(135deg, #E2136E, #be185d); color: white;' : ''}">
+                ${isAuto ? bkashBirdSvg : '+'}
               </div>
               <div class="user-history-info">
-                <div class="user-history-title" title="${titleText}">${titleText}</div>
+                <div class="user-history-title" title="${titleText}">
+                  ${titleText}
+                </div>
                 <div class="user-history-time">${dateStr}</div>
               </div>
             </div>
@@ -1410,24 +1509,30 @@ const UserBillsModule = {
               <div class="user-history-amount positive">
                 +${Utils.tk(item.amount)}
               </div>
-              ${this.getStatusPillHtml(isApproved ? 'approved' : (isRejected ? 'rejected' : 'pending'), 'add_money', false)}
+              ${this.getStatusPillHtml(item.status || (isApproved ? 'approved' : (isRejected ? 'rejected' : 'pending')), 'add_money', false)}
             </div>
           </div>
         `;
       } else {
         // Deposit Record
+        const isAuto = item.method === 'bkash_auto' || item.isAutoPayment || (item.note && item.note.toLowerCase().includes('bkash auto'));
         const isDeduction = item.amount < 0 || item.type === 'deduction' || item.type === 'other_costing';
         const amtVal = Math.abs(item.amount);
         const dateStr = item.date ? Utils.formatDate(item.date) : (item.timestamp ? new Date(item.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently');
-        const titleText = item.note || (isDeduction ? 'Bill Deduction' : 'Deposit Added');
+        let titleText = item.note || (isDeduction ? 'Bill Deduction' : 'Deposit Added');
+        if (isAuto) {
+          titleText = 'bKash Deposit';
+        }
+
+        const bkashBirdSvg = `<svg viewBox="165 0 165 150" width="19" height="17" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;"><polygon fill="#FFFFFF" points="225.42,71.2 234.67,112.76 295.16,82.13" opacity="0.95"/><polygon fill="#FFFFFF" points="242.63,9.1 225.43,71.21 295.18,82.13"/><polygon fill="#FFFFFF" points="168.73,0 240.86,8.62 223.81,70.36" opacity="0.9"/><polygon fill="#FFFFFF" points="168.15,12.15 176.19,12.15 198.73,40.96" opacity="0.75"/><polygon fill="#FFFFFF" points="297.09,81.74 276.12,52.72 310.04,46.65" opacity="0.95"/><polygon fill="#FFFFFF" points="293.59,90.24 295.74,83.78 242.81,110.64"/><polygon fill="#FFFFFF" points="223.94,72.84 234.98,122.49 202.2,149.14" opacity="0.75"/><polygon fill="#FFFFFF" points="306.73,61.4 325.98,61.07 312.07,46.92"/></svg>`;
 
         return `
           <div class="user-history-card single-line deposit ${isDeduction ? 'deduction' : 'deposit'}"
                onclick="Messliner.userBills.openHistoryDetailModal('${item.id}')"
                title="Click to view details">
             <div class="user-history-left">
-              <div class="user-history-icon-badge ${isDeduction ? 'deduction' : 'deposit'}">
-                ${isDeduction ? '−' : '+'}
+              <div class="user-history-icon-badge ${isDeduction ? 'deduction' : 'deposit'}" style="${isAuto ? 'background: linear-gradient(135deg, #E2136E, #be185d); color: white;' : ''}">
+                ${isDeduction ? '−' : (isAuto ? bkashBirdSvg : '+')}
               </div>
               <div class="user-history-info">
                 <div class="user-history-title" title="${titleText}">${titleText}</div>
@@ -1506,15 +1611,23 @@ const UserBillsModule = {
 
     const monthStr = this.formatCycle(item.month || this.currentHistoryCycle || Utils.currentMonth());
 
+    const isAutoPay = item.method === 'bkash_auto' || item.isAutoPayment || (item.note && item.note.toLowerCase().includes('bkash auto'));
     let typeText = 'Deposit';
-    if (isBillPay) typeText = 'Ledger Bill Payment';
-    else if (isReq) typeText = 'Balance Top-up Request';
-    else if (item.type === 'friday_meal') typeText = 'Friday Meal Deduction';
-    else if (isDeduction) typeText = 'Account Deduction';
+    if (isBillPay) {
+      typeText = 'Shared Bill Payment';
+    } else if (isAutoPay || (!isDeduction && (item.type === 'deposit' || item.type === 'member_deposit' || isReq))) {
+      typeText = 'Deposit';
+    } else if (item.type === 'friday_meal') {
+      typeText = 'Friday Meal Deduction';
+    } else if (isDeduction) {
+      typeText = 'Account Deduction';
+    }
 
     // Resolve human-friendly Payment Method name (e.g. Cash, bKash, Nagad, Rocket)
     let methodText = item.methodName || '';
-    if (!methodText) {
+    if (item.method === 'bkash_auto' || item.isAutoPayment) {
+      methodText = '⚡ bKash Auto Checkout';
+    } else if (!methodText) {
       const raw = String(item.method || item.paymentMethod || '').toLowerCase();
       if (raw.includes('bkash')) {
         methodText = 'bKash';
@@ -1559,6 +1672,16 @@ const UserBillsModule = {
       }
     }
 
+    const resolvedTrx = item.trxId || item.trxID || '';
+
+    // Clean up note text: format any ugly floating-point fee (e.g. 0.026000000000000002) to clean 2 decimals
+    let displayNote = (item.note || '').trim();
+    if (displayNote) {
+      displayNote = displayNote.replace(/(Fee:\s*৳?\s*)(\d+\.\d{3,})/gi, (match, prefix, num) => {
+        return `${prefix}${parseFloat(num).toFixed(2)}`;
+      });
+    }
+
     modalBody.innerHTML = `
       <!-- Hero Amount & Status Card -->
       <div class="uhd-hero-card">
@@ -1594,11 +1717,6 @@ const UserBillsModule = {
         </div>
 
         <div class="uhd-detail-row">
-          <span class="uhd-label">Month Cycle</span>
-          <span class="uhd-val">${monthStr}</span>
-        </div>
-
-        <div class="uhd-detail-row">
           <span class="uhd-label">Payment Method</span>
           <span class="uhd-val">${methodText}</span>
         </div>
@@ -1614,13 +1732,13 @@ const UserBillsModule = {
           </div>
         ` : ''}
 
-        ${item.trxId ? `
+        ${resolvedTrx ? `
           <div class="uhd-detail-row">
             <span class="uhd-label">Transaction ID</span>
             <span class="uhd-val">
               <span class="uhd-trx-box">
-                <code>${item.trxId}</code>
-                <button type="button" class="uhd-copy-btn" onclick="Messliner.userBills.copyNumber('${item.trxId}', this)" title="Copy TrxID">
+                <code>${resolvedTrx}</code>
+                <button type="button" class="uhd-copy-btn" onclick="Messliner.userBills.copyNumber('${resolvedTrx}', this)" title="Copy TrxID">
                   Copy
                 </button>
               </span>
@@ -1628,10 +1746,10 @@ const UserBillsModule = {
           </div>
         ` : ''}
 
-        ${item.note ? `
+        ${displayNote ? `
           <div class="uhd-detail-row note-row">
             <span class="uhd-label">Note / Remarks</span>
-            <div class="uhd-val note-val">${item.note}</div>
+            <div class="uhd-val note-val">${displayNote}</div>
           </div>
         ` : ''}
       </div>
@@ -1771,6 +1889,7 @@ const UserBillsModule = {
 
     if (raw.methods && typeof raw.methods === 'object') {
       Object.entries(raw.methods).forEach(([id, m]) => {
+        if (id === 'bkash_auto' || m?.isAutoPay) return;
         if (m && m.active !== false && m.number) {
           methods.push({ id, ...m });
           seenIds.add(id);
@@ -1780,7 +1899,7 @@ const UserBillsModule = {
     }
 
     Object.entries(raw).forEach(([key, val]) => {
-      if (key === 'methods') return;
+      if (key === 'methods' || key === 'bkash_auto' || val?.isAutoPay) return;
       if (val && typeof val === 'object' && val.number && (val.active !== false && val.enabled !== false)) {
         const platform = (val.platform || key).toLowerCase();
         const id = val.id || key;
@@ -1803,6 +1922,25 @@ const UserBillsModule = {
 
     // Always include Cash
     methods.push({ id: 'cash', name: 'Cash', available: true });
+
+    // Include bKash Auto Checkout if permitted by Super Admin and Active by Manager
+    const autoConfig = this.paymentMethods?.bkash_auto || this.paymentMethods?.methods?.bkash_auto || {};
+    const isAutoActive = autoConfig.active !== false;
+    if (this.autoPaymentEnabled && isAutoActive) {
+      const autoCharge = autoConfig.charge !== undefined ? (parseFloat(autoConfig.charge) || 0) : 0;
+      const autoName = autoConfig.name || 'bKash Auto';
+      const autoDesc = autoConfig.description || 'Direct Bill Settlement';
+      methods.unshift({
+        id: 'bkash_auto',
+        platform: 'bkash',
+        name: autoName,
+        isAutoPay: true,
+        available: true,
+        charge: autoCharge,
+        description: autoDesc
+      });
+    }
+
     this.payBillMethodsList = methods;
 
     if (!methods.some(m => m.id === this.selectedPayBillMethod)) {
@@ -1810,10 +1948,24 @@ const UserBillsModule = {
     }
 
     container.innerHTML = methods.map(m => {
+      const isAuto = m.id === 'bkash_auto' || m.isAutoPay;
       const methodKey = `${m.platform || ''} ${m.id || ''} ${m.name || ''}`.toLowerCase();
-      const brandClass = methodKey.includes('bkash') ? 'bkash' : (methodKey.includes('nagad') ? 'nagad' : (methodKey.includes('rocket') ? 'rocket' : ''));
+      const brandClass = isAuto ? 'bkash bkash-auto' : (methodKey.includes('bkash') ? 'bkash' : (methodKey.includes('nagad') ? 'nagad' : (methodKey.includes('rocket') ? 'rocket' : '')));
+      const isSelected = this.selectedPayBillMethod === m.id;
+
+      if (isAuto) {
+        return `
+          <button type="button" class="add-money-method-pill bkash-auto-pill ${isSelected ? 'active' : ''}"
+                  onclick="Messliner.userBills.selectPayBillMethod('${m.id}')"
+                  title="bKash (Instant Auto Pay)"
+                  style="height:38px; padding:6px 14px; display:inline-flex; align-items:center; justify-content:center; background:${isSelected ? '#FFFFFF' : '#F8FAFC'} !important; border:${isSelected ? '2px solid #E2136E' : '1.5px solid #E2E8F0'} !important; box-shadow:${isSelected ? '0 0 0 3px rgba(226, 19, 110, 0.18), 0 2px 8px rgba(226, 19, 110, 0.12)' : 'none'} !important;">
+            <img src="assets/Bkash-Logo.png" alt="bKash" style="height:18px; width:auto; max-width:62px; object-fit:contain; filter:none !important;" onerror="this.outerHTML='<span>bKash</span>'" />
+          </button>
+        `;
+      }
+
       return `
-        <button type="button" class="add-money-method-pill ${brandClass} ${this.selectedPayBillMethod === m.id ? 'active' : ''}"
+        <button type="button" class="add-money-method-pill ${brandClass} ${isSelected ? 'active' : ''}"
                 onclick="Messliner.userBills.selectPayBillMethod('${m.id}')">
           <span>${m.name || m.platform || 'Method'}</span>
         </button>
@@ -1867,10 +2019,75 @@ const UserBillsModule = {
 
     // Set submit button HTML with custom Taka symbol
     const payBtnHtml = `Pay <span class="tk-symbol"></span>${formattedTotal}`;
+    if (submitBtn) {
+      submitBtn.style.background = '';
+      submitBtn.style.borderColor = '';
+    }
     if (submitText) {
       submitText.innerHTML = payBtnHtml;
     } else if (submitBtn) {
       submitBtn.innerHTML = payBtnHtml;
+    }
+
+    if (this.selectedPayBillMethod === 'bkash_auto') {
+      if (trxGroup) trxGroup.style.display = 'none';
+      if (trxInput) trxInput.required = false;
+
+      if (container) {
+        container.innerHTML = `
+          <!-- Minimal Telecom-Grade Bill Payment Summary Card (Robi/Airtel style) -->
+          <div class="add-money-unified-card" style="border: 1px solid #e2e8f0; background: #ffffff; border-radius: 18px; padding: 16px 18px; margin-bottom: 12px; box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:38px; height:38px; border-radius:12px; background:#fdf2f8; border:1px solid #fce7f3; display:flex; align-items:center; justify-content:center; padding:5px; flex-shrink:0;">
+                  <img src="assets/Bkash-Logo.png" alt="bKash" style="height:20px; width:auto; max-width:28px; object-fit:contain;" />
+                </div>
+                <div>
+                  <div style="font-size:14px; font-weight:800; color:#0f172a; line-height:1.2;">bKash Auto Pay</div>
+                </div>
+              </div>
+              <span style="font-size:10px; font-weight:800; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; padding:2.5px 8px; border-radius:999px; letter-spacing:0.3px; flex-shrink:0; white-space:nowrap;">INSTANT</span>
+            </div>
+
+            <div style="border-top: 1px dashed #e2e8f0; margin: 12px 0;"></div>
+
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:#64748b;">
+                <span>Bill (${billTitle})</span>
+                <span style="font-weight:600; color:#0f172a;"><span class="tk-symbol"></span>${formattedAmount}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:#64748b;">
+                <span>Charge</span>
+                ${fee > 0 ? `<span style="font-weight:700; color:#E2136E;">+<span class="tk-symbol"></span>${formattedFee} (${charge}%)</span>` : `<span style="font-weight:700; color:#059669;">Free (৳0)</span>`}
+              </div>
+            </div>
+
+            <div style="border-top: 1px solid #f1f5f9; margin: 10px 0 8px;"></div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:700; color:#0f172a;">Total Payable</span>
+              <span style="font-size:18px; font-weight:900; color:#E2136E;"><span class="tk-symbol"></span>${formattedTotal}</span>
+            </div>
+
+            <div style="margin-top:10px; padding-top:9px; border-top:1px solid #f1f5f9; display:flex; align-items:center; justify-content:center; gap:5px; font-size:11px; font-weight:600; color:#64748B;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <span>End-to-end encrypted</span>
+            </div>
+          </div>
+        `;
+      }
+
+      if (submitBtn) {
+        submitBtn.style.background = 'linear-gradient(135deg, #E2136E 0%, #D12053 100%)';
+        submitBtn.style.borderColor = '#D12053';
+        const autoPayBtnHtml = `<span>Proceed to bKash Pay</span> <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline; margin-left:6px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+        if (submitText) submitText.innerHTML = autoPayBtnHtml;
+        else submitBtn.innerHTML = autoPayBtnHtml;
+      }
+      return;
     }
 
     if (this.selectedPayBillMethod === 'cash') {
@@ -2033,6 +2250,11 @@ const UserBillsModule = {
     const amount = userMember ? Utils.num(userMember.amount) : Utils.num(bill.totalAmount);
     const method = this.selectedPayBillMethod || 'cash';
 
+    if (method === 'bkash_auto') {
+      this.payBillWithBkashAuto(bill);
+      return;
+    }
+
     const trxId = document.getElementById('payBillTrxIdInput')?.value.trim();
     const note = document.getElementById('payBillNoteInput')?.value.trim();
 
@@ -2128,17 +2350,28 @@ const UserBillsModule = {
     if (form) form.reset();
 
     const diningId = this.getDiningId();
-    if (diningId && (!this.paymentMethods || Object.keys(this.paymentMethods).length === 0)) {
+    if (diningId) {
       try {
-        const snap = await db.ref(`dinings/${diningId}/settings/paymentMethods`).once('value');
-        if (snap.exists()) {
-          this.paymentMethods = snap.val() || {};
+        const [pmSnap, apSnap] = await Promise.all([
+          (!this.paymentMethods || Object.keys(this.paymentMethods).length === 0)
+            ? db.ref(`dinings/${diningId}/settings/paymentMethods`).once('value')
+            : Promise.resolve(null),
+          db.ref(`dinings/${diningId}/settings/autoPaymentEnabled`).once('value')
+        ]);
+        if (pmSnap && pmSnap.exists()) {
+          this.paymentMethods = pmSnap.val() || {};
+        }
+        if (apSnap && apSnap.exists()) {
+          this.autoPaymentEnabled = Boolean(apSnap.val());
         }
       } catch (err) {
-        console.warn('Failed to pre-fetch payment methods for user bills:', err);
+        console.warn('Failed to pre-fetch payment settings for user bills:', err);
       }
     }
 
+    const autoConfig = this.paymentMethods?.bkash_auto || this.paymentMethods?.methods?.bkash_auto || {};
+    const isAutoActive = autoConfig.active !== false;
+    this.selectedMethod = (this.autoPaymentEnabled && isAutoActive) ? 'bkash_auto' : 'bkash';
     this.renderPaymentMethodPills();
     this.goToAddMoneyStep(1);
     openModal('addMoneyModal');
@@ -2264,6 +2497,7 @@ const UserBillsModule = {
 
     if (raw.methods && typeof raw.methods === 'object') {
       Object.entries(raw.methods).forEach(([id, m]) => {
+        if (id === 'bkash_auto' || m?.isAutoPay) return;
         if (m && m.active !== false && m.number) {
           methods.push({ id, ...m });
           seenIds.add(id);
@@ -2273,7 +2507,7 @@ const UserBillsModule = {
     }
 
     Object.entries(raw).forEach(([key, val]) => {
-      if (key === 'methods') return;
+      if (key === 'methods' || key === 'bkash_auto' || val?.isAutoPay) return;
       if (val && typeof val === 'object' && val.number && (val.active !== false && val.enabled !== false)) {
         const platform = (val.platform || key).toLowerCase();
         const id = val.id || key;
@@ -2294,7 +2528,27 @@ const UserBillsModule = {
       }
     });
 
+    // Always include Cash
     methods.push({ id: 'cash', name: 'Cash', available: true });
+
+    // Include bKash Auto Checkout if permitted by Super Admin and Active by Manager
+    const autoConfig = this.paymentMethods?.bkash_auto || this.paymentMethods?.methods?.bkash_auto || {};
+    const isAutoActive = autoConfig.active !== false;
+    if (this.autoPaymentEnabled && isAutoActive) {
+      const autoCharge = autoConfig.charge !== undefined ? (parseFloat(autoConfig.charge) || 0) : 0;
+      const autoName = autoConfig.name || 'bKash Auto';
+      const autoDesc = autoConfig.description || 'Direct Bill Settlement';
+      methods.unshift({
+        id: 'bkash_auto',
+        platform: 'bkash',
+        name: autoName,
+        isAutoPay: true,
+        available: true,
+        charge: autoCharge,
+        description: autoDesc
+      });
+    }
+
     this.availableMethodsList = methods;
 
     if (!methods.some(m => m.id === this.selectedMethod)) {
@@ -2302,10 +2556,24 @@ const UserBillsModule = {
     }
 
     container.innerHTML = methods.map(m => {
+      const isAuto = m.id === 'bkash_auto' || m.isAutoPay;
       const methodKey = `${m.platform || ''} ${m.id || ''} ${m.name || ''}`.toLowerCase();
-      const brandClass = methodKey.includes('bkash') ? 'bkash' : (methodKey.includes('nagad') ? 'nagad' : (methodKey.includes('rocket') ? 'rocket' : ''));
+      const brandClass = isAuto ? 'bkash bkash-auto' : (methodKey.includes('bkash') ? 'bkash' : (methodKey.includes('nagad') ? 'nagad' : (methodKey.includes('rocket') ? 'rocket' : '')));
+      const isSelected = this.selectedMethod === m.id;
+
+      if (isAuto) {
+        return `
+          <button type="button" class="add-money-method-pill bkash-auto-pill ${isSelected ? 'active' : ''}"
+                  onclick="Messliner.userBills.selectPaymentMethod('${m.id}')"
+                  title="bKash (Instant Auto Pay)"
+                  style="height:38px; padding:6px 14px; display:inline-flex; align-items:center; justify-content:center; background:${isSelected ? '#FFFFFF' : '#F8FAFC'} !important; border:${isSelected ? '2px solid #E2136E' : '1.5px solid #E2E8F0'} !important; box-shadow:${isSelected ? '0 0 0 3px rgba(226, 19, 110, 0.18), 0 2px 8px rgba(226, 19, 110, 0.12)' : 'none'} !important;">
+            <img src="assets/Bkash-Logo.png" alt="bKash" style="height:18px; width:auto; max-width:62px; object-fit:contain; filter:none !important;" onerror="this.outerHTML='<span>bKash</span>'" />
+          </button>
+        `;
+      }
+
       return `
-        <button type="button" class="add-money-method-pill ${brandClass} ${this.selectedMethod === m.id ? 'active' : ''}"
+        <button type="button" class="add-money-method-pill ${brandClass} ${isSelected ? 'active' : ''}"
                 onclick="Messliner.userBills.selectPaymentMethod('${m.id}')">
           <span>${m.name || m.platform || 'Method'}</span>
         </button>
@@ -2343,9 +2611,9 @@ const UserBillsModule = {
 
     let fee = 0;
     if (charge > 0 && this.selectedMethod !== 'cash') {
-      fee = (amount * charge) / 100;
+      fee = Math.round(((amount * charge) / 100) * 100) / 100;
     }
-    const totalPayable = amount + fee;
+    const totalPayable = Math.round((amount + fee) * 100) / 100;
 
     const formattedAmount = Number(amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     const formattedFee = Number(fee).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -2356,10 +2624,75 @@ const UserBillsModule = {
 
     // Set submit button HTML with custom Taka symbol
     const payBtnHtml = `Pay <span class="tk-symbol"></span>${formattedTotal}`;
+    if (submitBtn) {
+      submitBtn.style.background = '';
+      submitBtn.style.borderColor = '';
+    }
     if (submitText) {
       submitText.innerHTML = payBtnHtml;
     } else if (submitBtn) {
       submitBtn.innerHTML = payBtnHtml;
+    }
+
+    if (this.selectedMethod === 'bkash_auto') {
+      if (trxGroup) trxGroup.style.display = 'none';
+      if (trxInput) trxInput.required = false;
+
+      if (container) {
+        container.innerHTML = `
+          <!-- Minimal Telecom-Grade Payment Summary Card (Robi/Airtel style) -->
+          <div class="add-money-unified-card" style="border: 1px solid #e2e8f0; background: #ffffff; border-radius: 18px; padding: 16px 18px; margin-bottom: 12px; box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:38px; height:38px; border-radius:12px; background:#fdf2f8; border:1px solid #fce7f3; display:flex; align-items:center; justify-content:center; padding:5px; flex-shrink:0;">
+                  <img src="assets/Bkash-Logo.png" alt="bKash" style="height:20px; width:auto; max-width:28px; object-fit:contain;" />
+                </div>
+                <div>
+                  <div style="font-size:14px; font-weight:800; color:#0f172a; line-height:1.2;">bKash Auto Pay</div>
+                </div>
+              </div>
+              <span style="font-size:10px; font-weight:800; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; padding:2.5px 8px; border-radius:999px; letter-spacing:0.3px; flex-shrink:0;">INSTANT</span>
+            </div>
+
+            <div style="border-top: 1px dashed #e2e8f0; margin: 12px 0;"></div>
+
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:#64748b;">
+                <span>Recharge Amount</span>
+                <span style="font-weight:600; color:#0f172a;"><span class="tk-symbol"></span>${formattedAmount}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:#64748b;">
+                <span>Charge</span>
+                ${fee > 0 ? `<span style="font-weight:700; color:#E2136E;">+<span class="tk-symbol"></span>${formattedFee} (${charge}%)</span>` : `<span style="font-weight:700; color:#059669;">Free (৳0)</span>`}
+              </div>
+            </div>
+
+            <div style="border-top: 1px solid #f1f5f9; margin: 10px 0 8px;"></div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:700; color:#0f172a;">Total Payable</span>
+              <span style="font-size:18px; font-weight:900; color:#E2136E;"><span class="tk-symbol"></span>${formattedTotal}</span>
+            </div>
+
+            <div style="margin-top:10px; padding-top:9px; border-top:1px solid #f1f5f9; display:flex; align-items:center; justify-content:center; gap:5px; font-size:11px; font-weight:600; color:#64748B;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <span>End-to-end encrypted</span>
+            </div>
+          </div>
+        `;
+      }
+
+      if (submitBtn) {
+        submitBtn.style.background = 'linear-gradient(135deg, #E2136E 0%, #D12053 100%)';
+        submitBtn.style.borderColor = '#D12053';
+        const autoPayBtnHtml = `<span>Proceed to bKash Pay</span> <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline; margin-left:6px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+        if (submitText) submitText.innerHTML = autoPayBtnHtml;
+        else submitBtn.innerHTML = autoPayBtnHtml;
+      }
+      return;
     }
 
     if (this.selectedMethod === 'cash') {
@@ -2543,6 +2876,11 @@ const UserBillsModule = {
       return;
     }
 
+    if (this.selectedMethod === 'bkash_auto') {
+      this.payWithBkashAuto(amount, note);
+      return;
+    }
+
     if (this.selectedMethod !== 'cash' && (!trxId || trxId.length < 8)) {
       Notifications.toast('warning', 'Invalid TrxID', 'Please enter a valid Transaction ID (minimum 8 characters).');
       document.getElementById('addMoneyTrxIdInput')?.focus();
@@ -2628,12 +2966,832 @@ const UserBillsModule = {
         else submitBtn.textContent = origBtnText;
       }
     }
+  },
+
+  /**
+   * Initiate bKash Tokenized Auto Checkout for Member Deposit
+   * Does NOT send any default phone number to API (user types freely on bKash portal)
+   */
+  async payWithBkashAuto(amount, note) {
+    const diningId = this.getDiningId();
+    const userId = this.getUserId();
+    const user = Messliner.users?.users?.[userId] || Messliner.state?.user || {};
+    const userName = user.name || Messliner.state?.userName || 'Member';
+    const diningInfo = Messliner.info || {};
+    const messName = diningInfo.name || 'Your Mess';
+
+    const submitBtn = document.getElementById('btnSubmitAddMoney');
+    const submitText = document.getElementById('btnSubmitAddMoneyText');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      if (submitText) submitText.innerHTML = 'Connecting bKash...';
+      else submitBtn.innerHTML = 'Connecting bKash...';
+    }
+
+    try {
+      const currentMonth = this.currentCycle || (typeof Utils !== 'undefined' ? Utils.currentMonth() : new Date().toISOString().slice(0, 7));
+
+      const fee = Math.round((this.calculatedFee || 0) * 100) / 100;
+      const totalPayable = Math.round((this.calculatedTotalPayable || (amount + fee)) * 100) / 100;
+      const feeFormatted = fee > 0 ? ` (Fee: ৳${fee.toFixed(2)})` : '';
+
+      // 1. Immediately create a 'processing' request in Firebase so User & Manager see it live in History
+      let paymentRequestId = null;
+      if (typeof db !== 'undefined' && diningId && userId) {
+        try {
+          const reqRef = db.ref(`dinings/${diningId}/paymentRequests`).push();
+          paymentRequestId = reqRef.key;
+          const initialReq = {
+            userId: userId,
+            userName: userName,
+            amount: amount,
+            fee: fee,
+            totalPayable: totalPayable,
+            method: 'bkash_auto',
+            methodName: 'bKash Auto',
+            status: 'processing',
+            month: currentMonth,
+            createdAt: firebase.database.ServerValue.TIMESTAMP || Date.now(),
+            note: note || `bKash Auto Deposit: ৳${amount}${feeFormatted}`,
+            isAutoPayment: true
+          };
+          await reqRef.set(initialReq);
+
+          this.paymentRequests = this.paymentRequests || {};
+          this.paymentRequests[paymentRequestId] = { id: paymentRequestId, ...initialReq, createdAt: Date.now() };
+          this.renderOverview();
+          this.renderHistory();
+        } catch (dbErr) {
+          console.warn('[UserBills] Pre-creating request notice:', dbErr);
+        }
+      }
+
+      if (window.MesslinerPayment && typeof window.MesslinerPayment.initiatePayment === 'function') {
+        const callbackUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, 'dashboard.html') + '?bkashPayment=auto';
+        await window.MesslinerPayment.initiatePayment({
+          amount: totalPayable,
+          type: 'member_deposit',
+          phone: '', // No phone sent to API so bKash checkout page has an empty input
+          diningId: diningId,
+          callbackUrl: callbackUrl,
+          metadata: {
+            userId: userId,
+            userName: userName,
+            messName: messName,
+            diningId: diningId,
+            baseAmount: amount,
+            fee: fee,
+            totalPayable: totalPayable,
+            paymentRequestId: paymentRequestId,
+            month: currentMonth,
+            note: note || `bKash Auto Deposit: ৳${amount}`,
+            purpose: 'Member Balance Deposit'
+          }
+        });
+      } else {
+        throw new Error('bKash gateway engine is loading. Please try again.');
+      }
+    } catch (err) {
+      console.error('[UserBills] payWithBkashAuto error:', err);
+      if (typeof Notifications !== 'undefined' && Notifications.toast) {
+        Notifications.toast('error', 'Payment Error', err.message || 'Failed to initiate bKash checkout.');
+      } else {
+        alert(err.message || 'Failed to initiate bKash checkout.');
+      }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        const resetHtml = `<span>Proceed to bKash Pay</span> <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline; margin-left:6px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+        if (submitText) submitText.innerHTML = resetHtml;
+        else submitBtn.innerHTML = resetHtml;
+      }
+    }
+  },
+
+  /**
+   * Initiate bKash Tokenized Auto Checkout for Individual Bill Payment
+   */
+  async payBillWithBkashAuto(bill) {
+    const diningId = this.getDiningId();
+    const userId = this.getUserId();
+    const user = Messliner.users?.users?.[userId] || Messliner.state?.user || {};
+    const userName = user.name || Messliner.state?.userName || 'Member';
+    const diningInfo = Messliner.info || {};
+    const messName = diningInfo.name || 'Your Mess';
+
+    const userMember = bill.members?.[userId];
+    const amount = userMember ? Utils.num(userMember.amount) : Utils.num(bill.totalAmount);
+    const billTitle = bill.title || 'Shared Bill';
+
+    const submitBtn = document.getElementById('btnSubmitPayBill');
+    const submitText = document.getElementById('btnSubmitPayBillText');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      if (submitText) submitText.innerHTML = 'Connecting bKash...';
+      else submitBtn.innerHTML = 'Connecting bKash...';
+    }
+
+    try {
+      const currentMonth = bill.month || this.currentCycle || (typeof Utils !== 'undefined' ? Utils.currentMonth() : new Date().toISOString().slice(0, 7));
+
+      const fee = Math.round((this.payBillCalculatedFee || 0) * 100) / 100;
+      const totalPayable = Math.round((this.payBillCalculatedTotal || (amount + fee)) * 100) / 100;
+
+      // Pre-create 'processing' request for bill payment
+      let paymentRequestId = null;
+      if (typeof db !== 'undefined' && diningId && userId) {
+        try {
+          const reqRef = db.ref(`dinings/${diningId}/paymentRequests`).push();
+          paymentRequestId = reqRef.key;
+          const initialReq = {
+            userId: userId,
+            userName: userName,
+            amount: amount,
+            fee: fee,
+            totalPayable: totalPayable,
+            method: 'bkash_auto',
+            methodName: 'bKash Auto',
+            status: 'processing',
+            type: 'bill_payment',
+            billId: this.selectedBillId,
+            billTitle: billTitle,
+            month: currentMonth,
+            createdAt: firebase.database.ServerValue.TIMESTAMP || Date.now(),
+            note: `bKash Auto Bill Payment: ${billTitle}${fee > 0 ? ` (Fee: ৳${fee})` : ''}`,
+            isAutoPayment: true
+          };
+          await reqRef.set(initialReq);
+
+          this.paymentRequests = this.paymentRequests || {};
+          this.paymentRequests[paymentRequestId] = { id: paymentRequestId, ...initialReq, createdAt: Date.now() };
+          this.renderOverview();
+          this.renderHistory();
+        } catch (dbErr) {
+          console.warn('[UserBills] Pre-creating bill request notice:', dbErr);
+        }
+      }
+
+      if (window.MesslinerPayment && typeof window.MesslinerPayment.initiatePayment === 'function') {
+        const callbackUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, 'dashboard.html') + '?bkashPayment=auto';
+        await window.MesslinerPayment.initiatePayment({
+          amount: totalPayable,
+          type: 'bill_payment',
+          phone: '', // No phone sent to API
+          diningId: diningId,
+          callbackUrl: callbackUrl,
+          metadata: {
+            userId: userId,
+            userName: userName,
+            messName: messName,
+            diningId: diningId,
+            billId: this.selectedBillId,
+            billTitle: billTitle,
+            baseAmount: amount,
+            fee: fee,
+            totalPayable: totalPayable,
+            paymentRequestId: paymentRequestId,
+            month: currentMonth,
+            purpose: `Bill Payment: ${billTitle}`
+          }
+        });
+      } else {
+        throw new Error('bKash gateway engine is loading. Please try again.');
+      }
+    } catch (err) {
+      console.error('[UserBills] payBillWithBkashAuto error:', err);
+      if (typeof Notifications !== 'undefined' && Notifications.toast) {
+        Notifications.toast('error', 'Payment Error', err.message || 'Failed to initiate bKash checkout.');
+      } else {
+        alert(err.message || 'Failed to initiate bKash checkout.');
+      }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        const resetHtml = `<span>Proceed to bKash Pay</span>`;
+        if (submitText) submitText.innerHTML = resetHtml;
+        else submitBtn.innerHTML = resetHtml;
+      }
+    }
+  },
+
+  /**
+   * Check if page was loaded as a bKash Auto Payment callback
+   * Mounts a professional bottom sheet modal directly over the ledger page
+   */
+  checkBkashCallback() {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isBkashParam = urlParams.get('bkashPayment') === 'auto' || urlParams.get('bkashAction') === 'member_callback';
+      const paymentID = urlParams.get('paymentID');
+      const status = (urlParams.get('status') || '').toLowerCase();
+      const trxID = urlParams.get('trxID') || '';
+
+      let pending = null;
+      try {
+        pending = JSON.parse(localStorage.getItem('ml_pending_member_payment') || 'null');
+      } catch (_) {}
+
+      if (!isBkashParam && !(paymentID && pending)) {
+        return;
+      }
+
+      if (!paymentID && !status) {
+        return;
+      }
+
+      // Single-Execution Guard: Avoid double-triggering across multiple listeners
+      if (this._isCheckingBkashCallback) {
+        return;
+      }
+      this._isCheckingBkashCallback = true;
+
+      // Navigate immediately to user-bills tab so user is on Ledger
+      if (typeof Router !== 'undefined' && Router.navigate) {
+        Router.navigate('user-bills', true);
+      } else {
+        try { window.location.hash = '#user-bills'; } catch (_) {}
+      }
+
+      // Small delay to ensure DOM and bills section are visible
+      setTimeout(() => {
+        this.showBkashCallbackModal({
+          paymentID: paymentID,
+          status: status || 'success',
+          trxID: trxID,
+          pending: pending
+        });
+      }, 350);
+    } catch (err) {
+      console.warn('[UserBills] checkBkashCallback error:', err);
+      this._isCheckingBkashCallback = false;
+    }
+  },
+
+  /**
+   * Render in-app Full-Width Professional Bottom Sheet Callback Modal
+   * 100% Professional English text · Does not auto-dismiss · Requires user click
+   */
+  async showBkashCallbackModal(options) {
+    const { paymentID, status, trxID, pending } = options;
+    const isCancel = status === 'cancel';
+    const isFailure = status === 'failure';
+    const isSuccess = !isCancel && !isFailure;
+
+    // Remove any existing callback modal
+    const existing = document.getElementById('bkashLedgerCallbackModal');
+    if (existing) existing.remove();
+
+    // Ensure CSS styles exist for bottom sheet and animations
+    if (!document.getElementById('bkashCallbackModalStyles')) {
+      const styleEl = document.createElement('style');
+      styleEl.id = 'bkashCallbackModalStyles';
+      styleEl.textContent = `
+        @keyframes bkashModalFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes bkashBottomSheetUp {
+          0% { transform: translateY(100%); opacity: 0; }
+          100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes bkashCheckBounce {
+          0% { transform: scale(0); opacity: 0; }
+          60% { transform: scale(1.18); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes bkashSpinDual {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .bkash-bottom-sheet-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 9999999;
+          background: rgba(15, 23, 42, 0.55);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          padding: 0;
+          animation: bkashModalFadeIn 0.22s ease-out forwards;
+          box-sizing: border-box;
+        }
+        .bkash-bottom-sheet-card {
+          width: 100%;
+          max-width: 500px;
+          background: #ffffff;
+          border-radius: 26px 26px 0 0;
+          box-shadow: 0 -12px 45px rgba(15, 23, 42, 0.25);
+          padding: 22px 22px 30px;
+          box-sizing: border-box;
+          position: relative;
+          animation: bkashBottomSheetUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @media (min-width: 640px) {
+          .bkash-bottom-sheet-overlay {
+            align-items: center;
+            padding: 20px;
+          }
+          .bkash-bottom-sheet-card {
+            border-radius: 26px;
+            box-shadow: 0 25px 60px rgba(15, 23, 42, 0.3);
+          }
+        }
+        .bkash-sheet-drag-handle {
+          width: 42px;
+          height: 4.5px;
+          background: #E2E8F0;
+          border-radius: 99px;
+          margin: 0 auto 16px;
+        }
+        .bkash-copy-btn-mini {
+          border: none;
+          background: #F1F5F9;
+          color: #334155;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 3px 8px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .bkash-copy-btn-mini:hover {
+          background: #E2E8F0;
+          color: #0F172A;
+        }
+      `;
+      document.head.appendChild(styleEl);
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'bkashLedgerCallbackModal';
+    overlay.className = 'bkash-bottom-sheet-overlay';
+
+    const diningId = pending?.diningId || this.getDiningId();
+    const userId = pending?.metadata?.userId || this.getUserId();
+    const paymentReqId = pending?.metadata?.paymentRequestId;
+
+    // ── CASE 1: USER CANCELLED ──
+    if (isCancel) {
+      if (typeof db !== 'undefined' && diningId && paymentReqId) {
+        db.ref(`dinings/${diningId}/paymentRequests/${paymentReqId}`).update({
+          status: 'cancelled',
+          cancelledAt: firebase.database.ServerValue.TIMESTAMP || Date.now()
+        }).catch(() => {});
+      }
+
+      if (typeof Notifications !== 'undefined' && typeof Notifications.create === 'function' && diningId && userId) {
+        Notifications.create(
+          diningId,
+          'Payment Cancelled',
+          'bKash payment checkout was cancelled. No money was deducted.',
+          userId,
+          'info'
+        ).catch(() => {});
+      }
+
+      overlay.innerHTML = `
+        <div class="bkash-bottom-sheet-card" onclick="event.stopPropagation()">
+          <div class="bkash-sheet-drag-handle"></div>
+          <div style="text-align: center;">
+            <div style="width: 58px; height: 58px; border-radius: 50%; background: #FEF3C7; border: 2px solid #FDE68A; color: #D97706; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+
+            <span style="display: inline-block; font-size: 10.5px; font-weight: 800; background: #FEF3C7; color: #92400E; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+              Payment Cancelled
+            </span>
+
+            <h3 style="font-size: 19px; font-weight: 800; color: #0F172A; margin: 0 0 6px;">Transaction Cancelled</h3>
+            <p style="font-size: 12.5px; color: #64748B; margin: 0 auto 20px; max-width: 340px; line-height: 1.5;">
+              You cancelled the payment request. No money was deducted from your bKash account.
+            </p>
+
+            ${paymentID ? `
+              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 10px 14px; margin-bottom: 20px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #64748B;">Reference ID:</span>
+                <code style="font-family: monospace; font-weight: 700; color: #0F172A;">${paymentID}</code>
+              </div>
+            ` : ''}
+
+            <button type="button" onclick="Messliner.userBills.closeBkashCallbackModal(true)" style="width: 100%; padding: 13.5px 20px; border-radius: 14px; background: #0F172A; color: #FFFFFF; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s;">
+              Close
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      return;
+    }
+
+    // ── CASE 2: PAYMENT FAILURE ──
+    if (isFailure) {
+      if (typeof db !== 'undefined' && diningId && paymentReqId) {
+        db.ref(`dinings/${diningId}/paymentRequests/${paymentReqId}`).update({
+          status: 'failed',
+          failedAt: firebase.database.ServerValue.TIMESTAMP || Date.now()
+        }).catch(() => {});
+      }
+
+      if (typeof Notifications !== 'undefined' && typeof Notifications.create === 'function' && diningId && userId) {
+        Notifications.create(
+          diningId,
+          'Payment Failed',
+          'bKash payment failed or was declined by the gateway.',
+          userId,
+          'warning'
+        ).catch(() => {});
+      }
+
+      overlay.innerHTML = `
+        <div class="bkash-bottom-sheet-card" onclick="event.stopPropagation()">
+          <div class="bkash-sheet-drag-handle"></div>
+          <div style="text-align: center;">
+            <div style="width: 58px; height: 58px; border-radius: 50%; background: #FEE2E2; border: 2px solid #FECACA; color: #DC2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </div>
+
+            <span style="display: inline-block; font-size: 10.5px; font-weight: 800; background: #FEE2E2; color: #991B1B; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+              Transaction Failed
+            </span>
+
+            <h3 style="font-size: 19px; font-weight: 800; color: #0F172A; margin: 0 0 6px;">Payment Failed</h3>
+            <p style="font-size: 12.5px; color: #64748B; margin: 0 auto 20px; max-width: 340px; line-height: 1.5;">
+              The gateway could not complete the transaction. If any amount was charged, it will be refunded automatically by bKash.
+            </p>
+
+            ${paymentID ? `
+              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 10px 14px; margin-bottom: 20px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #64748B;">bKash Payment ID:</span>
+                <code style="font-family: monospace; font-weight: 700; color: #0F172A;">${paymentID}</code>
+              </div>
+            ` : ''}
+
+            <button type="button" onclick="Messliner.userBills.closeBkashCallbackModal(true)" style="width: 100%; padding: 13.5px 20px; border-radius: 14px; background: #0F172A; color: #FFFFFF; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s;">
+              Close
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      return;
+    }
+
+    // ── CASE 3: SUCCESS / VERIFICATION FLOW ──
+    // Render Loading State first
+    overlay.innerHTML = `
+      <div class="bkash-bottom-sheet-card" id="bkashCallbackCard" onclick="event.stopPropagation()">
+        <div class="bkash-sheet-drag-handle"></div>
+        <div style="text-align: center;" id="bkashCallbackBody">
+          <div style="position: relative; width: 62px; height: 62px; margin: 10px auto 16px;">
+            <div style="position: absolute; inset: 0; border: 3.5px solid #FCE7F3; border-top-color: #E2136E; border-radius: 50%; animation: bkashSpinDual 0.8s linear infinite;"></div>
+            <div style="position: absolute; inset: 6px; border: 2.5px solid #D1FAE5; border-bottom-color: #059669; border-radius: 50%; animation: bkashSpinDual 1.2s linear infinite reverse;"></div>
+          </div>
+
+          <div style="display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 800; background: #FDF2F8; color: #BE185D; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; margin-bottom: 8px;">
+            <span>bKash Tokenized Checkout</span>
+          </div>
+
+          <h3 style="font-size: 19px; font-weight: 800; color: #0F172A; margin: 0 0 6px;">Verifying Transaction</h3>
+          <p style="font-size: 12.5px; color: #64748B; margin: 0 auto; max-width: 320px; line-height: 1.5;">
+            Securing confirmation from the official bKash gateway. Please do not close this window...
+          </p>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Call Verification Engine
+    const targetType = pending?.type || 'member_deposit';
+    const targetAmount = parseFloat(pending?.amount) || 0;
+    const isBill = targetType === 'bill_payment';
+    const metadata = pending?.metadata || {};
+    if (!metadata.userId) metadata.userId = userId;
+    if (!metadata.diningId) metadata.diningId = diningId;
+
+    let verifyResult = null;
+    try {
+      if (window.MesslinerPayment && typeof window.MesslinerPayment.verifyAndFulfill === 'function') {
+        verifyResult = await window.MesslinerPayment.verifyAndFulfill({
+          paymentID: paymentID,
+          trxID: trxID,
+          type: targetType,
+          diningId: diningId,
+          amount: targetAmount,
+          customerPhone: '',
+          metadata: metadata
+        });
+      }
+    } catch (vErr) {
+      console.error('[UserBills] Callback verify error:', vErr);
+      verifyResult = { success: false, error: vErr.message };
+    }
+
+    const cardBody = document.getElementById('bkashCallbackBody');
+    if (!cardBody) return;
+
+    const isVerified = Boolean(verifyResult && (verifyResult.success === true || verifyResult.alreadyProcessed === true));
+
+    if (!isVerified) {
+      if (typeof db !== 'undefined' && diningId && paymentReqId) {
+        db.ref(`dinings/${diningId}/paymentRequests/${paymentReqId}`).update({
+          status: 'failed',
+          failedAt: firebase.database.ServerValue.TIMESTAMP || Date.now()
+        }).catch(() => {});
+      }
+
+      if (typeof Notifications !== 'undefined' && typeof Notifications.create === 'function' && diningId && userId) {
+        Notifications.create(
+          diningId,
+          'Payment Verification Failed',
+          (verifyResult && verifyResult.error) ? verifyResult.error : 'bKash could not verify payment.',
+          userId,
+          'error'
+        ).catch(() => {});
+      }
+
+      cardBody.innerHTML = `
+        <div style="width: 58px; height: 58px; border-radius: 50%; background: #FEE2E2; border: 2px solid #FECACA; color: #DC2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </div>
+
+        <span style="display: inline-block; font-size: 10.5px; font-weight: 800; background: #FEE2E2; color: #991B1B; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; margin-bottom: 8px;">
+          Verification Notice
+        </span>
+
+        <h3 style="font-size: 19px; font-weight: 800; color: #0F172A; margin: 0 0 6px;">Payment Verification Failed</h3>
+        <p style="font-size: 12.5px; color: #64748B; margin: 0 auto 20px; max-width: 340px; line-height: 1.5;">
+          ${(verifyResult && verifyResult.error) ? verifyResult.error : 'Unable to confirm payment from bKash server.'}
+        </p>
+
+        ${paymentID ? `
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 10px 14px; margin-bottom: 20px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #64748B;">Payment ID:</span>
+            <code style="font-family: monospace; font-weight: 700; color: #0F172A;">${paymentID}</code>
+          </div>
+        ` : ''}
+
+        <button type="button" onclick="Messliner.userBills.closeBkashCallbackModal(true)" style="width: 100%; padding: 13.5px 20px; border-radius: 14px; background: #0F172A; color: #FFFFFF; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s;">
+          Close
+        </button>
+      `;
+      return;
+    }
+
+    // ── Server-Side Fulfillment Sync ──
+    // All balance updates, deposit records, paymentRequests approvals, and notifications
+    // are now handled exclusively on the secure server (Supabase Edge Function verify-payment).
+    // Client-side code ONLY updates in-memory state and UI views (Zero Double-Credit & Zero Multiple Entries).
+    const verifiedTrxID = (verifyResult && verifyResult.trxID) || trxID || 'BKASH_CONFIRMED';
+    const chargedTotal = (verifyResult && verifyResult.amount) || targetAmount;
+    const baseAmount = parseFloat(metadata.baseAmount) || parseFloat(metadata.amount) || chargedTotal;
+    const gatewayFee = parseFloat(metadata.fee) || Math.max(0, chargedTotal - baseAmount);
+    const finalAmount = baseAmount > 0 ? baseAmount : chargedTotal;
+
+    // ── OPTIMISTIC LOCAL STATE UPDATE (INSTANT 0-SECOND REFLECT) ──
+    const currentMonth = Utils.currentMonth();
+    const todayStr = new Date().toISOString().split('T')[0];
+    const optKey = `bkash_${paymentID || Date.now()}`;
+
+    // 1. Instantly inject deposit in local userDeposits cache
+    if (!isBill) {
+      this.userDeposits = this.userDeposits || {};
+      const optimisticDeposit = {
+        userId: userId,
+        userName: metadata.userName || Messliner.users?.users?.[userId]?.name || 'Member',
+        amount: finalAmount,
+        type: 'deposit',
+        method: 'bkash_auto',
+        paymentID: paymentID || '',
+        trxID: verifiedTrxID,
+        trxId: verifiedTrxID,
+        date: todayStr,
+        month: currentMonth,
+        isAutoPayment: true,
+        timestamp: Date.now()
+      };
+      this.userDeposits[optKey] = optimisticDeposit;
+      this._optimisticBkashDeposits = this._optimisticBkashDeposits || {};
+      this._optimisticBkashDeposits[optKey] = optimisticDeposit;
+    }
+
+    // 2. Instantly mark paymentRequest as approved in memory so in-process count drops to 0
+    if (paymentReqId && this.paymentRequests && this.paymentRequests[paymentReqId]) {
+      this.paymentRequests[paymentReqId].status = 'approved';
+      this.paymentRequests[paymentReqId].approvedAt = Date.now();
+      this.paymentRequests[paymentReqId].trxID = verifiedTrxID;
+    }
+
+    // 3. If bill payment, mark bill member status as collected in memory
+    if (isBill && metadata.billId && this.bills?.[metadata.billId]?.members?.[userId]) {
+      this.bills[metadata.billId].members[userId].status = 'collected';
+      this.bills[metadata.billId].members[userId].paidAt = Date.now();
+      this.bills[metadata.billId].members[userId].trxID = verifiedTrxID;
+    }
+
+    // 4. Instantly update user totalDeposit in global Messliner store
+    if (Messliner.users?.users?.[userId]) {
+      if (typeof verifyResult?.updatedBalance === 'number') {
+        Messliner.users.users[userId].totalDeposit = verifyResult.updatedBalance;
+      } else if (!isBill) {
+        Messliner.users.users[userId].totalDeposit = (parseFloat(Messliner.users.users[userId].totalDeposit) || 0) + finalAmount;
+      }
+    }
+    if (Messliner.state?.user) {
+      if (typeof verifyResult?.updatedBalance === 'number') {
+        Messliner.state.user.totalDeposit = verifyResult.updatedBalance;
+      } else if (!isBill) {
+        Messliner.state.user.totalDeposit = (parseFloat(Messliner.state.user.totalDeposit) || 0) + finalAmount;
+      }
+    }
+
+    // 5. Instantly sync with UserDashboard so balance and hero metrics update with 0s lag
+    if (typeof UserDashboard !== 'undefined') {
+      if (!isBill) {
+        UserDashboard.monthlyDeposit = (parseFloat(UserDashboard.monthlyDeposit) || 0) + finalAmount;
+        if (UserDashboard.deposits) {
+          UserDashboard.deposits[optKey] = this.userDeposits[optKey];
+        }
+      }
+      if (UserDashboard.userData) {
+        if (typeof verifyResult?.updatedBalance === 'number') {
+          UserDashboard.userData.totalDeposit = verifyResult.updatedBalance;
+        } else if (!isBill) {
+          UserDashboard.userData.totalDeposit = (parseFloat(UserDashboard.userData.totalDeposit) || 0) + finalAmount;
+        }
+      }
+      try {
+        if (typeof UserDashboard.renderHeroCard === 'function') UserDashboard.renderHeroCard();
+        if (typeof UserDashboard.renderHeader === 'function') UserDashboard.renderHeader();
+        if (typeof UserDashboard.renderOverview === 'function') UserDashboard.renderOverview();
+        if (typeof UserDashboard.render === 'function') UserDashboard.render();
+      } catch (_) {}
+    }
+
+    // Refresh views smoothly with updated local data
+    this.renderOverview();
+    this.renderBills();
+    this.renderHistory();
+
+    // Success UI Render in Professional English
+    cardBody.innerHTML = `
+      <div style="width: 62px; height: 62px; border-radius: 50%; background: #ECFDF5; border: 2px solid #A7F3D0; color: #059669; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; animation: bkashCheckBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+
+      <div style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 999px; color: #047857; font-size: 10.5px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+        <span>Payment Completed</span>
+      </div>
+
+      <h3 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0 0 4px;">
+        ${isBill ? 'Bill Payment Completed' : 'Deposit Added to Balance'}
+      </h3>
+      <p style="font-size: 12.5px; color: #64748B; margin: 0 0 16px;">
+        ${isBill ? 'Your shared bill has been verified and settled in the ledger.' : 'Your payment has been verified and credited to your dining balance.'}
+      </p>
+
+      <!-- Amount Box -->
+      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 14px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 12px; font-weight: 600; color: #64748B;">${isBill ? 'Amount Paid' : 'Balance Credited'}</span>
+        <span style="font-size: 22px; font-weight: 900; color: #0F172A;">৳ ${finalAmount.toFixed(2)}</span>
+      </div>
+
+      <!-- Transaction Details -->
+      <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; padding: 10px 16px; margin-bottom: 20px; font-size: 12px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #F1F5F9;">
+          <span style="color: #64748B;">Transaction ID</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <code style="font-family: monospace; font-weight: 700; color: #0F172A; background: #F1F5F9; padding: 2px 6px; border-radius: 5px;">${verifiedTrxID}</code>
+            <button type="button" class="bkash-copy-btn-mini" onclick="Messliner.userBills.copyNumber('${verifiedTrxID}', this)">Copy</button>
+          </div>
+        </div>
+        ${gatewayFee > 0 ? `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #F1F5F9;">
+            <span style="color: #64748B;">Charge</span>
+            <span style="font-weight: 600; color: #0F172A;">৳ ${gatewayFee.toFixed(2)}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #F1F5F9;">
+            <span style="color: #64748B;">Total bKash Deducted</span>
+            <span style="font-weight: 700; color: #E2136E;">৳ ${chargedTotal.toFixed(2)}</span>
+          </div>
+        ` : ''}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #F1F5F9;">
+          <span style="color: #64748B;">Payment Method</span>
+          <span style="font-weight: 700; color: #E2136E;">bKash Auto</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0;">
+          <span style="color: #64748B;">Status</span>
+          <span style="font-weight: 700; color: #059669;">Approved & Credited</span>
+        </div>
+      </div>
+
+      <!-- User Must Click This Button to Dismiss -->
+      <button type="button" onclick="Messliner.userBills.closeBkashCallbackModal(true)" style="width: 100%; padding: 14px 20px; border-radius: 14px; background: #0F172A; color: #FFFFFF; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s;">
+        View in Ledger
+      </button>
+    `;
+  },
+
+  /**
+   * Close the bKash Bottom Sheet Callback Modal and clean URL params
+   */
+  closeBkashCallbackModal(refresh = false) {
+    this._isCheckingBkashCallback = false;
+    const modal = document.getElementById('bkashLedgerCallbackModal');
+    if (modal) {
+      modal.style.transition = 'opacity 0.2s ease-out';
+      modal.style.opacity = '0';
+      setTimeout(() => modal.remove(), 200);
+    }
+
+    localStorage.removeItem('ml_pending_member_payment');
+
+    // Clean URL parameters cleanly so reload does not re-open modal
+    try {
+      const cleanUrl = window.location.pathname + '#user-bills';
+      window.history.replaceState({ page: 'user-bills' }, '', cleanUrl);
+    } catch (_) {}
+
+    if (refresh) {
+      // Re-fetch UserBills views so the new deposit and balance reflect instantly
+      const diningId = this.getDiningId();
+      const userId = this.getUserId();
+      if (diningId && userId && typeof db !== 'undefined') {
+        db.ref(`dinings/${diningId}/users/${userId}`).once('value').then(snap => {
+          const val = snap.val();
+          if (val && Messliner.users?.users?.[userId]) {
+            Messliner.users.users[userId].totalDeposit = val.totalDeposit;
+          }
+          if (val && Messliner.state?.user) {
+            Messliner.state.user.totalDeposit = val.totalDeposit;
+          }
+          this.renderOverview();
+        }).catch(() => {});
+
+        db.ref(`dinings/${diningId}/paymentRequests`).once('value').then(snap => {
+          this.paymentRequests = snap.val() || {};
+          this.renderOverview();
+          this.renderHistory();
+        }).catch(() => {});
+
+        db.ref(`dinings/${diningId}/deposits`).once('value').then(snap => {
+          const remoteDeposits = snap.val() || {};
+          if (this._optimisticBkashDeposits) {
+            Object.entries(this._optimisticBkashDeposits).forEach(([optK, optV]) => {
+              const alreadyInRemote = Object.values(remoteDeposits).some(
+                d => (d && optV && ((d.paymentID && d.paymentID === optV.paymentID) || (d.trxID && d.trxID === optV.trxID)))
+              );
+              if (!alreadyInRemote) {
+                remoteDeposits[optK] = optV;
+              } else {
+                delete this._optimisticBkashDeposits[optK];
+              }
+            });
+          }
+          this.userDeposits = remoteDeposits;
+          this.renderOverview();
+          this.renderHistory();
+        }).catch(() => {});
+      } else {
+        this.renderOverview();
+        this.renderHistory();
+      }
+
+      this.switchTab('history');
+    }
   }
 };
+
 if (typeof window !== 'undefined') {
   window.UserBillsModule = UserBillsModule;
   if (typeof Messliner !== 'undefined') {
     Messliner.userBills = UserBillsModule;
+  }
+
+  // Automatic listener check for bKash return on page load
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+          if (window.UserBillsModule) window.UserBillsModule.checkBkashCallback();
+        }, 350);
+      });
+    } else {
+      setTimeout(() => {
+        if (window.UserBillsModule) window.UserBillsModule.checkBkashCallback();
+      }, 350);
+    }
   }
 }
 

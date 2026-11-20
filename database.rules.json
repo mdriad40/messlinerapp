@@ -1,6 +1,7 @@
 {
   "rules": {
     "dinings": {
+      ".read": true,
       "$diningId": {
         ".read": true,
         ".write": "!data.exists()",

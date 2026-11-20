@@ -1620,7 +1620,7 @@ textarea.form-input {
   justify-content: center;
   flex-direction: column;
   gap: var(--space-4);
-  z-index: var(--z-tooltip);
+  z-index: 99999 !important;
   transition: opacity 0.22s ease, visibility 0.22s ease;
   opacity: 1;
   visibility: visible;
@@ -1631,6 +1631,19 @@ textarea.form-input {
   visibility: hidden !important;
   pointer-events: none !important;
   display: none !important;
+  z-index: -1 !important;
+}
+
+/* While page loader / shimmer is active, ensure bottom navigation dock is completely hidden */
+.page-loader:not(.fade-out) ~ #appShell .bottom-nav,
+.page-loader:not(.fade-out) ~ #appShell #bottomNav,
+body:has(.page-loader:not(.fade-out)) .bottom-nav,
+body:has(#pageLoader:not(.fade-out)) #bottomNav,
+html:has(#pageLoader:not(.fade-out)) #bottomNav {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .page-loader .brand-text {
@@ -1693,6 +1706,7 @@ textarea.form-input {
     justify-content: flex-start !important;
     align-items: stretch !important;
     overflow: hidden !important;
+    z-index: 99999 !important;
   }
 
   [data-theme="dark"] html:not(.ml-is-admin) body:not(.role-admin) .page-loader {

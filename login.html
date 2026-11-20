@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
   <meta name="description"
     content="Messliner — Smart Dining Management for Messes. Track meals, manage deposits, split bills and run your mess stress-free.">
   <title>Messliner | Log in</title>
@@ -74,16 +74,18 @@
       display: flex !important;
     }
 
-    /* Enable full-page window scrolling on Auth page */
-    html,
+    /* Enable natural scrolling with keyboard scroll padding */
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-bottom: 28px;
+    }
+
     body {
-      height: auto !important;
-      min-height: 100% !important;
-      min-height: 100vh !important;
-      overflow-y: auto !important;
-      overflow-x: hidden !important;
-      overscroll-behavior-y: auto !important;
-      touch-action: auto !important;
+      height: auto;
+      min-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
   </style>
 
@@ -948,6 +950,56 @@
         window.location.hash = 'forgot';
       }
     };
+
+    /* ============================================================
+       NATIVE-APP KEYBOARD AWARE AUTO-SCROLL
+       Brings input & submit button above virtual keyboard on user tap
+       ============================================================ */
+    (function () {
+      let _userTappedInput = false;
+      let _scrollTimer = null;
+
+      // Only trigger if the user actually touches/clicks an input (never on auto-fill/page-load)
+      document.addEventListener('pointerdown', function (e) {
+        if (e.target && e.target.closest('input, select, textarea')) {
+          _userTappedInput = true;
+        }
+      }, true);
+
+      // When an input receives focus AFTER a user touch
+      document.addEventListener('focusin', function (e) {
+        if (!_userTappedInput) return;
+        if (!e.target || !e.target.matches('input, select, textarea')) return;
+
+        const activeInput = e.target;
+        clearTimeout(_scrollTimer);
+
+        // Wait for virtual keyboard to finish sliding up on mobile
+        _scrollTimer = setTimeout(() => {
+          const form = activeInput.closest('form') || activeInput.closest('.auth-pane-view');
+          const submitBtn = form ? form.querySelector('.btn-auth-submit, button[type="submit"]') : null;
+
+          if (submitBtn) {
+            submitBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } else {
+            activeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          _userTappedInput = false;
+        }, 320);
+      });
+
+      // When the user dismisses the keyboard or leaves input fields
+      document.addEventListener('focusout', function () {
+        setTimeout(() => {
+          const active = document.activeElement;
+          const stillInInput = active && active.matches && active.matches('input, select, textarea');
+          if (!stillInInput) {
+            _userTappedInput = false;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }, 180);
+      });
+    })();
   </script>
 </body>
 

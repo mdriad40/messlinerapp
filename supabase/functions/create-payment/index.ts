@@ -85,7 +85,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         mode: "0011",
-        payerReference: customerPhone || "01700000000",
+        payerReference: invoiceNo,
         callbackURL: callbackURL,
         amount: numAmount.toFixed(2),
         currency: "BDT",

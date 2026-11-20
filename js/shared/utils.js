@@ -322,7 +322,37 @@ const Utils = {
    */
   formatBazarItems(itemsStr) {
     if (!itemsStr) return '—';
-    const lines = itemsStr.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    let lines = [];
+    if (Array.isArray(itemsStr)) {
+      lines = itemsStr.map(i => {
+        if (!i) return '';
+        if (typeof i === 'string') return i.trim();
+        const n = i.name || i.title || i.item || '';
+        const q = i.qty || i.quantity || '';
+        const p = (i.price || i.amount) ? ` - ৳${i.price || i.amount}` : '';
+        return `${n}${q ? ` (${q})` : ''}${p}`.trim();
+      }).filter(Boolean);
+    } else if (typeof itemsStr === 'object') {
+      lines = Object.values(itemsStr).map(i => {
+        if (!i) return '';
+        if (typeof i === 'string') return i.trim();
+        return (i.name || i.title || i.item || JSON.stringify(i)).trim();
+      }).filter(Boolean);
+    } else {
+      const str = String(itemsStr).trim();
+      if (str.includes('\n')) {
+        lines = str.split('\n').map(l => l.trim()).filter(Boolean);
+      } else if (str.includes(',,') || str.includes(',')) {
+        const sep = str.includes(',,') ? ',,' : ',';
+        lines = str.split(sep).map(l => l.trim()).filter(Boolean);
+      } else if (str.includes(';') || str.includes('•')) {
+        const sep = str.includes(';') ? ';' : '•';
+        lines = str.split(sep).map(l => l.trim()).filter(Boolean);
+      } else {
+        lines = [str];
+      }
+    }
+
     if (lines.length > 1) {
       return `
         <ul class="bazar-items-list-styled">
@@ -330,7 +360,7 @@ const Utils = {
         </ul>
       `;
     }
-    return itemsStr;
+    return lines[0] || '—';
   },
 
   /**

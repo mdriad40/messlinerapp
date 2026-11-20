@@ -313,7 +313,12 @@ const BazarHistoryModule = {
     const shopperLabel = shoppers.length > 0 ? shoppers.join(', ') : 'N/A';
 
     // Combine all items from all entries into one preview string
-    const allItemsText = entries.map(e => (e.items || '').replace(/\r?\n/g, ', ')).filter(Boolean).join(', ');
+    const allItemsText = entries.map(e => {
+      if (!e.items) return '';
+      if (typeof e.items === 'string') return e.items.replace(/\r?\n/g, ', ');
+      if (Array.isArray(e.items)) return e.items.map(i => typeof i === 'string' ? i : (i.name || i.item || '')).filter(Boolean).join(', ');
+      return String(e.items);
+    }).filter(Boolean).join(', ');
     const shortPreview = allItemsText.length > 42 ? allItemsText.slice(0, 42) + '…' : allItemsText;
 
     const dateObj = new Date(date + 'T00:00:00');
@@ -339,14 +344,15 @@ const BazarHistoryModule = {
       </div>
     `).join('');
 
-    const cardId = `bazar-card-${date.replace(/-/g, '')}`;
+    const cleanDateId = String(date).replace(/[^a-zA-Z0-9]/g, '');
+    const cardId = `bazar-history-card-${cleanDateId}`;
     const isExpanded = this.expandedCard === date;
 
     return `
       <div class="bazar-day-card ${isExpanded ? 'expanded' : ''}" id="${cardId}">
 
         <!-- Clickable header row -->
-        <div class="bazar-day-card-header" onclick="window.toggleBazarHistoryCard ? window.toggleBazarHistoryCard('${date}', '${cardId}') : BazarHistoryModule.toggleCard('${date}', '${cardId}')">
+        <div class="bazar-day-card-header" onclick="window.toggleBazarHistoryCard ? window.toggleBazarHistoryCard('${date}', '${cardId}', this) : BazarHistoryModule.toggleCard('${date}', '${cardId}', this)">
 
           <!-- Date badge -->
           <div class="bazar-date-badge">${dayNum}</div>
@@ -401,20 +407,22 @@ const BazarHistoryModule = {
   /**
    * Toggle accordion card expand/collapse
    */
-  toggleCard(date, cardId) {
-    const card = document.getElementById(cardId);
+  toggleCard(date, cardId, el) {
+    const card = (el && el.closest) ? (el.closest('.bazar-day-card') || document.getElementById(cardId)) : document.getElementById(cardId);
     if (!card) return;
 
     const isCurrentlyExpanded = card.classList.contains('expanded');
     this._lastRenderedHtml = null;
 
-    // Collapse all cards first
-    document.querySelectorAll('.bazar-day-card.expanded').forEach(c => {
-      c.classList.remove('expanded');
+    // Collapse other cards first within the container
+    const container = card.closest('.bazar-history-list') || card.parentElement || document;
+    container.querySelectorAll('.bazar-day-card.expanded').forEach(c => {
+      if (c !== card) c.classList.remove('expanded');
     });
 
     if (isCurrentlyExpanded) {
       // Was open — now closed
+      card.classList.remove('expanded');
       this.expandedCard = null;
     } else {
       // Open this one
@@ -438,11 +446,14 @@ const BazarHistoryModule = {
 };
 
 window.BazarHistoryModule = BazarHistoryModule;
-window.toggleBazarHistoryCard = function(date, cardId) {
+window.toggleBazarHistoryCard = function(date, cardId, el) {
   if (window.BazarHistoryModule && typeof window.BazarHistoryModule.toggleCard === 'function') {
-    window.BazarHistoryModule.toggleCard(date, cardId);
+    window.BazarHistoryModule.toggleCard(date, cardId, el);
   } else if (window.Messliner && Messliner.bazarHistory && typeof Messliner.bazarHistory.toggleCard === 'function') {
-    Messliner.bazarHistory.toggleCard(date, cardId);
+    Messliner.bazarHistory.toggleCard(date, cardId, el);
+  } else if (el && el.closest) {
+    const card = el.closest('.bazar-day-card');
+    if (card) card.classList.toggle('expanded');
   }
 };
 if (typeof Messliner !== 'undefined') {

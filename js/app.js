@@ -27,6 +27,8 @@ window.showSignOutConfirm = async function() {
 };
 
 window.Messliner = window.DineDesk = {
+  _dataRendered: false,
+  _initError: false,
   state: {
     user: null,
     userId: null,
@@ -289,10 +291,13 @@ window.Messliner = window.DineDesk = {
       this._bootForUser(syncUser);
     }
 
-    // Guaranteed Failsafe Watchdog: Under NO circumstance should preloader hang more than 2.5s
+    // Safety Watchdog: Failsafe if network hangs completely (10s extreme fallback)
     setTimeout(() => {
-      this._dismissLoaderFast();
-    }, 2500);
+      if (!this._dataRendered && !document.body.classList.contains('onboarding-active')) {
+        console.warn('[Messliner] Watchdog timeout reached before data rendered. Forcing preloader dismissal.');
+        this._dismissLoaderFast(true);
+      }
+    }, 10000);
 
     // Auth state listener (handles background token verification or logout)
     auth.onAuthStateChanged(async (user) => {
@@ -503,7 +508,7 @@ window.Messliner = window.DineDesk = {
                 profile = userProfileSnap.val() || profile;
         }
       } catch (_) { }
-      this._dismissLoaderFast();
+      this._dismissLoaderFast(true);
       const onboardingPage = document.getElementById('onboardingPage');
       if (onboardingPage) onboardingPage.style.display = 'flex';
       const appShell = document.getElementById('appShell');
@@ -637,7 +642,8 @@ window.Messliner = window.DineDesk = {
 
   } catch(error) {
     console.error('[Messliner] Init error:', error);
-    this._dismissLoaderFast();
+    this._initError = true;
+    this._dismissLoaderFast(true);
     if (!hasHydratedFromCache) {
       Notifications.toast('error', 'Error', 'Failed to load your dining data.');
     }
@@ -652,10 +658,18 @@ window.Messliner = window.DineDesk = {
    * On mobile member panel, guarantees at least 1.5s shimmer skeleton preview on reload,
    * and waits for subpage data (Meal Chart, Bazar, Summary, Friday Meal) to fully render before dismissing
    */
-  async _dismissLoaderFast() {
+  async _dismissLoaderFast(force = false) {
   const loaderEl = document.getElementById('pageLoader');
   if (!loaderEl) return;
   if (this._loaderDismissing || loaderEl.classList.contains('fade-out')) return;
+
+  // Safety guard: On dashboard, never dismiss the shimmer screen until UI data is actually rendered,
+  // unless explicitly forced (e.g. fatal timeout / onboarding / error)
+  const isOnboarding = document.body.classList.contains('onboarding-active') || (document.getElementById('onboardingPage')?.style?.display === 'flex');
+  if (!force && !this._dataRendered && !isOnboarding && !this._initError) {
+    console.log('[Messliner] _dismissLoaderFast held back — awaiting dashboard data render...');
+    return;
+  }
 
   const isMobile = window.innerWidth <= 768;
   let isMember = true;
@@ -734,6 +748,8 @@ _saveToCache(key, data) {
  * Core UI & Module Population Engine (Used for both Instant Cache and Fresh Network Data)
  */
 _renderDashboardPayload(data, isFromCache) {
+  this._dataRendered = true;
+  window.__ML_DASHBOARD_READY = true;
   const diningId = data.mapping.diningId;
   const userId = data.mapping.userId;
   this.state.diningId = diningId;
@@ -913,6 +929,11 @@ _renderDashboardPayload(data, isFromCache) {
     });
     UserDashboard.monthlyMeals = mMeals;
     UserDashboard.monthlyMealsBreakdown = mBreakdown;
+  }
+
+  // Hydrate and listen to notifications early so badge is accurate from 0ms
+  if (window.Notifications && typeof Notifications.initListener === 'function') {
+    Notifications.initListener(diningId, userId, userData.createdAt || null);
   }
 
   UserDashboard._activityDataReady = true;
@@ -1418,11 +1439,13 @@ _initModules(diningId, userId, mealsData, initialData) {
   const isAdmin = this.state.role === 'admin';
 
   // Always init these
+  if (window.Notifications && typeof Notifications.initListener === 'function') {
+    Notifications.initListener(diningId, userId, this.state.userJoinedAt);
+  }
   UsersModule.init(diningId, initialData);
   UserDashboard.init(diningId, userId, initialData);
   HistoryModule.init(diningId, userId);
   OverviewModule.init(diningId, initialData);
-  Notifications.initListener(diningId, userId, this.state.userJoinedAt);
   if (window.MealChartModule) MealChartModule.init(diningId, userId);
   if (window.BazarHistoryModule) {
     BazarHistoryModule.init(diningId, userId, initialData);

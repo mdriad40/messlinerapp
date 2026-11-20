@@ -112,10 +112,11 @@
         }
 
         window.__ML_LOAD_START_TIME = Date.now();
+        const _isBkashReturn = window.location.search && (window.location.search.includes('bkashPayment=auto') || (window.location.search.includes('paymentID=') && localStorage.getItem('ml_pending_member_payment')));
         const _path = (window.location.pathname || '').replace(/^\/dashboard(?:\.html)?\/?/i, '').trim();
         const _pageFromPath = _path.split('/')[0];
-        const _hash = (_pageFromPath || window.location.hash || '').replace(/^[#\/]+/, '').split('?')[0].toLowerCase();
-        const _lastPage = (_hash || sessionStorage.getItem('ml_current_page') || '').toLowerCase();
+        const _hash = _isBkashReturn ? 'user-bills' : ((_pageFromPath || window.location.hash || '').replace(/^[#\/]+/, '').split('?')[0].toLowerCase());
+        const _lastPage = _isBkashReturn ? 'user-bills' : ((_hash || sessionStorage.getItem('ml_current_page') || '').toLowerCase());
         if (['mealchart', 'fridaymeal'].includes(_lastPage)) {
           document.documentElement.classList.add('ml-loader-mealchart');
         } else if (['bazar', 'bazarhistory', 'summary'].includes(_lastPage)) {
@@ -164,6 +165,22 @@
       pointer-events: none !important;
       visibility: hidden !important;
       display: none !important;
+    }
+
+    /* Shimmer Screen Stacking & Bottom Nav Hiding (Guarantees shimmer covers bottom menu on reload across all tabs) */
+    #pageLoader {
+      z-index: 99999 !important;
+    }
+
+    .page-loader:not(.fade-out)~#appShell .bottom-nav,
+    .page-loader:not(.fade-out)~#appShell #bottomNav,
+    body:has(#pageLoader:not(.fade-out)) .bottom-nav,
+    body:has(#pageLoader:not(.fade-out)) #bottomNav,
+    html:has(#pageLoader:not(.fade-out)) #bottomNav {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
   </style>
 
@@ -8412,7 +8429,10 @@
                   </div>
                 </div>
                 <div class="sms-toggle-action">
-                  <div class="toggle-switch" id="smsAlertToggleSwitch" onclick="Messliner.smsAlert.requestToggleEnable(event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Messliner.smsAlert.requestToggleEnable(event);}" role="button" tabindex="0" style="cursor: pointer;">
+                  <div class="toggle-switch" id="smsAlertToggleSwitch"
+                    onclick="Messliner.smsAlert.requestToggleEnable(event)"
+                    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Messliner.smsAlert.requestToggleEnable(event);}"
+                    role="button" tabindex="0" style="cursor: pointer;">
                     <input type="checkbox" id="smsAlertToggle" tabindex="-1" style="pointer-events: none;" readonly>
                     <span class="toggle-slider"></span>
                   </div>
@@ -8573,7 +8593,8 @@
                     <div
                       style="display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: rgba(255,255,255,0.9); border: 1px solid rgba(226, 19, 110, 0.15); border-radius: 10px; margin-bottom: 14px;">
                       <span style="font-size: 11px; color: #64748b; font-weight: 600;">Estimated Credits:</span>
-                      <span id="bkashEstSmsCount" style="font-size: 12px; font-weight: 800; color: #E2136E;">≈ 142 SMS Credits</span>
+                      <span id="bkashEstSmsCount" style="font-size: 12px; font-weight: 800; color: #E2136E;">≈ 142 SMS
+                        Credits</span>
                     </div>
                   </div>
 
@@ -9819,12 +9840,9 @@
                   <input type="text" id="aiChatInput" class="ai-text-input"
                     placeholder="Ask me anything about your dining..."
                     onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();Messliner.history.sendAiChatMessage();}"
-                    autocomplete="off">
-                  <button class="ai-send-btn" onclick="Messliner.history.sendAiChatMessage()" title="Send (Enter)">
-                    <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24">
-                      <line x1="22" y1="2" x2="11" y2="13" />
-                      <polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff" stroke="none" />
-                    </svg>
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff" stroke="none" />
+                  </svg>
                   </button>
                 </div>
                 <div class="ai-input-hint">Powered by Messliner</div>
@@ -9839,207 +9857,207 @@
               window._aiRefreshGreeting = updateAiGreeting;
 
               // Greeting with username
-                const userName = (window.Messliner && Messliner.history && Messliner.history.currentUserData && Messliner.history.currentUserData.name)
-                  || (window.Messliner && window.Messliner.state && window.Messliner.state.userName)
-                  || (window._aiLastUserName)
-                  || 'User';
-                window._aiLastUserName = userName;
+              const userName = (window.Messliner && Messliner.history && Messliner.history.currentUserData && Messliner.history.currentUserData.name)
+                || (window.Messliner && window.Messliner.state && window.Messliner.state.userName)
+                || (window._aiLastUserName)
+                || 'User';
+              window._aiLastUserName = userName;
 
-                const firstName = userName.split(' ')[0];
-                const hour = new Date().getHours();
-                let greeting = 'Good morning';
-                if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
-                else if (hour >= 17) greeting = 'Good evening';
+              const firstName = userName.split(' ')[0];
+              const hour = new Date().getHours();
+              let greeting = 'Good morning';
+              if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
+              else if (hour >= 17) greeting = 'Good evening';
 
-                if (nameEl) nameEl.textContent = `👋 Hello, ${firstName}!`;
-                if (timeEl) timeEl.textContent = `${greeting}! How can I help you today?`;
-                if (welcomeTitleEl) welcomeTitleEl.textContent = `Hello, ${userName}! 👋`;
-                const welcomeSubEl = document.getElementById('aiWelcomeSub');
-                if (welcomeSubEl) welcomeSubEl.textContent = `How can I help you today?`;
+              if (nameEl) nameEl.textContent = `👋 Hello, ${firstName}!`;
+              if (timeEl) timeEl.textContent = `${greeting}! How can I help you today?`;
+              if (welcomeTitleEl) welcomeTitleEl.textContent = `Hello, ${userName}! 👋`;
+              const welcomeSubEl = document.getElementById('aiWelcomeSub');
+              if (welcomeSubEl) welcomeSubEl.textContent = `How can I help you today?`;
 
-                // Customize the top header for AI Assistant page
-                const headerTitle = document.getElementById('headerTitle');
-                const headerSubtitle = document.getElementById('headerSubtitle');
+              // Customize the top header for AI Assistant page
+              const headerTitle = document.getElementById('headerTitle');
+              const headerSubtitle = document.getElementById('headerSubtitle');
 
-                if (window.Messliner && window.Messliner.router && window.Messliner.router.currentPage === 'aiassistant') {
-                  if (headerTitle) {
-                    headerTitle.textContent = 'Messliner AI';
-                  }
-                  if (headerSubtitle) {
-                    headerSubtitle.textContent = '';
-                    headerSubtitle.style.display = 'none';
-                  }
+              if (window.Messliner && window.Messliner.router && window.Messliner.router.currentPage === 'aiassistant') {
+                if (headerTitle) {
+                  headerTitle.textContent = 'Messliner AI';
+                }
+                if (headerSubtitle) {
+                  headerSubtitle.textContent = '';
+                  headerSubtitle.style.display = 'none';
                 }
               }
+            }
 
               // Try immediately, then retry when page is navigated to
               updateAiGreeting();
-              setTimeout(updateAiGreeting, 800);
+            setTimeout(updateAiGreeting, 800);
 
-              // Hook into router navigation to refresh greeting & load chat sessions
-              if (window.Messliner && window.Messliner.router) {
-                const origNavigate = window.Messliner.router.navigate.bind(window.Messliner.router);
-                window.Messliner.router.navigate = function (page) {
-                  origNavigate(page);
-                  if (page === 'aiassistant') {
-                    setTimeout(updateAiGreeting, 300);
-                    if (window._aiChatManager) {
-                      window._aiChatManager.init();
-                    }
+            // Hook into router navigation to refresh greeting & load chat sessions
+            if (window.Messliner && window.Messliner.router) {
+              const origNavigate = window.Messliner.router.navigate.bind(window.Messliner.router);
+              window.Messliner.router.navigate = function (page) {
+                origNavigate(page);
+                if (page === 'aiassistant') {
+                  setTimeout(updateAiGreeting, 300);
+                  if (window._aiChatManager) {
+                    window._aiChatManager.init();
                   }
-                };
-              }
-
-              // Bind the StartNewChat to our custom chat manager session creator
-              window._aiStartNewChat = function () {
-                if (window._aiChatManager) {
-                  window._aiChatManager.createNewSession();
                 }
               };
+            }
 
-              if (window.Messliner && window.Messliner.history) {
-                window.Messliner.history._startNewAiChat = window._aiStartNewChat;
+            // Bind the StartNewChat to our custom chat manager session creator
+            window._aiStartNewChat = function () {
+              if (window._aiChatManager) {
+                window._aiChatManager.createNewSession();
               }
+            };
 
-              // Expose dynamic chat history manager
-              window._aiChatManager = {
-                sessions: [],
-                currentSessionId: null,
+            if (window.Messliner && window.Messliner.history) {
+              window.Messliner.history._startNewAiChat = window._aiStartNewChat;
+            }
 
-                init() {
-                  if (!window.Messliner || !Messliner.history || !Messliner.history.userId) return;
+            // Expose dynamic chat history manager
+            window._aiChatManager = {
+              sessions: [],
+              currentSessionId: null,
 
-                  // Load from localStorage
-                  const stored = localStorage.getItem(`messliner_ai_sessions_${Messliner.history.userId}`);
-                  if (stored) {
-                    try {
-                      this.sessions = JSON.parse(stored);
-                    } catch (e) {
-                      this.sessions = [];
-                    }
+              init() {
+                if (!window.Messliner || !Messliner.history || !Messliner.history.userId) return;
+
+                // Load from localStorage
+                const stored = localStorage.getItem(`messliner_ai_sessions_${Messliner.history.userId}`);
+                if (stored) {
+                  try {
+                    this.sessions = JSON.parse(stored);
+                  } catch (e) {
+                    this.sessions = [];
                   }
+                }
 
-                  if (this.sessions.length === 0) {
-                    this.createNewSession();
-                  } else {
-                    this.currentSessionId = this.sessions[0].id;
-                    this.renderSidebar();
-                    this.loadSession(this.currentSessionId);
-                  }
-                },
-
-                createNewSession() {
-                  const newSession = {
-                    id: 'session_' + Date.now(),
-                    title: 'Current Session',
-                    date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    messages: []
-                  };
-                  this.sessions.unshift(newSession);
-                  this.currentSessionId = newSession.id;
-                  this.saveToStorage();
+                if (this.sessions.length === 0) {
+                  this.createNewSession();
+                } else {
+                  this.currentSessionId = this.sessions[0].id;
                   this.renderSidebar();
-                  this.loadSession(newSession.id);
-                },
+                  this.loadSession(this.currentSessionId);
+                }
+              },
 
-                saveMessage(sender, text, timestamp) {
-                  const session = this.sessions.find(s => s.id === this.currentSessionId);
-                  if (!session) return;
+              createNewSession() {
+                const newSession = {
+                  id: 'session_' + Date.now(),
+                  title: 'Current Session',
+                  date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  messages: []
+                };
+                this.sessions.unshift(newSession);
+                this.currentSessionId = newSession.id;
+                this.saveToStorage();
+                this.renderSidebar();
+                this.loadSession(newSession.id);
+              },
 
-                  session.messages.push({ sender, text, timestamp });
+              saveMessage(sender, text, timestamp) {
+                const session = this.sessions.find(s => s.id === this.currentSessionId);
+                if (!session) return;
 
-                  // Update title on first user message
-                  if (sender === 'user' && (session.title === 'Current Session' || session.title === 'New Chat')) {
-                    session.title = text.length > 22 ? text.substring(0, 22) + '…' : text;
-                  }
+                session.messages.push({ sender, text, timestamp });
 
-                  this.saveToStorage();
-                  this.renderSidebar();
-                },
+                // Update title on first user message
+                if (sender === 'user' && (session.title === 'Current Session' || session.title === 'New Chat')) {
+                  session.title = text.length > 22 ? text.substring(0, 22) + '…' : text;
+                }
 
-                loadSession(id) {
-                  this.currentSessionId = id;
-                  const session = this.sessions.find(s => s.id === id);
-                  if (!session) return;
+                this.saveToStorage();
+                this.renderSidebar();
+              },
 
-                  const win = document.getElementById('aiChatWindow');
-                  if (!win) return;
+              loadSession(id) {
+                this.currentSessionId = id;
+                const session = this.sessions.find(s => s.id === id);
+                if (!session) return;
 
-                  // Clear chat window except welcome block
-                  const welcomeBlock = document.getElementById('aiWelcomeBlock');
-                  win.innerHTML = '';
-                  if (welcomeBlock) win.appendChild(welcomeBlock);
+                const win = document.getElementById('aiChatWindow');
+                if (!win) return;
 
-                  if (session.messages.length === 0) {
-                    if (welcomeBlock) welcomeBlock.style.display = 'flex';
-                  } else {
-                    if (welcomeBlock) welcomeBlock.style.display = 'none';
+                // Clear chat window except welcome block
+                const welcomeBlock = document.getElementById('aiWelcomeBlock');
+                win.innerHTML = '';
+                if (welcomeBlock) win.appendChild(welcomeBlock);
 
-                    session.messages.forEach(msg => {
-                      const el = document.createElement('div');
-                      if (msg.sender === 'user') {
-                        el.className = 'ai-msg-row user-row';
-                        el.innerHTML = `
+                if (session.messages.length === 0) {
+                  if (welcomeBlock) welcomeBlock.style.display = 'flex';
+                } else {
+                  if (welcomeBlock) welcomeBlock.style.display = 'none';
+
+                  session.messages.forEach(msg => {
+                    const el = document.createElement('div');
+                    if (msg.sender === 'user') {
+                      el.className = 'ai-msg-row user-row';
+                      el.innerHTML = `
                           <div style="display:flex;flex-direction:column;align-items:flex-end;max-width: 85%;">
                             <div class="ai-chat-bubble-user">${msg.text}</div>
                             <div class="ai-msg-time">${msg.timestamp}</div>
                           </div>
                         `;
-                      } else {
-                        el.className = 'ai-msg-row';
-                        el.innerHTML = `
+                    } else {
+                      el.className = 'ai-msg-row';
+                      el.innerHTML = `
                           <div style="max-width: 85%;">
                             <div class="ai-chat-bubble-bot">${msg.text}</div>
                             <div class="ai-msg-time">${msg.timestamp}</div>
                           </div>
                         `;
-                      }
-                      win.appendChild(el);
-                    });
-                    requestAnimationFrame(() => { win.scrollTop = win.scrollHeight; });
-                  }
-
-                  this.renderSidebar();
-                },
-
-                deleteSession(id, event) {
-                  if (event) event.stopPropagation();
-                  if (this.sessions.length <= 1) {
-                    // Clear messages instead of deleting the last session
-                    const session = this.sessions[0];
-                    session.title = 'Current Session';
-                    session.messages = [];
-                    this.saveToStorage();
-                    this.loadSession(session.id);
-                    return;
-                  }
-
-                  const idx = this.sessions.findIndex(s => s.id === id);
-                  if (idx !== -1) {
-                    this.sessions.splice(idx, 1);
-                    if (this.currentSessionId === id) {
-                      this.currentSessionId = this.sessions[0].id;
                     }
-                    this.saveToStorage();
-                    this.loadSession(this.currentSessionId);
+                    win.appendChild(el);
+                  });
+                  requestAnimationFrame(() => { win.scrollTop = win.scrollHeight; });
+                }
+
+                this.renderSidebar();
+              },
+
+              deleteSession(id, event) {
+                if (event) event.stopPropagation();
+                if (this.sessions.length <= 1) {
+                  // Clear messages instead of deleting the last session
+                  const session = this.sessions[0];
+                  session.title = 'Current Session';
+                  session.messages = [];
+                  this.saveToStorage();
+                  this.loadSession(session.id);
+                  return;
+                }
+
+                const idx = this.sessions.findIndex(s => s.id === id);
+                if (idx !== -1) {
+                  this.sessions.splice(idx, 1);
+                  if (this.currentSessionId === id) {
+                    this.currentSessionId = this.sessions[0].id;
                   }
-                },
+                  this.saveToStorage();
+                  this.loadSession(this.currentSessionId);
+                }
+              },
 
-                saveToStorage() {
-                  localStorage.setItem(`messliner_ai_sessions_${Messliner.history.userId}`, JSON.stringify(this.sessions));
-                },
+              saveToStorage() {
+                localStorage.setItem(`messliner_ai_sessions_${Messliner.history.userId}`, JSON.stringify(this.sessions));
+              },
 
-                renderSidebar() {
-                  const list = document.getElementById('aiChatHistoryList');
-                  if (!list) return;
+              renderSidebar() {
+                const list = document.getElementById('aiChatHistoryList');
+                if (!list) return;
 
-                  list.innerHTML = '';
-                  this.sessions.forEach(s => {
-                    const el = document.createElement('div');
-                    el.className = `ai-history-item${s.id === this.currentSessionId ? ' active' : ''}`;
-                    el.onclick = () => this.loadSession(s.id);
+                list.innerHTML = '';
+                this.sessions.forEach(s => {
+                  const el = document.createElement('div');
+                  el.className = `ai-history-item${s.id === this.currentSessionId ? ' active' : ''}`;
+                  el.onclick = () => this.loadSession(s.id);
 
-                    el.innerHTML = `
+                  el.innerHTML = `
                       <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:6px;">
                         <div style="overflow:hidden; flex:1;">
                           <div class="ai-history-title">${s.title}</div>
@@ -10054,18 +10072,18 @@
                         </button>
                       </div>
                     `;
-                    list.appendChild(el);
-                  });
-                }
-              };
+                  list.appendChild(el);
+                });
+              }
+            };
 
-              // Auto initialize on load if history module is ready
-              setTimeout(function () {
-                if (window._aiChatManager && window.Messliner && Messliner.history && Messliner.history.userId) {
-                  window._aiChatManager.init();
-                }
-              }, 800);
-            })();
+            // Auto initialize on load if history module is ready
+            setTimeout(function () {
+              if (window._aiChatManager && window.Messliner && Messliner.history && Messliner.history.userId) {
+                window._aiChatManager.init();
+              }
+            }, 800);
+            }) ();
           </script>
         </section>
 
@@ -10385,8 +10403,11 @@
         <!-- Row 1: Bazar, Ledger, Member -->
         <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('bazar');">
           <div class="more-card-icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
             </svg>
           </div>
           <span class="more-card-label">Bazar</span>
@@ -10394,8 +10415,10 @@
 
         <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('ledger');">
           <div class="more-card-icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
             </svg>
           </div>
           <span class="more-card-label">Ledger</span>
@@ -10403,18 +10426,25 @@
 
         <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('users');">
           <div class="more-card-icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
           </div>
           <span class="more-card-label">Member</span>
         </div>
 
         <!-- Row 2: History, SMS, ML AI -->
-        <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('mealhistory');">
+        <div class="more-sheet-card"
+          onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('mealhistory');">
           <div class="more-card-icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
           <span class="more-card-label">History</span>
@@ -10422,7 +10452,8 @@
 
         <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('more');">
           <div class="more-card-icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"
+              stroke-linejoin="round">
               <rect x="2" y="4" width="20" height="16" rx="2.5"></rect>
               <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
             </svg>
@@ -10430,9 +10461,11 @@
           <span class="more-card-label">SMS</span>
         </div>
 
-        <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('aiassistant');">
+        <div class="more-sheet-card"
+          onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('aiassistant');">
           <div class="more-card-icon-box" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+              stroke-linejoin="round">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
             </svg>
           </div>
@@ -10442,8 +10475,10 @@
         <!-- Row 3: Notice, Mess Task, Messliner Pro -->
         <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('notices');">
           <div class="more-card-icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
           </div>
           <span class="more-card-label">Notice</span>
@@ -10451,8 +10486,10 @@
 
         <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('tasks');">
           <div class="more-card-icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4" />
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
             </svg>
           </div>
           <span class="more-card-label">Mess Task</span>
@@ -10460,8 +10497,9 @@
 
         <div class="more-sheet-card" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('pro');">
           <div class="more-card-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #d97706;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
             </svg>
           </div>
           <span class="more-card-label">Messliner Pro</span>
@@ -10469,19 +10507,28 @@
       </div>
 
       <div class="more-sheet-bottom-actions">
-        <button type="button" class="more-sheet-action-btn" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('profile');">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7.5" r="4"/><path d="M5 21a7 7 0 0 1 14 0H5z"/></svg>
+        <button type="button" class="more-sheet-action-btn"
+          onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('profile');">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="7.5" r="4" />
+            <path d="M5 21a7 7 0 0 1 14 0H5z" />
+          </svg>
           <span>Profile</span>
         </button>
-        <button type="button" class="more-sheet-action-btn" onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('settings');">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <button type="button" class="more-sheet-action-btn"
+          onclick="Messliner.closeMoreSheet(true); Messliner.router.navigate('settings');">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
           <span>Settings</span>
         </button>
       </div>
     </div>
   </div>
-      </div>
-    </nav>
+  </div>
+  </nav>
 
   </div> <!-- /app-shell -->
 
@@ -10515,9 +10562,11 @@
           </svg>
         </div>
 
-        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; background: #FEF3C7; border: 1px solid #FCD34D;">
+        <div
+          style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; background: #FEF3C7; border: 1px solid #FCD34D;">
           <span style="width: 6px; height: 6px; border-radius: 50%; background: #D97706;"></span>
-          <span id="memberLimitPlanBadge" style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #92400E;">
+          <span id="memberLimitPlanBadge"
+            style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #92400E;">
             Plan Limit Reached
           </span>
         </div>
@@ -10527,19 +10576,27 @@
       <h3 style="font-size: 1.25rem; font-weight: 800; color: #0F172A; margin: 0 0 6px; letter-spacing: -0.01em;">
         Member Limit Reached
       </h3>
-      <p id="memberLimitDescText" style="font-size: 0.85rem; color: #64748B; line-height: 1.6; margin: 0 auto 18px; text-align: center;">
-        You've reached the <strong>25-member limit</strong> on <strong>Messliner Pro</strong>.<br style="display: block; margin-top: 3px;">
+      <p id="memberLimitDescText"
+        style="font-size: 0.85rem; color: #64748B; line-height: 1.6; margin: 0 auto 18px; text-align: center;">
+        You've reached the <strong>25-member limit</strong> on <strong>Messliner Pro</strong>.<br
+          style="display: block; margin-top: 3px;">
         Please upgrade your plan to add more dining members.
       </p>
 
       <!-- Capacity Usage Meter Card -->
-      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 12px 14px; margin-bottom: 20px;">
+      <div
+        style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 12px 14px; margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Capacity Utilized</span>
-          <span id="memberLimitCountText" style="font-size: 0.82rem; font-weight: 800; color: #D97706;">25 / 25 Members</span>
+          <span
+            style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Capacity
+            Utilized</span>
+          <span id="memberLimitCountText" style="font-size: 0.82rem; font-weight: 800; color: #D97706;">25 / 25
+            Members</span>
         </div>
         <div style="width: 100%; height: 8px; background: #E2E8F0; border-radius: 99px; overflow: hidden;">
-          <div id="memberLimitBarFill" style="width: 100%; height: 100%; background: linear-gradient(90deg, #F59E0B, #EF4444); border-radius: 99px; transition: width 0.4s ease;"></div>
+          <div id="memberLimitBarFill"
+            style="width: 100%; height: 100%; background: linear-gradient(90deg, #F59E0B, #EF4444); border-radius: 99px; transition: width 0.4s ease;">
+          </div>
         </div>
       </div>
 
@@ -10550,11 +10607,14 @@
           onmouseover="this.style.boxShadow='0 8px 24px -2px rgba(5, 150, 105, 0.5)'; this.style.transform='translateY(-1px)';"
           onmouseout="this.style.boxShadow='0 6px 20px -3px rgba(5, 150, 105, 0.4)'; this.style.transform='translateY(0)';"
           onclick="closeModal('memberLimitModal')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
           </svg>
           <span>Upgrade to Add More Members</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.85;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.85;">
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </a>
@@ -10712,14 +10772,17 @@
         style="display: flex; justify-content: space-between; align-items: flex-start; padding: 22px 24px 16px; border-bottom: 1px solid #F1F5F9; background: #FFFFFF; border-top-left-radius: 24px; border-top-right-radius: 24px;">
         <div>
           <h3 class="modal-title" id="depositModalTitle"
-            style="font-size: 1.22rem; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.01em;">Add deposit
+            style="font-size: 1.22rem; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.01em;">Add
+            deposit
           </h3>
-          <p style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Instantly credits balance to member account</p>
+          <p style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Instantly credits balance to
+            member account</p>
         </div>
         <button type="button" class="btn-close" onclick="closeModal('depositModal')" title="Close"
           style="cursor: pointer; width: 32px; height: 32px; border-radius: 50%; border: none; background: #F1F5F9; color: #64748B; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; transition: all 0.2s;">✕</button>
       </div>
-      <div class="modal-body" style="padding: 20px 24px 24px; background: #FFFFFF; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;">
+      <div class="modal-body"
+        style="padding: 20px 24px 24px; background: #FFFFFF; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;">
         <form id="depositForm" onsubmit="event.preventDefault(); Messliner.finance.saveDeposit();">
           <!-- Member Select (Custom Bazar Dropdown) -->
           <div class="form-group mb-3" style="margin-bottom: 16px;">
@@ -10728,9 +10791,11 @@
               <button type="button" class="custom-dropdown-trigger bazar-select-box"
                 onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
                 <span id="depositUserValue"
-                  style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; font-weight: 500; color: #1E293B;">Select Member</span>
+                  style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; font-weight: 500; color: #1E293B;">Select
+                  Member</span>
                 <div class="bazar-dropdown-chevron-badge">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 12 15 18 9"></polyline>
                   </svg>
                 </div>
@@ -10747,7 +10812,8 @@
               <div class="bazar-currency-symbol">৳</div>
               <input type="text" inputmode="decimal" class="bazar-amount-input" id="depositAmountInput"
                 placeholder="1,500" autocomplete="off" onkeydown="Messliner.finance.filterNumberKey(event)"
-                oninput="Messliner.finance.sanitizeAmountInput(this); Messliner.finance.validateDepositForm();" required>
+                oninput="Messliner.finance.sanitizeAmountInput(this); Messliner.finance.validateDepositForm();"
+                required>
             </div>
           </div>
 
@@ -10779,14 +10845,17 @@
         style="display: flex; justify-content: space-between; align-items: flex-start; padding: 22px 24px 16px; border-bottom: 1px solid #F1F5F9; background: #FFFFFF; border-top-left-radius: 24px; border-top-right-radius: 24px;">
         <div>
           <h3 class="modal-title"
-            style="font-size: 1.22rem; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.01em;">Deduct balance
+            style="font-size: 1.22rem; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.01em;">Deduct
+            balance
           </h3>
-          <p style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Deducts amount directly from member's balance</p>
+          <p style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Deducts amount directly from
+            member's balance</p>
         </div>
         <button type="button" class="btn-close" onclick="closeModal('deductModal')" title="Close"
           style="cursor: pointer; width: 32px; height: 32px; border-radius: 50%; border: none; background: #F1F5F9; color: #64748B; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; transition: all 0.2s;">✕</button>
       </div>
-      <div class="modal-body" style="padding: 20px 24px 24px; background: #FFFFFF; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;">
+      <div class="modal-body"
+        style="padding: 20px 24px 24px; background: #FFFFFF; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;">
         <form id="deductForm" onsubmit="event.preventDefault(); Messliner.finance.saveDeduction();">
           <!-- Member Select (Custom Bazar Dropdown) -->
           <div class="form-group mb-3" style="margin-bottom: 16px;">
@@ -10795,9 +10864,11 @@
               <button type="button" class="custom-dropdown-trigger bazar-select-box"
                 onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
                 <span id="deductUserValue"
-                  style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; font-weight: 500; color: #1E293B;">Select Member</span>
+                  style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; font-weight: 500; color: #1E293B;">Select
+                  Member</span>
                 <div class="bazar-dropdown-chevron-badge">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 12 15 18 9"></polyline>
                   </svg>
                 </div>
@@ -10812,8 +10883,8 @@
             <label class="bazar-field-label">Deduction Amount</label>
             <div class="bazar-amount-input-group">
               <div class="bazar-currency-symbol">৳</div>
-              <input type="text" inputmode="decimal" class="bazar-amount-input" id="deductAmountInput"
-                placeholder="200" autocomplete="off" onkeydown="Messliner.finance.filterNumberKey(event)"
+              <input type="text" inputmode="decimal" class="bazar-amount-input" id="deductAmountInput" placeholder="200"
+                autocomplete="off" onkeydown="Messliner.finance.filterNumberKey(event)"
                 oninput="Messliner.finance.sanitizeAmountInput(this); Messliner.finance.validateDeductForm();" required>
             </div>
           </div>
@@ -10821,7 +10892,8 @@
           <!-- Reason (Ash Border) -->
           <div class="form-group mb-4" style="margin-bottom: 16px;">
             <label class="bazar-field-label">Reason / Penalty Note</label>
-            <input type="text" class="form-input" id="deductReasonInput" placeholder="e.g. Mess rule fine, late fee, extra charge"
+            <input type="text" class="form-input" id="deductReasonInput"
+              placeholder="e.g. Mess rule fine, late fee, extra charge"
               oninput="Messliner.finance.validateDeductForm();"
               style="width: 100%; height: 48px; border-radius: 14px; border: 1.5px solid #D1E7DD; background: #FFFFFF; padding: 0 14px; font-size: 0.94rem; font-weight: 500; color: #1E293B; outline: none; box-sizing: border-box; transition: all 0.2s ease;">
           </div>
@@ -10848,9 +10920,11 @@
         style="display: flex; justify-content: space-between; align-items: flex-start; padding: 22px 24px 16px; border-bottom: 1px solid #F1F5F9; background: #FFFFFF; border-top-left-radius: 24px; border-top-right-radius: 24px; flex-shrink: 0;">
         <div>
           <h3 class="modal-title"
-            style="font-size: 1.22rem; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.01em;">Other costing
+            style="font-size: 1.22rem; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.01em;">Other
+            costing
           </h3>
-          <p style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Equally splits utility/shared expense among selected members</p>
+          <p style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Equally splits
+            utility/shared expense among selected members</p>
         </div>
         <button type="button" class="btn-close" onclick="closeModal('otherCostingModal')" title="Close"
           style="cursor: pointer; width: 32px; height: 32px; border-radius: 50%; border: none; background: #F1F5F9; color: #64748B; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; transition: all 0.2s;">✕</button>
@@ -10865,7 +10939,8 @@
               <div class="bazar-currency-symbol">৳</div>
               <input type="text" inputmode="decimal" class="bazar-amount-input" id="otherCostingAmountInput"
                 placeholder="1,200" autocomplete="off" onkeydown="Messliner.finance.filterNumberKey(event)"
-                oninput="Messliner.finance.sanitizeAmountInput(this); Messliner.finance.updateOtherCostingSplit(); Messliner.finance.validateOtherCostingForm();" required>
+                oninput="Messliner.finance.sanitizeAmountInput(this); Messliner.finance.updateOtherCostingSplit(); Messliner.finance.validateOtherCostingForm();"
+                required>
             </div>
           </div>
 
@@ -10875,16 +10950,19 @@
             <input type="text" class="form-input" id="otherCostingReasonInput"
               placeholder="e.g. Gas cylinder, Wi-Fi, electricity bill"
               oninput="Messliner.finance.validateOtherCostingForm();"
-              style="width: 100%; height: 48px; border-radius: 14px; border: 1.5px solid #D1E7DD; background: #FFFFFF; padding: 0 14px; font-size: 0.94rem; font-weight: 500; color: #1E293B; outline: none; box-sizing: border-box; transition: all 0.2s ease;" required>
+              style="width: 100%; height: 48px; border-radius: 14px; border: 1.5px solid #D1E7DD; background: #FFFFFF; padding: 0 14px; font-size: 0.94rem; font-weight: 500; color: #1E293B; outline: none; box-sizing: border-box; transition: all 0.2s ease;"
+              required>
           </div>
 
           <!-- Member Checklist -->
           <div class="form-group mb-3" style="margin-bottom: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <label class="bazar-field-label" style="margin-bottom: 0;">Select Members</label>
-              <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: #059669; cursor: pointer; user-select: none;">
+              <label
+                style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: #059669; cursor: pointer; user-select: none;">
                 <input type="checkbox" id="otherCostingSelectAll"
-                  onchange="Messliner.finance.toggleSelectAllOtherCosting(this)" style="accent-color: #059669; cursor: pointer; width: 16px; height: 16px;">
+                  onchange="Messliner.finance.toggleSelectAllOtherCosting(this)"
+                  style="accent-color: #059669; cursor: pointer; width: 16px; height: 16px;">
                 <span>Select All</span>
               </label>
             </div>
@@ -11536,12 +11614,13 @@
           <h3 class="modal-title" id="bazarModalTitle"
             style="font-size: 1.22rem; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.01em;">Log bazar
           </h3>
-          <p id="bazarModalSubtitle" style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Rate recalculates
+          <p id="bazarModalSubtitle" style="font-size: 0.82rem; color: #64748B; margin: 3px 0 0; font-weight: 500;">Rate
+            recalculates
             automatically once saved</p>
         </div>
         <button type="button" class="btn-close"
-          onclick="Messliner.finance.closeBazarCalendar(); Messliner.finance.resetBazarModal?.(); closeModal('bazarModal')" title="Close"
-          style="cursor: pointer;">✕</button>
+          onclick="Messliner.finance.closeBazarCalendar(); Messliner.finance.resetBazarModal?.(); closeModal('bazarModal')"
+          title="Close" style="cursor: pointer;">✕</button>
       </div>
       <div class="modal-body"
         style="padding: 20px 24px 24px; background: #FFFFFF; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;">
@@ -11800,7 +11879,8 @@
   <div id="smsToggleConfirmModal" class="modal-overlay zero-meal-confirm-overlay"
     onclick="Messliner.smsAlert.cancelToggleConfirm(event)">
     <div class="zero-meal-card sms-toggle-modal-card" onclick="event.stopPropagation()">
-      <button type="button" class="zero-modal-close-btn" onclick="Messliner.smsAlert.cancelToggleConfirm()" title="Close">
+      <button type="button" class="zero-modal-close-btn" onclick="Messliner.smsAlert.cancelToggleConfirm()"
+        title="Close">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
           stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="6" x2="6" y2="18" />
@@ -11832,7 +11912,8 @@
         <div class="zero-info-sep"></div>
         <div class="zero-info-item">
           <span class="zero-info-label">Status</span>
-          <span class="zero-info-value" id="smsToggleModalStatusTag" style="color: #059669; font-weight: 700;">OFF → ON</span>
+          <span class="zero-info-value" id="smsToggleModalStatusTag" style="color: #059669; font-weight: 700;">OFF →
+            ON</span>
         </div>
       </div>
 
@@ -12937,6 +13018,70 @@
   </div>
 
 
+  <!-- ============================================================ -->
+  <!-- ADMIN CONFIGURE BKASH AUTO PAY MODAL                         -->
+  <!-- ============================================================ -->
+  <div id="ledgerAutoPaymentModal" class="modal-overlay"
+    onclick="if(event.target===this) Messliner.ledger.closeAutoPaymentModal()">
+    <div class="modal payment-methods-dialog" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Configure bKash Auto Pay</h3>
+        <button type="button" class="btn-close" onclick="Messliner.ledger.closeAutoPaymentModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <form id="ledgerAutoPaymentForm" onsubmit="event.preventDefault(); Messliner.ledger.saveAutoPaymentSettings();">
+          <!-- Gateway Highlight Card -->
+          <div style="background: linear-gradient(135deg, #fdf2f8 0%, #ffffff 100%); border: 1px solid #fce7f3; border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: #E2136E; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+              ⚡
+            </div>
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 800; color: #9d174d;">Official bKash Tokenized Checkout</div>
+              <div style="font-size: 0.72rem; color: #64748B;">Members pay securely via PIN &amp; OTP with instant auto-approval. No personal number required.</div>
+            </div>
+          </div>
+
+          <!-- Charge % -->
+          <div class="form-group">
+            <label class="form-label" for="autoPaymentChargePercent" style="font-size:0.8rem; font-weight:700;">Charge % (0 = Free Gateway Fee)</label>
+            <div class="input-addon-group">
+              <input type="number" id="autoPaymentChargePercent" class="form-input" placeholder="0" min="0" max="100" step="0.1" value="0" style="padding-right:32px;" />
+              <span class="input-addon-suffix">%</span>
+            </div>
+            <div style="font-size: 0.72rem; color: #94A3B8; margin-top: 3px;">Extra percentage fee paid by the member during checkout.</div>
+          </div>
+
+          <!-- Description (Optional) -->
+          <div class="form-group">
+            <label class="form-label" for="autoPaymentDescription" style="font-size:0.8rem; font-weight:700;">Description (Optional)</label>
+            <input type="text" id="autoPaymentDescription" class="form-input" placeholder="e.g. Instant balance credit" />
+          </div>
+
+          <!-- Active Switch Toggle -->
+          <div class="toggle-card-row">
+            <div>
+              <div style="font-size:0.88rem; font-weight:800; color:#0F172A;">Active Status</div>
+              <div style="font-size:0.75rem; color:#64748B;">Show bKash Auto Pay in members' Add Money and Bills panel</div>
+            </div>
+            <label class="toggle-switch" style="margin:0;">
+              <input type="checkbox" id="autoPaymentActiveToggle" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Actions -->
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:16px; border-top:1px solid #F1F5F9;">
+            <button type="button" class="btn btn-secondary" style="border-radius:10px; font-weight:700;" onclick="Messliner.ledger.closeAutoPaymentModal()">Cancel</button>
+            <button type="submit" id="btnSaveAutoPaymentSubmit" class="btn btn-primary" style="border-radius:10px; font-weight:700; background:#E2136E; border-color:#E2136E;">
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- ======== SIGN OUT CONFIRMATION MODAL ======== -->
   <style>
     #signOutModal {
@@ -12944,26 +13089,27 @@
       position: fixed;
       inset: 0;
       z-index: 99999;
-      background: rgba(10, 22, 15, 0.55);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       align-items: flex-end;
       justify-content: center;
     }
 
     #signOutModal.active {
       display: flex;
-      animation: soOverlayIn 0.28s ease forwards;
+      animation: soOverlayIn 0.25s ease forwards;
     }
 
     #signOutSheet {
       width: 100%;
       max-width: 480px;
+      background: #FFFFFF;
       border-radius: 24px 24px 0 0;
       overflow: hidden;
-      box-shadow: 0 -8px 48px rgba(0, 0, 0, 0.22);
+      box-shadow: 0 -8px 40px rgba(15, 23, 42, 0.16);
       transform: translateY(100%);
-      animation: soSheetUp 0.36s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+      animation: soSheetUp 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
     }
 
     @media (min-width: 600px) {
@@ -12974,36 +13120,27 @@
       #signOutSheet {
         max-width: 380px;
         border-radius: 22px;
-        animation: soCardIn 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 20px 48px -10px rgba(15, 23, 42, 0.2);
+        animation: soCardIn 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
       }
     }
 
     @keyframes soOverlayIn {
-      from {
-        opacity: 0;
-      }
-
-      to {
-        opacity: 1;
-      }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     @keyframes soSheetUp {
-      from {
-        transform: translateY(100%);
-      }
-
-      to {
-        transform: translateY(0);
-      }
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
     }
 
     @keyframes soCardIn {
       from {
         opacity: 0;
-        transform: translateY(28px) scale(0.96);
+        transform: translateY(20px) scale(0.97);
       }
-
       to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -13011,88 +13148,101 @@
     }
 
     #signOutModal.so-closing {
-      animation: soOverlayOut 0.22s ease forwards;
+      animation: soOverlayOut 0.2s ease forwards;
     }
 
     #signOutModal.so-closing #signOutSheet {
-      animation: soSheetDown 0.22s cubic-bezier(0.4, 0, 1, 1) forwards;
+      animation: soSheetDown 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
     }
 
     @media (min-width: 600px) {
       #signOutModal.so-closing #signOutSheet {
-        animation: soCardOut 0.2s ease forwards;
+        animation: soCardOut 0.18s ease forwards;
       }
     }
 
     @keyframes soOverlayOut {
-      to {
-        opacity: 0;
-      }
+      to { opacity: 0; }
     }
 
     @keyframes soSheetDown {
-      to {
-        transform: translateY(100%);
-      }
+      to { transform: translateY(100%); }
     }
 
     @keyframes soCardOut {
       to {
         opacity: 0;
-        transform: translateY(16px) scale(0.96);
+        transform: translateY(12px) scale(0.97);
       }
     }
 
     .so-handle {
-      width: 40px;
+      width: 36px;
       height: 4px;
       border-radius: 99px;
-      background: rgba(255, 255, 255, 0.25);
-      margin: 0 auto 18px;
+      background: #CBD5E1;
+      margin: 10px auto 0;
     }
 
-    .so-icon-ring {
-      width: 68px;
-      height: 68px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.10);
-      display: flex;
+    @media (min-width: 600px) {
+      .so-handle {
+        display: none;
+      }
+    }
+
+    .so-body {
+      padding: 24px 22px 24px;
+      text-align: center;
+    }
+
+    @media (min-width: 600px) {
+      .so-body {
+        padding: 28px 24px 26px;
+      }
+    }
+
+    .so-icon-box {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: #FEF2F2;
+      border: 1px solid #FEE2E2;
+      color: #EF4444;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 16px;
-      position: relative;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);
     }
 
-    .so-icon-ring::before {
-      content: '';
-      position: absolute;
-      inset: -6px;
-      border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.12);
-      animation: soRingPulse 2.4s ease-in-out infinite;
+    .so-title {
+      color: #0F172A;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: 0 0 6px;
+      letter-spacing: -0.02em;
     }
 
-    @keyframes soRingPulse {
+    .so-desc {
+      color: #64748B;
+      font-size: 0.86rem;
+      margin: 0 0 22px;
+      line-height: 1.5;
+    }
 
-      0%,
-      100% {
-        opacity: 0.4;
-        transform: scale(1);
-      }
-
-      50% {
-        opacity: 1;
-        transform: scale(1.08);
-      }
+    .so-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
     }
 
     .so-btn-logout {
       width: 100%;
-      padding: 14px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #DC2626, #991B1B);
-      color: #fff;
-      font-weight: 700;
+      padding: 13px 18px;
+      border-radius: 13px;
+      background: #EF4444;
+      color: #FFFFFF;
+      font-weight: 600;
       font-size: 0.92rem;
       border: none;
       cursor: pointer;
@@ -13101,14 +13251,14 @@
       justify-content: center;
       gap: 8px;
       letter-spacing: 0.01em;
-      box-shadow: 0 6px 20px rgba(185, 28, 28, 0.35);
-      transition: transform 0.18s, box-shadow 0.18s, background 0.18s;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.22);
+      transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
     }
 
     .so-btn-logout:hover {
-      background: linear-gradient(135deg, #B91C1C, #7F1D1D);
-      transform: translateY(-2px);
-      box-shadow: 0 10px 28px rgba(185, 28, 28, 0.45);
+      background: #DC2626;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(239, 68, 68, 0.32);
     }
 
     .so-btn-logout:active {
@@ -13117,54 +13267,53 @@
 
     .so-btn-cancel {
       width: 100%;
-      padding: 14px;
-      border-radius: 14px;
-      background: #F1F5F9;
+      padding: 13px 18px;
+      border-radius: 13px;
+      background: #F8FAFC;
       color: #475569;
       font-weight: 600;
       font-size: 0.92rem;
-      border: none;
+      border: 1px solid #E2E8F0;
       cursor: pointer;
-      transition: background 0.15s, color 0.15s;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
 
     .so-btn-cancel:hover {
-      background: #E2E8F0;
-      color: #334155;
+      background: #F1F5F9;
+      color: #0F172A;
+      border-color: #CBD5E1;
     }
   </style>
 
   <div id="signOutModal" onclick="if(event.target===this) closeSignOutModal()">
     <div id="signOutSheet">
-      <div
-        style="background: linear-gradient(160deg, #0D2818 0%, #064E3B 60%, #065F46 100%); padding: 28px 28px 24px; text-align: center;">
-        <div class="so-handle"></div>
-        <div class="so-icon-ring">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"
+      <div class="so-handle"></div>
+      <div class="so-body">
+        <div class="so-icon-box">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
             stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
             <polyline points="16 17 21 12 16 7" />
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
         </div>
-        <h3 style="color:#fff; font-size:1.2rem; font-weight:800; margin:0 0 7px; letter-spacing:-0.02em;">Sign out?
-        </h3>
-        <p style="color:rgba(255,255,255,0.6); font-size:0.83rem; margin:0; line-height:1.55;">
-          You'll be taken back to the login screen.<br>Any unsaved changes will be lost.
+        <h3 class="so-title">Sign Out?</h3>
+        <p class="so-desc">
+          Are you sure you want to sign out? You will need to log back in to access your dashboard.
         </p>
-      </div>
 
-      <div style="background:#fff; padding:20px 20px 28px; display:flex; flex-direction:column; gap:10px;">
-        <button class="so-btn-logout" onclick="Messliner.auth.logout()">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          Yes, Sign Me Out
-        </button>
-        <button class="so-btn-cancel" onclick="closeSignOutModal()">Stay Logged In</button>
+        <div class="so-actions">
+          <button class="so-btn-logout" onclick="Messliner.auth.logout()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Yes, Sign Me Out
+          </button>
+          <button class="so-btn-cancel" onclick="closeSignOutModal()">Stay Logged In</button>
+        </div>
       </div>
     </div>
   </div>
@@ -14297,7 +14446,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/shared/utils.js?v=2.1"></script>
-  <script src="js/shared/payment.js"></script>
+  <script src="js/shared/payment.js?v=3.7"></script>
   <script src="js/shared/subscription.js"></script>
   <script src="js/shared/notifications.js?v=3.2"></script>
   <script src="js/shared/charts.js"></script>
@@ -14306,11 +14455,11 @@
   <script src="js/admin/users.js"></script>
   <script src="js/admin/meals.js?v=3.1"></script>
   <script src="js/admin/finance.js?v=2.2"></script>
-  <script src="js/admin/ledger.js"></script>
+  <script src="js/admin/ledger.js?v=3.7"></script>
   <script src="js/admin/settings.js"></script>
   <script src="js/user/dashboard.js?v=2.1"></script>
   <script src="js/user/history.js?v=2.6"></script>
-  <script src="js/user/bills.js?v=5.5"></script>
+  <script src="js/user/bills.js?v=6.2"></script>
   <script src="js/user/mealchart.js?v=2.2"></script>
   <script src="js/user/bazarHistory.js"></script>
   <script src="js/user/bazar.js?v=2.2"></script>

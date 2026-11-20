@@ -19,6 +19,11 @@ const Router = {
    */
   getPageFromUrl() {
     try {
+      // Auto-route bKash member payment callback directly to user-bills tab
+      if (window.location.search && (window.location.search.includes('bkashPayment=auto') || (window.location.search.includes('paymentID=') && localStorage.getItem('ml_pending_member_payment')))) {
+        return 'user-bills';
+      }
+
       const pathname = window.location.pathname || '';
       // Support clean URLs: /dashboard/history, /dashboard/meals, etc.
       const match = pathname.match(/^\/dashboard(?:\.html)?(?:\/([a-zA-Z0-9_-]+))?/i);
@@ -30,14 +35,15 @@ const Router = {
       if (rawHash) {
         return rawHash;
       }
-    } catch (_) {}
+    } catch (_) { }
     return null;
   },
 
   /**
    * Update browser URL with clean path structure without full reload
+   * Defaults to replaceState = true to act like a native app (zero history buildup)
    */
-  updateUrl(page, replace = false) {
+  updateUrl(page, replace = true) {
     try {
       const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
 
@@ -60,7 +66,7 @@ const Router = {
         }
       } else {
         // file:// or localhost / Live Server fallback (keeps dashboard.html in URL so reload F5 works)
-        const hash = (!page || page === 'dashboard' || page === 'overview') ? '' : '#' + page;
+        const hash = (!page || page === 'dashboard') ? '' : '#' + page;
         const targetUrl = window.location.pathname + searchStr + hash;
         if (window.location.pathname + window.location.search + window.location.hash !== targetUrl) {
           if (replace) {
@@ -71,7 +77,7 @@ const Router = {
         }
       }
     } catch (_) {
-      try { location.hash = page; } catch (_) {}
+      try { window.location.replace('#' + page); } catch (_) {}
     }
   },
 
@@ -130,7 +136,7 @@ const Router = {
           }
         }
       }
-    } catch (_) {}
+    } catch (_) { }
     return this.role || null;
   },
 
@@ -171,24 +177,28 @@ const Router = {
       return;
     }
 
+    // If on Home (dashboard), Home is the root end of the app — never navigate back to other tabs!
+    if (this.currentPage === 'dashboard') {
+      return;
+    }
+
+    // 4. Main bottom navigation tabs (dining/overview, bills/user-bills, profile) directly return to home (dashboard)
+    const mainBottomTabs = ['overview', 'user-bills', 'profile', 'meals', 'finance', 'mymeal', 'ledger'];
+    if (mainBottomTabs.includes(this.currentPage)) {
+      this.navigate('dashboard', true);
+      return;
+    }
+
     if (this.currentPage === 'export-slip') {
-      this.navigate(this.previousPage === 'overview' ? 'overview' : 'dashboard');
+      this.navigate('overview', true);
     } else if (['mealhistory', 'bazarroster', 'tasks', 'notices'].includes(this.currentPage)) {
-      this.navigate(this.getRole() === 'admin' ? 'mymeal' : 'dashboard');
+      this.navigate(this.getRole() === 'admin' ? 'mymeal' : 'dashboard', true);
     } else if (['bazar', 'mealchart', 'summary', 'history', 'fridaymeal', 'prayer'].includes(this.currentPage)) {
-      if (this.previousPage === 'overview' || this.getRole() !== 'admin') {
-        this.navigate('overview');
-      } else if (this.previousPage && this.previousPage !== this.currentPage && this.previousPage !== 'notifications') {
-        this.navigate(this.previousPage);
-      } else {
-        this.navigate('dashboard');
-      }
+      this.navigate('overview', true);
     } else if (this.currentPage === 'meals') {
-      this.navigate(this.previousPage === 'overview' ? 'overview' : 'dashboard');
-    } else if (this.previousPage && this.previousPage !== this.currentPage && this.previousPage !== 'notifications') {
-      this.navigate(this.previousPage);
+      this.navigate('overview', true);
     } else {
-      this.navigate('dashboard');
+      this.navigate('dashboard', true);
     }
   },
 
@@ -204,7 +214,7 @@ const Router = {
       if (this.navigatedFromDesktopPopover && this.popoverOriginPage && page === this.popoverOriginPage) {
         this.navigatedFromDesktopPopover = false;
         this.popoverOriginPage = null;
-        this._showPage(page);
+        this._showPage(page, true);
         setTimeout(() => {
           if (window.innerWidth > 768 && window.Notifications && typeof Notifications.openDesktopPopover === 'function') {
             Notifications.openDesktopPopover();
@@ -212,7 +222,18 @@ const Router = {
         }, 120);
         return;
       }
-      this._showPage(page);
+
+      // If user was already on home (dashboard), do not pop back into other tabs
+      if (this.currentPage === 'dashboard') {
+        this.updateUrl('dashboard', true);
+        return;
+      }
+
+      // Smoothly navigate back to the popped page (e.g. Home dashboard)
+      this._isBackNav = true;
+      this.previousPage = this.currentPage;
+      this.updateUrl(page, true);
+      this._showPage(page, true);
     });
 
     // Fallback listener for hash changes
@@ -221,7 +242,7 @@ const Router = {
       if (this.navigatedFromDesktopPopover && this.popoverOriginPage && page === this.popoverOriginPage) {
         this.navigatedFromDesktopPopover = false;
         this.popoverOriginPage = null;
-        this._showPage(page);
+        this._showPage(page, true);
         setTimeout(() => {
           if (window.innerWidth > 768 && window.Notifications && typeof Notifications.openDesktopPopover === 'function') {
             Notifications.openDesktopPopover();
@@ -229,15 +250,56 @@ const Router = {
         }, 120);
         return;
       }
-      if (page && page !== this.currentPage) {
-        this.navigate(page);
+      if (this.currentPage === 'dashboard' && page !== 'dashboard') {
+        this.updateUrl('dashboard', true);
+        return;
+      }
+      if (page !== this.currentPage) {
+        this._isBackNav = true;
+        this.previousPage = this.currentPage;
+        this.updateUrl(page, true);
+        this._showPage(page, true);
       }
     });
+
+    // Support physical Backspace key navigation on desktop (when not editing an input)
+    if (!this._backspaceHandlerAttached) {
+      this._backspaceHandlerAttached = true;
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace') {
+          const activeEl = document.activeElement;
+          const isEditing = activeEl && (
+            activeEl.tagName === 'INPUT' ||
+            activeEl.tagName === 'TEXTAREA' ||
+            activeEl.isContentEditable ||
+            (activeEl.getAttribute && activeEl.getAttribute('contenteditable') === 'true') ||
+            activeEl.classList?.contains('form-input')
+          );
+          if (!isEditing) {
+            e.preventDefault();
+            // If already on Home (dashboard), do not navigate back into other tabs
+            if (this.currentPage === 'dashboard') {
+              return;
+            }
+            this.handleBack();
+          }
+        }
+      });
+    }
 
     // Navigate to initial page from URL path, hash or session
     this._initialNav = true;
     const initialPage = this.getPageFromUrl() || (sessionStorage.getItem('ml_current_page') || '').toLowerCase() || 'dashboard';
-    this.updateUrl(initialPage, true);
+    
+    // When opening directly into a subpage/tab (e.g. #overview on reload):
+    // Put dashboard as the root history entry behind it so browser's ← button is active and returns to Home
+    if (initialPage && initialPage !== 'dashboard') {
+      this.updateUrl('dashboard', true);
+      this.updateUrl(initialPage, false);
+    } else {
+      this.updateUrl('dashboard', true);
+    }
+    
     this._showPage(initialPage);
     this._initialNav = false;
 
@@ -268,7 +330,7 @@ const Router = {
   /**
    * Navigate to a page
    */
-  navigate(page, replace = false) {
+  navigate(page, replace = null) {
     // If already on this page, smoothly scroll to top without re-rendering or interrupting transitions
     if (this.currentPage === page) {
       // Prevent synthetic click from scrolling to top immediately after a tab navigation
@@ -300,6 +362,18 @@ const Router = {
 
     if (this.currentPage && this.currentPage !== page && this.currentPage !== 'notifications') {
       this.previousPage = this.currentPage;
+    }
+
+    // Option 1 Navigation History Logic:
+    // 1. When moving from Home (dashboard) to any page: PUSH (so browser ← button turns Active/Purple)
+    // 2. When moving between tabs (Dining -> Bills -> Profile): REPLACE (so history stack stays at 1 step above Home)
+    // 3. When moving back to Home: REPLACE
+    if (replace === null || replace === undefined) {
+      if ((!this.currentPage || this.currentPage === 'dashboard') && page !== 'dashboard') {
+        replace = false; // Push state! Browser ← turns Active / Purple
+      } else {
+        replace = true; // Replace state! Keeps history stack flat at exactly 1 step above Home
+      }
     }
 
     this.updateUrl(page, replace);
@@ -372,17 +446,17 @@ const Router = {
         section.id = 'page-pro';
         section.className = 'page-section';
         section.style.cssText = 'max-width: 900px; margin: 0 auto; padding: 16px 14px 40px;';
-        
+
         // Compute live subscription and member count details
         let currentMemberCount = 0;
         try {
           const userList = (typeof UsersModule !== 'undefined' && UsersModule.users && Object.keys(UsersModule.users).length > 0)
             ? UsersModule.users
             : ((window.UsersModule && UsersModule.users)
-            || (window.OverviewModule && OverviewModule.cachedData && OverviewModule.cachedData.users)
-            || (window.Messliner && Messliner.state && Messliner.state.users)
-            || (window.Messliner && Messliner.diningData && Messliner.diningData.users)
-            || {});
+              || (window.OverviewModule && OverviewModule.cachedData && OverviewModule.cachedData.users)
+              || (window.Messliner && Messliner.state && Messliner.state.users)
+              || (window.Messliner && Messliner.diningData && Messliner.diningData.users)
+              || {});
           currentMemberCount = Object.keys(userList || {}).length;
         } catch (_) { }
         const subInfo = (window.Dashboard && window.Dashboard.currentSubInfo)
@@ -512,7 +586,7 @@ const Router = {
       targetLoaderClass = 'ml-loader-mealchart';
     } else if (['bazar', 'bazarhistory', 'summary'].includes(page)) {
       targetLoaderClass = 'ml-loader-bazar';
-    } else if (['overview', 'dining', 'history', 'mealhistory', 'bazarroster', 'tasks', 'notices', 'meals', 'mymeal', 'export-slip'].includes(page)) {
+    } else if (['overview', 'dining', 'history', 'mealhistory', 'bazarroster', 'tasks', 'notices', 'meals', 'mymeal', 'export-slip', 'prayer'].includes(page)) {
       targetLoaderClass = 'ml-loader-dining';
     } else if (['ledger', 'user-bills', 'bills', 'finance'].includes(page)) {
       targetLoaderClass = 'ml-loader-ledger';
@@ -587,7 +661,7 @@ const Router = {
                 if (titleEl) titleEl.textContent = `${liveCount} out of ${maxLimit} Members Limit`;
                 if (descEl) descEl.textContent = `${liveCount} out of ${maxLimit} member limit used on ${planLabel}. Click to manage members.`;
               }
-            }).catch(() => {});
+            }).catch(() => { });
           }
         } catch (_) { }
       }
@@ -755,7 +829,7 @@ const Router = {
     let activeNavPage = page;
     const isMobileNav = window.innerWidth <= 768;
     const isAdminRole = this.getRole() === 'admin';
-    if (page === 'mealchart' || page === 'bazar' || page === 'summary' || page === 'export-slip' || page === 'fridaymeal') {
+    if (['mealchart', 'bazar', 'summary', 'export-slip', 'fridaymeal', 'prayer'].includes(page)) {
       activeNavPage = (isAdminRole && page === 'bazar') ? (isMobileNav ? 'more-sheet' : 'bazar') : 'overview';
     } else if (page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices') {
       activeNavPage = (isAdminRole ? (['tasks', 'notices'].includes(page) && isMobileNav ? 'more-sheet' : 'mymeal') : 'dashboard');
@@ -1005,7 +1079,7 @@ const Router = {
             try {
               e.preventDefault();
               e.stopPropagation();
-            } catch (_) {}
+            } catch (_) { }
           }
           const now = Date.now();
           if (now - lastTrigger < 350) return; // Debounce clicks

@@ -88,12 +88,14 @@
   }
 
   // Emergency recurring safety watchdog:
-  // Starts checking immediately; after 2.4s, unconditionally dismisses any lingering preloader!
+  // On login/landing pages, dismisses after 2.4s. On dashboard, lets app.js manage shimmer until data is ready,
+  // keeping a 10s extreme failsafe only if the dashboard crashes completely.
   let _watchdogTicks = 0;
   const _loaderWatchdog = setInterval(function () {
     _watchdogTicks++;
     const loader = document.getElementById('pageLoader');
-    if (_watchdogTicks >= 6) { // ~2.4 seconds
+    const maxTicks = isDashboardPage ? 25 : 6; // 10s on dashboard, 2.4s on other pages
+    if (_watchdogTicks >= maxTicks) {
       if (loader && loader.style.display !== 'none') {
         emergencyDismissLoader();
       }
@@ -103,10 +105,14 @@
 
   // If any unhandled script error or promise rejection occurs, dismiss loader safely
   window.addEventListener('error', function () {
-    setTimeout(emergencyDismissLoader, 600);
+    if (!isDashboardPage || window.__ML_DASHBOARD_READY) {
+      setTimeout(emergencyDismissLoader, 600);
+    }
   });
   window.addEventListener('unhandledrejection', function () {
-    setTimeout(emergencyDismissLoader, 600);
+    if (!isDashboardPage || window.__ML_DASHBOARD_READY) {
+      setTimeout(emergencyDismissLoader, 600);
+    }
   });
 
   // ========================================================

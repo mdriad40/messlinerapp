@@ -2729,20 +2729,40 @@ body:has(#page-pro.active) #headerSubtitle {
     box-sizing: border-box !important;
   }
 
-  body.role-admin .overview-mobile-stats .mymeal-user-topbar,
-  body.role-admin .overview-mobile-stats .overview-user-topbar {
+  /* On Dining Tab (#page-overview): ALWAYS show Dining icon + title, NEVER avatar/pro/notif */
+  #page-overview .overview-mobile-stats .overview-user-topbar,
+  #page-overview .overview-mobile-stats .mymeal-user-topbar {
+    display: none !important;
+  }
+  #page-overview .overview-mobile-stats .overview-hero-top-title {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+    padding: 2px 2px 4px 2px !important;
+  }
+
+  /* On Admin Dashboard Home (#managerOverviewSection / #page-dashboard): Show Admin Avatar Topbar, HIDE Dining icon + title */
+  #managerOverviewSection .overview-mobile-stats .mymeal-user-topbar,
+  #managerOverviewSection .overview-mobile-stats .overview-user-topbar,
+  body.role-admin #page-dashboard .overview-mobile-stats .mymeal-user-topbar,
+  body.role-admin #page-dashboard .overview-mobile-stats .overview-user-topbar {
     display: flex !important;
     margin-bottom: 14px !important;
     padding: 2px 0 !important;
   }
+  #managerOverviewSection .overview-mobile-stats .overview-hero-top-title,
+  body.role-admin #page-dashboard .overview-mobile-stats .overview-hero-top-title {
+    display: none !important;
+  }
 
+  /* Fallback for general non-admin view */
   body:not(.role-admin) .overview-mobile-stats .mymeal-user-topbar,
   body:not(.role-admin) .overview-mobile-stats .overview-user-topbar {
     display: none !important;
   }
-
-  body.role-admin .overview-mobile-stats .overview-hero-top-title {
-    display: none !important;
+  body:not(.role-admin) .overview-mobile-stats .overview-hero-top-title {
+    display: flex !important;
   }
 
   #page-mymeal .mymeal-user-topbar,

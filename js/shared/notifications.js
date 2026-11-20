@@ -387,7 +387,7 @@ const Notifications = {
       if (!el) return;
       if (unreadCount > 0) {
         el.textContent = unreadCount > 9 ? '9+' : String(unreadCount);
-        el.style.setProperty('display', 'flex', 'important');
+        el.style.setProperty('display', 'inline-flex', 'important');
         el.classList.remove('hidden');
       } else {
         el.textContent = '';
@@ -991,5 +991,10 @@ const Notifications = {
     }
   }
 };
+
+// Globally expose Notifications module to window
+if (typeof window !== 'undefined') {
+  window.Notifications = Notifications;
+}
 
 console.log('[Messliner] Notifications module loaded');

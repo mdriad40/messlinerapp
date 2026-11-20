@@ -36,13 +36,18 @@ const MesslinerPayment = {
     }
 
     const type = options.type || 'sms_recharge';
-    const customerPhone = options.phone || options.customerPhone || '01700000000';
+    const customerPhone = (options.phone && options.phone !== '01700000000') ? options.phone : (options.customerPhone && options.customerPhone !== '01700000000' ? options.customerPhone : '');
     const diningId = options.diningId || (typeof Messliner !== 'undefined' ? Messliner.state?.diningId : '') || localStorage.getItem('currentDiningId') || '';
 
     // Choose appropriate callback page
     let callbackURL = options.callbackUrl;
     if (!callbackURL) {
-      const page = type === 'pro_preorder' ? 'preorder-callback.html' : 'callback.html';
+      let page = 'callback.html';
+      if (type === 'pro_preorder') {
+        page = 'preorder-callback.html';
+      } else if (type === 'member_deposit' || type === 'bill_payment') {
+        page = 'dashboard.html?bkashPayment=auto';
+      }
       try {
         callbackURL = new URL(page, window.location.href).href;
       } catch (_) {
@@ -63,6 +68,9 @@ const MesslinerPayment = {
 
     if (type === 'pro_preorder') {
       localStorage.setItem('ml_pending_pro_preorder', JSON.stringify({ ...pendingPayload, ...options.metadata }));
+    } else if (type === 'member_deposit' || type === 'bill_payment') {
+      localStorage.setItem('ml_pending_member_payment', JSON.stringify(pendingPayload));
+      localStorage.setItem('ml_pending_bkash_recharge', JSON.stringify(pendingPayload));
     } else {
       localStorage.setItem('ml_pending_bkash_recharge', JSON.stringify(pendingPayload));
     }
@@ -384,6 +392,185 @@ const MesslinerPayment = {
 
       } catch (dbErr) {
         console.error('[MesslinerPayment] Subscription record error:', dbErr);
+      }
+    } else if (type === 'member_deposit' && targetAmount > 0) {
+      try {
+        const userId = metadata?.userId || (typeof Messliner !== 'undefined' ? Messliner.state?.userId : null);
+        const userName = metadata?.userName || customerPhone || 'Member';
+        const note = metadata?.note || `bKash Auto Deposit (TrxID: ${verifiedTrxID})`;
+        const currentMonth = metadata?.month || (typeof Utils !== 'undefined' && Utils.currentMonth ? Utils.currentMonth() : new Date().toISOString().slice(0, 7));
+        const todayStr = (typeof Utils !== 'undefined' && Utils.today ? Utils.today() : new Date().toISOString().slice(0, 10));
+
+        if (diningId && userId) {
+          // 1. Fetch live user totalDeposit
+          let currentDeposit = 0;
+          try {
+            const uSnap = await db.ref(`dinings/${diningId}/users/${userId}`).once('value');
+            const uVal = uSnap.val() || {};
+            currentDeposit = parseFloat(uVal.totalDeposit) || 0;
+          } catch (_) { }
+
+          const newTotalDeposit = currentDeposit + targetAmount;
+          const depKey = db.ref(`dinings/${diningId}/deposits`).push().key;
+          const reqKey = db.ref(`dinings/${diningId}/paymentRequests`).push().key;
+
+          const updates = {};
+          // Update user totalDeposit
+          updates[`dinings/${diningId}/users/${userId}/totalDeposit`] = newTotalDeposit;
+
+          // Push deposit record into dinings/deposits
+          updates[`dinings/${diningId}/deposits/${depKey}`] = {
+            userId: userId,
+            userName: userName,
+            amount: targetAmount,
+            type: 'deposit',
+            method: 'bkash_auto',
+            trxID: verifiedTrxID,
+            paymentID: cleanPaymentId,
+            note: note,
+            date: todayStr,
+            month: currentMonth,
+            isAutoPayment: true,
+            timestamp: firebase.database.ServerValue.TIMESTAMP || Date.now()
+          };
+
+          // Record approved payment request for user's history and admin ledger
+          updates[`dinings/${diningId}/paymentRequests/${reqKey}`] = {
+            userId: userId,
+            userName: userName,
+            amount: targetAmount,
+            fee: 0,
+            totalPayable: targetAmount,
+            method: 'bkash_auto',
+            methodName: 'bKash Auto',
+            trxId: verifiedTrxID,
+            paymentID: cleanPaymentId,
+            note: note,
+            status: 'approved',
+            isAutoPayment: true,
+            month: currentMonth,
+            createdAt: firebase.database.ServerValue.TIMESTAMP || Date.now(),
+            approvedAt: firebase.database.ServerValue.TIMESTAMP || Date.now(),
+            approvedBy: 'bKash_Gateway'
+          };
+
+          // Mark payment processed in anti-replay ledger
+          updates[`processedPayments/${cleanPaymentId}`] = {
+            paymentID: cleanPaymentId,
+            trxID: verifiedTrxID,
+            amount: targetAmount,
+            type: 'member_deposit',
+            diningId: diningId,
+            userId: userId,
+            status: 'completed',
+            processedAt: Date.now()
+          };
+
+          await db.ref().update(updates);
+
+          // In-App Notification
+          try {
+            if (typeof Notifications !== 'undefined' && Notifications.create) {
+              await Notifications.create(
+                diningId,
+                'Auto Deposit Credited',
+                `৳${targetAmount} deposited via bKash Instant (Trx: ${verifiedTrxID}).`,
+                userId,
+                'deposit'
+              );
+            }
+          } catch (_) { }
+
+          updatedBalance = newTotalDeposit;
+        }
+      } catch (depErr) {
+        console.error('[MesslinerPayment] Member deposit credit error:', depErr);
+      }
+    } else if (type === 'bill_payment' && targetAmount > 0) {
+      try {
+        const userId = metadata?.userId || (typeof Messliner !== 'undefined' ? Messliner.state?.userId : null);
+        const userName = metadata?.userName || customerPhone || 'Member';
+        const billId = metadata?.billId;
+        const billTitle = metadata?.billTitle || 'Shared Bill';
+        const currentMonth = metadata?.month || (typeof Utils !== 'undefined' && Utils.currentMonth ? Utils.currentMonth() : new Date().toISOString().slice(0, 7));
+
+        if (diningId && userId && billId) {
+          const reqKey = db.ref(`dinings/${diningId}/paymentRequests`).push().key;
+          const updates = {};
+
+          // Mark member paid in bill
+          updates[`dinings/${diningId}/bills/${billId}/members/${userId}/status`] = 'collected';
+          updates[`dinings/${diningId}/bills/${billId}/members/${userId}/collectedAt`] = Date.now();
+          updates[`dinings/${diningId}/bills/${billId}/members/${userId}/paymentMethod`] = 'bkash_auto';
+          updates[`dinings/${diningId}/bills/${billId}/members/${userId}/trxId`] = verifiedTrxID;
+          updates[`dinings/${diningId}/bills/${billId}/members/${userId}/paymentRequestId`] = reqKey;
+
+          // Record approved bill payment request
+          updates[`dinings/${diningId}/paymentRequests/${reqKey}`] = {
+            type: 'bill_payment',
+            billId: billId,
+            billTitle: billTitle,
+            userId: userId,
+            userName: userName,
+            amount: targetAmount,
+            fee: 0,
+            totalPayable: targetAmount,
+            method: 'bkash_auto',
+            methodName: 'bKash Auto',
+            trxId: verifiedTrxID,
+            paymentID: cleanPaymentId,
+            status: 'approved',
+            isAutoPayment: true,
+            month: currentMonth,
+            createdAt: firebase.database.ServerValue.TIMESTAMP || Date.now(),
+            approvedAt: firebase.database.ServerValue.TIMESTAMP || Date.now(),
+            approvedBy: 'bKash_Gateway'
+          };
+
+          // Mark payment processed
+          updates[`processedPayments/${cleanPaymentId}`] = {
+            paymentID: cleanPaymentId,
+            trxID: verifiedTrxID,
+            amount: targetAmount,
+            type: 'bill_payment',
+            diningId: diningId,
+            userId: userId,
+            billId: billId,
+            status: 'completed',
+            processedAt: Date.now()
+          };
+
+          await db.ref().update(updates);
+
+          // Check if all members paid to update bill status
+          try {
+            const billSnap = await db.ref(`dinings/${diningId}/bills/${billId}`).once('value');
+            const billVal = billSnap.val();
+            if (billVal && billVal.members) {
+              const allPaid = Object.values(billVal.members).every(m => m && (m.status === 'collected' || m.status === 'paid'));
+              if (allPaid) {
+                await db.ref(`dinings/${diningId}/bills/${billId}/status`).set('paid');
+              } else {
+                await db.ref(`dinings/${diningId}/bills/${billId}/status`).set('partially_paid');
+              }
+            }
+          } catch (_) { }
+
+          // In-App Notification
+          try {
+            if (typeof Notifications !== 'undefined' && Notifications.create) {
+              await Notifications.create(
+                diningId,
+                'Bill Paid',
+                `Your bill "${billTitle}" of ৳${targetAmount} has been paid via bKash Instant!`,
+                userId,
+                'deposit'
+              );
+            }
+          } catch (_) { }
+        }
+      } catch (billErr) {
+        console.error('[MesslinerPayment] Bill payment fulfillment error:', billErr);
       }
     }
 

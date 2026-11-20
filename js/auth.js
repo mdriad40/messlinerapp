@@ -861,7 +861,7 @@ const Auth = {
 
       Auth.isRegistering = false;
       setTimeout(() => {
-        window.location.href = ((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'dashboard.html' : '/dashboard');
+        window.location.replace((window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'dashboard.html' : '/dashboard');
       }, 800);
 
     } catch (error) {

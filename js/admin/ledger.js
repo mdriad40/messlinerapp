@@ -14,6 +14,7 @@ const LedgerModule = {
   selectedDueDate: null,
   dueCalViewYear: undefined,
   dueCalViewMonth: undefined,
+  autoPaymentEnabled: false,
 
   /**
    * Preset categories with icons and defaults
@@ -77,6 +78,10 @@ const LedgerModule = {
 
     if (initialData?.settings?.paymentMethods) {
       this.paymentMethods = initialData.settings.paymentMethods;
+    }
+
+    if (initialData?.settings?.autoPaymentEnabled !== undefined) {
+      this.autoPaymentEnabled = Boolean(initialData.settings.autoPaymentEnabled);
     }
 
     if (initialData?.paymentRequests) {
@@ -182,6 +187,15 @@ const LedgerModule = {
     // Listen to Payment Methods config in real-time
     db.ref(`dinings/${diningId}/settings/paymentMethods`).on('value', (snap) => {
       this.paymentMethods = snap.val() || {};
+      this.renderPaymentMethodsBanner();
+      if (document.getElementById('ledgerPaymentMethodsModal')?.classList.contains('active')) {
+        this.renderPaymentMethodsModal();
+      }
+    });
+
+    // Listen to Super Admin bKash Auto-Pay permission in real-time
+    db.ref(`dinings/${diningId}/settings/autoPaymentEnabled`).on('value', (snap) => {
+      this.autoPaymentEnabled = Boolean(snap.val());
       this.renderPaymentMethodsBanner();
       if (document.getElementById('ledgerPaymentMethodsModal')?.classList.contains('active')) {
         this.renderPaymentMethodsModal();
@@ -509,6 +523,7 @@ const LedgerModule = {
     const m = String(methodIdOrName).toLowerCase();
     if (m === 'cash') return 'CASH';
     if (m === 'bkash') return 'BKASH';
+    if (m === 'bkash_auto') return 'BKASH AUTO';
     if (m === 'nagad') return 'NAGAD';
     if (m === 'rocket') return 'ROCKET';
     if (m === 'upay') return 'UPAY';
@@ -544,11 +559,11 @@ const LedgerModule = {
     const billRequests = allRequests.filter(r => r.type === 'bill_payment');
     const depositRequests = allRequests.filter(r => r.type !== 'bill_payment');
 
-    const pendingBillRequests = billRequests.filter(r => r.status === 'pending');
-    const pendingDepositRequests = depositRequests.filter(r => r.status === 'pending');
+    const pendingBillRequests = billRequests.filter(r => r.status === 'pending' || r.status === 'processing');
+    const pendingDepositRequests = depositRequests.filter(r => r.status === 'pending' || r.status === 'processing');
 
     // Pagination calculation for Previous Activity (6 items per page)
-    const allProcessed = allRequests.filter(r => r.status !== 'pending');
+    const allProcessed = allRequests.filter(r => r.status !== 'pending' && r.status !== 'processing');
     const pageSize = 6;
     const totalPages = Math.ceil(allProcessed.length / pageSize) || 1;
     this.previousActivityPage = Math.min(Math.max(1, this.previousActivityPage || 1), totalPages);
@@ -560,12 +575,16 @@ const LedgerModule = {
       const isBill = req.type === 'bill_payment';
       const user = Messliner.users?.users?.[req.userId];
       const name = req.userName || user?.name || 'Member';
+      const isProcessing = req.status === 'processing';
 
       return `
         <div class="ledger-widget-req-compact-row ${isBill ? 'bill' : 'deposit'} fade-up" onclick="Messliner.ledger.openReviewModal('${req.id}')">
           <div class="flex items-center min-w-0" style="gap: 10px;">
             <div class="member-tia-avatar shrink-0" style="width:32px !important; height:32px !important; font-size:0.8rem !important; flex-shrink:0;">${Utils.initials(name)}</div>
-            <div class="ledger-widget-req-compact-name truncate">${name}</div>
+            <div class="ledger-widget-req-compact-name truncate">
+              ${name}
+              ${isProcessing ? '<span style="font-size:9px; font-weight:800; background:#fce7f3; color:#be185d; border-radius:4px; padding:1px 5px; margin-left:4px;">Auto</span>' : ''}
+            </div>
           </div>
           <div class="flex items-center gap-3 shrink-0">
             <span class="ledger-widget-req-compact-amt ${isBill ? 'bill' : 'deposit'}">
@@ -953,11 +972,19 @@ const LedgerModule = {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
                 <span>Approve & Credit Balance</span>
               </button>
+            ` : (req.status === 'processing' ? `
+              <div class="deposit-status-pill processing" style="background:#FDF2F8; color:#BE185D; border:1px solid #FCE7F3; padding:10px 16px; border-radius:12px; font-weight:700; text-align:center; font-size:12.5px; width:100%;">
+                ⚡ bKash Auto Checkout in Progress
+              </div>
+            ` : (req.status === 'cancelled' ? `
+              <div class="deposit-status-pill cancelled" style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A; padding:10px 16px; border-radius:12px; font-weight:700; text-align:center; font-size:12.5px; width:100%;">
+                ✕ Payment Cancelled by Member
+              </div>
             ` : `
               <div class="deposit-status-pill ${req.status}">
                 ${req.status === 'approved' ? '✓ Approved & Credited to Balance' : '✕ Request Rejected'}
               </div>
-            `}
+            `))}
           </div>
         </div>
       `;
@@ -2928,7 +2955,7 @@ const LedgerModule = {
     // 1. From methods map (if nested in raw.methods)
     if (raw.methods && typeof raw.methods === 'object') {
       Object.entries(raw.methods).forEach(([id, m]) => {
-        if (m && typeof m === 'object' && m.number) {
+        if (m && typeof m === 'object' && m.number && id !== 'bkash_auto' && !m.isAutoPay) {
           list.push({ id, ...m });
           seenIds.add(id);
           if (m.platform) seenIds.add(m.platform.toLowerCase());
@@ -2938,8 +2965,8 @@ const LedgerModule = {
 
     // 2. Direct keys in raw (e.g. raw.bkash, raw.nagad, raw.rocket, raw.upay, raw.other, raw.method_xxx)
     Object.entries(raw).forEach(([key, val]) => {
-      if (key === 'methods') return;
-      if (val && typeof val === 'object' && val.number) {
+      if (key === 'methods' || key === 'bkash_auto') return;
+      if (val && typeof val === 'object' && val.number && !val.isAutoPay) {
         const platform = (val.platform || key).toLowerCase();
         const id = val.id || `legacy_${key}`;
         if (!seenIds.has(key) && !seenIds.has(id) && !seenIds.has(platform)) {
@@ -2963,6 +2990,23 @@ const LedgerModule = {
   },
 
   /**
+   * Helper to get bKash Auto-Pay configuration
+   */
+  getAutoPaymentConfig() {
+    const raw = this.paymentMethods?.bkash_auto || this.paymentMethods?.methods?.bkash_auto;
+    return {
+      id: 'bkash_auto',
+      platform: 'bkash_auto',
+      name: 'bKash Auto Pay',
+      charge: raw?.charge !== undefined ? (parseFloat(raw.charge) || 0) : 0,
+      description: raw?.description !== undefined ? raw.description : '',
+      active: raw?.active !== false,
+      number: 'Instant checkout',
+      isAutoPay: true
+    };
+  },
+
+  /**
    * Render Top Payment Methods Setup Banner
    */
   renderPaymentMethodsBanner() {
@@ -2973,8 +3017,10 @@ const LedgerModule = {
 
     const allMethods = this.getMethodsList();
     const activeMethods = allMethods.filter(m => m.active !== false && !!m.number);
+    const autoConfig = this.getAutoPaymentConfig();
+    const hasActiveAuto = Boolean(this.autoPaymentEnabled && autoConfig.active !== false);
 
-    if (activeMethods.length === 0) {
+    if (activeMethods.length === 0 && !hasActiveAuto) {
       // Red vibe warning state when no digital accounts configured
       if (bannerEl) {
         bannerEl.classList.add('warning-mode');
@@ -2993,7 +3039,11 @@ const LedgerModule = {
       if (iconBox) {
         iconBox.className = 'ledger-methods-banner-icon configured';
       }
-      const names = [...new Set(activeMethods.map(m => m.name || m.platform || 'Digital')), 'Cash'];
+      const names = [...new Set(activeMethods.map(m => m.name || m.platform || 'Digital'))];
+      if (hasActiveAuto) {
+        names.unshift('bKash Auto');
+      }
+      names.push('Cash');
       subEl.innerHTML = `<span class="ledger-banner-configured-text">${names.join(' · ')}</span>`;
     }
   },
@@ -3005,9 +3055,15 @@ const LedgerModule = {
     const diningId = this.getDiningId();
     if (diningId) {
       try {
-        const snap = await db.ref(`dinings/${diningId}/settings/paymentMethods`).once('value');
-        if (snap.exists()) {
-          this.paymentMethods = snap.val() || {};
+        const [pmSnap, apSnap] = await Promise.all([
+          db.ref(`dinings/${diningId}/settings/paymentMethods`).once('value'),
+          db.ref(`dinings/${diningId}/settings/autoPaymentEnabled`).once('value')
+        ]);
+        if (pmSnap && pmSnap.exists()) {
+          this.paymentMethods = pmSnap.val() || {};
+        }
+        if (apSnap && apSnap.exists()) {
+          this.autoPaymentEnabled = Boolean(apSnap.val());
         }
       } catch (err) {
         console.warn('Failed to pre-fetch payment methods:', err);
@@ -3026,8 +3082,41 @@ const LedgerModule = {
     if (!container) return;
 
     const allMethods = this.getMethodsList();
+    const hasAutoPay = Boolean(this.autoPaymentEnabled);
+    const autoConfig = this.getAutoPaymentConfig();
 
-    if (allMethods.length === 0) {
+    let autoCardHtml = '';
+    if (hasAutoPay) {
+      const isInactive = autoConfig.active === false;
+      const charge = autoConfig.charge || 0;
+      autoCardHtml = `
+        <div class="payment-method-item-card ${isInactive ? 'inactive' : ''}">
+          <div class="flex items-center gap-3">
+            <span class="platform-dot bkash" style="background:#E2136E; box-shadow:0 0 0 3px #FCE7F3;"></span>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="payment-method-item-name">${autoConfig.name || 'bKash Auto Pay'}</span>
+                <span style="font-size:9.5px; font-weight:800; background:#fce7f3; color:#be185d; border-radius:4px; padding:1px 6px;">⚡ Auto</span>
+                ${charge > 0 ? `<span class="payment-method-charge-badge">${charge}% fee</span>` : `<span class="payment-method-charge-badge" style="background:#ECFDF5; color:#047857; border-color:#A7F3D0;">Free fee</span>`}
+                ${isInactive ? `<span class="payment-method-inactive-badge">Off</span>` : ''}
+              </div>
+              <div class="payment-method-item-number" style="font-size:0.78rem; color:#64748B;">Instant checkout</div>
+              ${autoConfig.description ? `<div style="font-size:0.72rem; color:#94A3B8; margin-top:2px;">${autoConfig.description}</div>` : ''}
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" class="btn-icon-soft" onclick="Messliner.ledger.openAutoPaymentModal()" title="Configure bKash Auto Pay">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    if (allMethods.length === 0 && !hasAutoPay) {
       // Image 1: Clean Empty State
       container.innerHTML = `
         <div class="payment-methods-empty-state">
@@ -3049,6 +3138,7 @@ const LedgerModule = {
     // Image 3: Populated List Cards
     container.innerHTML = `
       <div class="payment-methods-list">
+        ${autoCardHtml}
         ${allMethods.map(m => {
       const platform = (m.platform || 'other').toLowerCase();
       const name = m.name || m.platform || 'Payment Method';
@@ -3341,6 +3431,93 @@ const LedgerModule = {
     } catch (err) {
       console.error('Delete method error:', err);
       Notifications.toast('error', 'Error', 'Failed to delete payment method.');
+    }
+  },
+
+  /**
+   * Open bKash Auto Pay Configuration Modal
+   */
+  openAutoPaymentModal() {
+    const config = this.getAutoPaymentConfig();
+    const chargeInput = document.getElementById('autoPaymentChargePercent');
+    const descInput = document.getElementById('autoPaymentDescription');
+    const activeInput = document.getElementById('autoPaymentActiveToggle');
+
+    if (chargeInput) chargeInput.value = config.charge !== undefined ? config.charge : 0;
+    if (descInput) descInput.value = config.description || '';
+    if (activeInput) activeInput.checked = config.active !== false;
+
+    closeModal('ledgerPaymentMethodsModal');
+    openModal('ledgerAutoPaymentModal');
+  },
+
+  /**
+   * Close bKash Auto Pay Modal & Return to List View
+   */
+  closeAutoPaymentModal() {
+    closeModal('ledgerAutoPaymentModal');
+    this.renderPaymentMethodsModal();
+    openModal('ledgerPaymentMethodsModal');
+  },
+
+  /**
+   * Save bKash Auto Pay Settings (Charge %, Description, Active Toggle)
+   */
+  async saveAutoPaymentSettings() {
+    const diningId = this.getDiningId();
+    if (!diningId) {
+      Notifications.toast('error', 'Error', 'Active Mess ID not found.');
+      return;
+    }
+
+    const name = 'bKash Auto Pay';
+    const charge = Math.max(0, parseFloat(document.getElementById('autoPaymentChargePercent')?.value) || 0);
+    const description = document.getElementById('autoPaymentDescription')?.value.trim() || '';
+    const active = document.getElementById('autoPaymentActiveToggle')?.checked ?? true;
+
+    const payload = {
+      id: 'bkash_auto',
+      platform: 'bkash_auto',
+      name: name,
+      number: 'Instant checkout',
+      charge: charge,
+      description: description,
+      active: active,
+      isAutoPay: true,
+      updatedAt: firebase.database.ServerValue.TIMESTAMP || Date.now()
+    };
+
+    // Update in-memory state
+    if (!this.paymentMethods) this.paymentMethods = {};
+    this.paymentMethods.bkash_auto = payload;
+    if (!this.paymentMethods.methods) this.paymentMethods.methods = {};
+    this.paymentMethods.methods.bkash_auto = payload;
+
+    const btn = document.getElementById('btnSaveAutoPaymentSubmit');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+    }
+
+    try {
+      await Promise.all([
+        db.ref(`dinings/${diningId}/settings/paymentMethods/bkash_auto`).set(payload),
+        db.ref(`dinings/${diningId}/settings/paymentMethods/methods/bkash_auto`).set(payload)
+      ]);
+
+      Notifications.toast('success', 'Settings Saved', 'bKash Auto Pay configuration updated.');
+      closeModal('ledgerAutoPaymentModal');
+      this.renderPaymentMethodsBanner();
+      this.renderPaymentMethodsModal();
+      openModal('ledgerPaymentMethodsModal');
+    } catch (err) {
+      console.error('Save auto payment settings error:', err);
+      Notifications.toast('error', 'Error', 'Failed to save bKash Auto Pay settings.');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+      }
     }
   }
 };

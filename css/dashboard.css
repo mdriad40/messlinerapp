@@ -444,6 +444,18 @@
   }
 }
 
+/* Hide floating bottom nav dock while page loader / shimmer is active */
+.page-loader:not(.fade-out) ~ #appShell .bottom-nav,
+.page-loader:not(.fade-out) ~ #appShell #bottomNav,
+body:has(.page-loader:not(.fade-out)) .bottom-nav,
+body:has(#pageLoader:not(.fade-out)) #bottomNav,
+html:has(#pageLoader:not(.fade-out)) #bottomNav {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 .bottom-nav-items {
   display: flex !important;
   align-items: center !important;
@@ -19246,8 +19258,7 @@ button.user-add-money-btn:active,
    ============================================================ */
 
 #addMoneyModal.modal-overlay,
-#payBillModal.modal-overlay,
-#userHistoryDetailModal.modal-overlay {
+#payBillModal.modal-overlay {
   display: flex !important;
   align-items: flex-end !important;
   justify-content: center !important;
@@ -19263,16 +19274,14 @@ button.user-add-money-btn:active,
 }
 
 #addMoneyModal.modal-overlay.active,
-#payBillModal.modal-overlay.active,
-#userHistoryDetailModal.modal-overlay.active {
+#payBillModal.modal-overlay.active {
   opacity: 1 !important;
   visibility: visible !important;
   pointer-events: auto !important;
 }
 
 #addMoneyModal .add-money-modal-dialog,
-#payBillModal .pay-bill-modal-dialog,
-#userHistoryDetailModal .user-history-detail-dialog {
+#payBillModal .pay-bill-modal-dialog {
   width: 100% !important;
   max-width: 500px !important;
   max-height: min(85vh, 560px) !important;
@@ -19293,14 +19302,12 @@ button.user-add-money-btn:active,
 }
 
 #addMoneyModal.modal-overlay.active .add-money-modal-dialog,
-#payBillModal.modal-overlay.active .pay-bill-modal-dialog,
-#userHistoryDetailModal.modal-overlay.active .user-history-detail-dialog {
+#payBillModal.modal-overlay.active .pay-bill-modal-dialog {
   transform: translateY(0) !important;
 }
 
 #addMoneyModal .modal-drag-indicator,
-#payBillModal .modal-drag-indicator,
-#userHistoryDetailModal .modal-drag-indicator {
+#payBillModal .modal-drag-indicator {
   width: 42px;
   height: 4.5px;
   background: #CBD5E1;
@@ -19311,14 +19318,12 @@ button.user-add-money-btn:active,
 }
 
 #addMoneyModal:hover .modal-drag-indicator,
-#payBillModal:hover .modal-drag-indicator,
-#userHistoryDetailModal:hover .modal-drag-indicator {
+#payBillModal:hover .modal-drag-indicator {
   background: #94A3B8;
 }
 
 #addMoneyModal .modal-header,
-#payBillModal .modal-header,
-#userHistoryDetailModal .modal-header {
+#payBillModal .modal-header {
   padding: 10px 22px 14px 22px !important;
   border-bottom: 1px solid #F1F5F9 !important;
   display: flex !important;
@@ -19329,8 +19334,7 @@ button.user-add-money-btn:active,
 }
 
 #addMoneyModal .modal-title,
-#payBillModal .modal-title,
-#userHistoryDetailModal .modal-title {
+#payBillModal .modal-title {
   font-size: 1.18rem !important;
   font-weight: 800 !important;
   color: #0F2E1E !important;
@@ -19339,8 +19343,7 @@ button.user-add-money-btn:active,
 }
 
 #addMoneyModal .modal-body,
-#payBillModal .modal-body,
-#userHistoryDetailModal .modal-body {
+#payBillModal .modal-body {
   padding: 16px 22px 20px 22px !important;
   overflow-y: auto !important;
   flex: 1 1 auto !important;
@@ -19348,22 +19351,132 @@ button.user-add-money-btn:active,
 }
 
 #addMoneyModal .modal-body::-webkit-scrollbar,
-#payBillModal .modal-body::-webkit-scrollbar,
-#userHistoryDetailModal .modal-body::-webkit-scrollbar {
+#payBillModal .modal-body::-webkit-scrollbar {
   width: 5px;
 }
 
 #addMoneyModal .modal-body::-webkit-scrollbar-thumb,
-#payBillModal .modal-body::-webkit-scrollbar-thumb,
-#userHistoryDetailModal .modal-body::-webkit-scrollbar-thumb {
+#payBillModal .modal-body::-webkit-scrollbar-thumb {
   background: rgba(100, 116, 139, 0.22);
   border-radius: 999px;
 }
 
 #addMoneyModal .modal-body::-webkit-scrollbar-thumb:hover,
-#payBillModal .modal-body::-webkit-scrollbar-thumb:hover,
-#userHistoryDetailModal .modal-body::-webkit-scrollbar-thumb:hover {
+#payBillModal .modal-body::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.38);
+}
+
+/* User History Detail Modal - Fixed Size & Non-Scrollable */
+#userHistoryDetailModal.modal-overlay {
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.55) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  z-index: 10005 !important;
+}
+
+#userHistoryDetailModal.modal-overlay.active {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+#userHistoryDetailModal .user-history-detail-dialog {
+  width: 100% !important;
+  max-width: 480px !important;
+  height: auto !important;
+  max-height: none !important;
+  border-radius: 28px 28px 0 0 !important;
+  margin: 0 auto !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  border-bottom: none !important;
+  box-shadow: 0 -12px 40px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
+  transform: translateY(100%) !important;
+  transition: transform 0.36s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: transform;
+}
+
+#userHistoryDetailModal.modal-overlay.active .user-history-detail-dialog {
+  transform: translateY(0) !important;
+}
+
+#userHistoryDetailModal .modal-drag-indicator {
+  width: 42px;
+  height: 4.5px;
+  background: #CBD5E1;
+  border-radius: 999px;
+  margin: 12px auto 4px auto;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+#userHistoryDetailModal:hover .modal-drag-indicator {
+  background: #94A3B8;
+}
+
+#userHistoryDetailModal .modal-header {
+  padding: 8px 22px 10px 22px !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-shrink: 0 !important;
+  background: #ffffff !important;
+}
+
+#userHistoryDetailModal .modal-title {
+  font-size: 1.15rem !important;
+  font-weight: 800 !important;
+  color: #0F2E1E !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
+}
+
+#userHistoryDetailModal .modal-body {
+  padding: 12px 20px 14px 20px !important;
+  overflow: hidden !important;
+  overflow-y: hidden !important;
+  flex: none !important;
+  max-height: none !important;
+}
+
+#userHistoryDetailModal .uhd-hero-card {
+  padding: 8px 12px 6px !important;
+  margin-bottom: 6px !important;
+  gap: 3px !important;
+}
+
+#userHistoryDetailModal .uhd-hero-amount {
+  font-size: 1.65rem !important;
+}
+
+#userHistoryDetailModal .uhd-detail-row {
+  padding: 6.5px 0 !important;
+  font-size: 0.83rem !important;
+}
+
+#userHistoryDetailModal .uhd-detail-row.note-row {
+  padding: 6px 0 0 0 !important;
+  gap: 4px !important;
+}
+
+#userHistoryDetailModal .uhd-detail-row.note-row .uhd-val.note-val {
+  padding: 7px 12px !important;
+  font-size: 0.81rem !important;
+  line-height: 1.35 !important;
 }
 
 @media (max-width: 640px) {

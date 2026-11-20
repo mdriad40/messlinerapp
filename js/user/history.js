@@ -3123,9 +3123,6 @@ const HistoryPageModule = {
 
     // Build user panel style day cards
     const html = sortedDates.map(date => {
-      if (window.BazarHistoryModule && window.BazarHistoryModule._buildDayCard) {
-        return window.BazarHistoryModule._buildDayCard(date, grouped[date]);
-      }
       return this._buildDayCardFallback(date, grouped[date]);
     }).join('');
 
@@ -3170,7 +3167,7 @@ const HistoryPageModule = {
 
     return `
       <div class="bazar-day-card" id="${cardId}">
-        <div class="bazar-day-card-header" onclick="document.getElementById('${cardId}').classList.toggle('expanded')">
+        <div class="bazar-day-card-header" onclick="const c = this.closest('.bazar-day-card'); if (c) c.classList.toggle('expanded');">
           <div class="bazar-date-badge">${dayNum}</div>
           <div class="bazar-card-info">
             <div class="bazar-card-top-row">

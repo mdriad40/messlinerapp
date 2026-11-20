@@ -471,23 +471,27 @@ const UserDashboard = {
     Utils.setText('overviewMessInfo', messInfoText);
 
     // Notification Badge in mymeal & overview topbar
-    const unreadCount = (window.Notifications && Array.isArray(Notifications.notifications))
-      ? Notifications.notifications.filter(n => !n.read).length
-      : parseInt(document.getElementById('notifBadge')?.textContent || '0', 10);
-    const badges = [document.getElementById('mymealNotifBadge'), document.getElementById('overviewNotifBadge')];
-    badges.forEach(b => {
-      if (b) {
-        if (unreadCount > 0) {
-          b.textContent = unreadCount > 9 ? '9+' : String(unreadCount);
-          b.style.setProperty('display', 'inline-flex', 'important');
-          b.classList.remove('hidden');
-        } else {
-          b.textContent = '';
-          b.style.setProperty('display', 'none', 'important');
-          b.classList.add('hidden');
+    if (window.Notifications && typeof Notifications.updateBadge === 'function') {
+      Notifications.updateBadge();
+    } else {
+      const rawText = document.getElementById('notifBadge')?.textContent?.trim() || '';
+      const isOverNine = rawText.includes('+') || (parseInt(rawText, 10) > 9);
+      const countVal = parseInt(rawText, 10) || 0;
+      const badges = [document.getElementById('mymealNotifBadge'), document.getElementById('overviewNotifBadge')];
+      badges.forEach(b => {
+        if (b) {
+          if (rawText && (countVal > 0 || isOverNine)) {
+            b.textContent = isOverNine ? '9+' : String(countVal);
+            b.style.setProperty('display', 'inline-flex', 'important');
+            b.classList.remove('hidden');
+          } else {
+            b.textContent = '';
+            b.style.setProperty('display', 'none', 'important');
+            b.classList.add('hidden');
+          }
         }
-      }
-    });
+      });
+    }
 
     // Update Hero Card Rate & Month
     const currentMonthName = new Date().toLocaleString('en-US', { month: 'long' }).toUpperCase();

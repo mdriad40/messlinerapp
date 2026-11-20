@@ -566,6 +566,273 @@ serve(async (req) => {
       } catch (admSbErr: any) {
         console.warn("[verify-payment] Admin Supabase record notice for SMS:", admSbErr.message);
       }
+    } else if (type === "member_deposit") {
+      if (!diningId) {
+        return new Response(
+          JSON.stringify({ error: "Missing diningId for member deposit" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const userId = metadata?.userId;
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ error: "Missing userId in payment metadata" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // ── Precise Base Amount vs Gateway Fee Calculation ──
+      const baseAmountFromMeta = parseFloat(String(metadata?.baseAmount || metadata?.amount || 0));
+      const feeFromMeta = parseFloat(String(metadata?.fee || 0));
+      const depositAmount = (baseAmountFromMeta > 0 && baseAmountFromMeta <= verifiedAmount)
+        ? baseAmountFromMeta
+        : verifiedAmount;
+      const gatewayFee = feeFromMeta > 0 ? feeFromMeta : Math.max(0, verifiedAmount - depositAmount);
+
+      // 1. Fetch current user totalDeposit from RTDB
+      const userRes = await fetch(`${FIREBASE_RTDB_URL}/dinings/${diningId}/users/${userId}.json${primaryAuthQuery}`);
+      const userData = userRes.ok ? (await userRes.json()) || {} : {};
+      const currentDeposit = parseFloat(userData.totalDeposit) || 0;
+      updatedBalance = currentDeposit + depositAmount;
+
+      // 2. Atomically update user totalDeposit (Server Single Source of Truth)
+      await fetch(`${FIREBASE_RTDB_URL}/dinings/${diningId}/users/${userId}.json${primaryAuthQuery}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          totalDeposit: updatedBalance,
+          lastDepositAt: Date.now(),
+          lastDepositAmount: depositAmount,
+          lastPaymentID: cleanPaymentId,
+          lastTrxID: verifiedTrxID
+        })
+      });
+
+      const todayStr = new Date().toISOString().split("T")[0];
+      const monthStr = metadata?.month || todayStr.slice(0, 7);
+      const userName = metadata?.userName || userData.name || "Member";
+
+      // 3. Append EXACTLY ONE deposit record into dinings/{diningId}/deposits
+      await fetch(`${FIREBASE_RTDB_URL}/dinings/${diningId}/deposits.json${primaryAuthQuery}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userId,
+          userName: userName,
+          amount: depositAmount,
+          fee: gatewayFee,
+          totalPaid: verifiedAmount,
+          type: "deposit",
+          method: "bkash_auto",
+          methodName: "bKash Auto",
+          trxId: verifiedTrxID,
+          trxID: verifiedTrxID,
+          paymentID: cleanPaymentId,
+          note: metadata?.note || `bKash Auto Deposit: ৳${depositAmount.toFixed(2)}${gatewayFee > 0 ? ` (+৳${gatewayFee.toFixed(2)} fee)` : ''} (TrxID: ${verifiedTrxID})`,
+          date: todayStr,
+          month: monthStr,
+          isAutoPayment: true,
+          status: "approved",
+          timestamp: Date.now()
+        })
+      });
+
+      // 4. Update the initiated payment request or append ONE approved payment request
+      const paymentRequestId = metadata?.paymentRequestId;
+      if (paymentRequestId) {
+        await fetch(`${FIREBASE_RTDB_URL}/dinings/${diningId}/paymentRequests/${paymentRequestId}.json${primaryAuthQuery}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "approved",
+            amount: depositAmount,
+            fee: gatewayFee,
+            totalPayable: verifiedAmount,
+            trxId: verifiedTrxID,
+            trxID: verifiedTrxID,
+            paymentID: cleanPaymentId,
+            approvedAt: Date.now(),
+            approvedBy: "bKash_Auto"
+          })
+        }).catch(() => {});
+      } else {
+        await fetch(`${FIREBASE_RTDB_URL}/dinings/${diningId}/paymentRequests.json${primaryAuthQuery}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: userId,
+            userName: userName,
+            amount: depositAmount,
+            fee: gatewayFee,
+            totalPayable: verifiedAmount,
+            method: "bkash_auto",
+            methodName: "bKash Auto",
+            trxId: verifiedTrxID,
+            trxID: verifiedTrxID,
+            paymentID: cleanPaymentId,
+            note: metadata?.note || `bKash Auto Deposit: ৳${depositAmount.toFixed(2)} (TrxID: ${verifiedTrxID})`,
+            status: "approved",
+            isAutoPayment: true,
+            month: monthStr,
+            createdAt: Date.now(),
+            approvedAt: Date.now(),
+            approvedBy: "bKash_Auto"
+          })
+        });
+      }
+
+      // 5. In-App Notification (Single Notification on server)
+      await fetch(`${FIREBASE_RTDB_URL}/dinings/${diningId}/notifications.json${primaryAuthQuery}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "bKash Deposit Credited",
+          message: `Your payment of ৳${depositAmount.toFixed(2)} via bKash Auto has been verified and credited to your dining balance. TrxID: ${verifiedTrxID}`,
+          targetUser: userId,
+          type: "deposit",
+          read: false,
+          timestamp: Date.now()
+        })
+      }).catch(() => {});
+
+      // 6. Central Record in Admin Supabase for Audit
+      try {
+        const adminSupabase = createClient(ADMIN_SUPABASE_URL, ADMIN_SUPABASE_ANON_KEY);
+        await adminSupabase.from("payments").insert({
+          payment_id: cleanPaymentId,
+          trx_id: verifiedTrxID,
+          amount: verifiedAmount,
+          plan: "member_deposit",
+          billing_cycle: "on_demand",
+          dining_id: diningId || null,
+          mess_name: metadata?.messName || null,
+          email: metadata?.email || userData.email || null,
+          phone: customerPhone || metadata?.phone || userData.phone || null,
+          status: "completed",
+          created_at: new Date().toISOString()
+        });
+      } catch (admSbErr: any) {
+        console.warn("[verify-payment] Admin Supabase record notice for member_deposit:", admSbErr.message);
+      }
+
+    } else if (type === "bill_payment") {
+      if (!diningId) {
+        return new Response(
+          JSON.stringify({ error: "Missing diningId for bill payment" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const userId = metadata?.userId;
+      const billId = metadata?.billId;
+      const todayStr = new Date().toISOString().split("T")[0];
+      const monthStr = metadata?.month || todayStr.slice(0, 7);
+
+      const baseAmountFromMeta = parseFloat(String(metadata?.baseAmount || metadata?.amount || 0));
+      const feeFromMeta = parseFloat(String(metadata?.fee || 0));
+      const billAmount = (baseAmountFromMeta > 0 && baseAmountFromMeta <= verifiedAmount)
+        ? baseAmountFromMeta
+        : verifiedAmount;
+      const gatewayFee = feeFromMeta > 0 ? feeFromMeta : Math.max(0, verifiedAmount - billAmount);
+
+      // 1. Mark bill member as paid if billId provided
+      if (billId && userId) {
+        await fetch(`${FIREBASE_RTDB_URL}/dinings/${diningId}/bills/${billId}/members/${userId}.json${primaryAuthQuery}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "collected",
+            paid: true,
+            collectedAt: Date.now(),
+            paidAt: Date.now(),
+            trxId: verifiedTrxID,
+            paymentID: cleanPaymentId,
+            paymentMethod: "bkash_auto"
+          })
+        }).catch(() => {});
+      }
+
+      // 2. Update existing payment request or create ONE approved payment request
+      const paymentRequestId = metadata?.paymentRequestId;
+      if (paymentRequestId) {
+        await fetch(`${FIREBASE_RTDB_URL}/dinings/${diningId}/paymentRequests/${paymentRequestId}.json${primaryAuthQuery}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "approved",
+            amount: billAmount,
+            fee: gatewayFee,
+            totalPayable: verifiedAmount,
+            trxId: verifiedTrxID,
+            trxID: verifiedTrxID,
+            paymentID: cleanPaymentId,
+            approvedAt: Date.now(),
+            approvedBy: "bKash_Auto"
+          })
+        }).catch(() => {});
+      } else {
+        await fetch(`${FIREBASE_RTDB_URL}/dinings/${diningId}/paymentRequests.json${primaryAuthQuery}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: userId || "member",
+            userName: metadata?.userName || "Member",
+            amount: billAmount,
+            fee: gatewayFee,
+            totalPayable: verifiedAmount,
+            method: "bkash_auto",
+            methodName: "bKash Auto",
+            trxId: verifiedTrxID,
+            paymentID: cleanPaymentId,
+            billId: billId || null,
+            billTitle: metadata?.billTitle || "Shared Bill",
+            note: metadata?.note || `bKash Bill Payment: ${metadata?.billTitle || "Shared Bill"} (৳${billAmount.toFixed(2)})`,
+            status: "approved",
+            isAutoPayment: true,
+            month: monthStr,
+            createdAt: Date.now(),
+            approvedAt: Date.now(),
+            approvedBy: "bKash_Auto"
+          })
+        });
+      }
+
+      // 3. In-App Notification (Single Notification on server)
+      if (userId) {
+        await fetch(`${FIREBASE_RTDB_URL}/dinings/${diningId}/notifications.json${primaryAuthQuery}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Bill Payment Confirmed",
+            message: `Your payment of ৳${billAmount.toFixed(2)} for "${metadata?.billTitle || 'Shared Bill'}" via bKash Auto has been verified and cleared. TrxID: ${verifiedTrxID}`,
+            targetUser: userId,
+            type: "deposit",
+            read: false,
+            timestamp: Date.now()
+          })
+        }).catch(() => {});
+      }
+
+      // 4. Central record in Admin Supabase
+      try {
+        const adminSupabase = createClient(ADMIN_SUPABASE_URL, ADMIN_SUPABASE_ANON_KEY);
+        await adminSupabase.from("payments").insert({
+          payment_id: cleanPaymentId,
+          trx_id: verifiedTrxID,
+          amount: verifiedAmount,
+          plan: "bill_payment",
+          billing_cycle: "on_demand",
+          dining_id: diningId || null,
+          mess_name: metadata?.messName || null,
+          email: metadata?.email || null,
+          phone: customerPhone || metadata?.phone || null,
+          status: "completed",
+          created_at: new Date().toISOString()
+        });
+      } catch (admSbErr: any) {
+        console.warn("[verify-payment] Admin Supabase record notice for bill_payment:", admSbErr.message);
+      }
     }
 
     // 5. Anti-Replay Guard: Register completed payment
@@ -592,6 +859,7 @@ serve(async (req) => {
         trxID: verifiedTrxID,
         amount: verifiedAmount,
         updatedBalance: updatedBalance,
+        serverFulfillment: true
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

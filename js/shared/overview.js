@@ -428,14 +428,8 @@ const OverviewModule = {
 
     // User profile & notification data for topbar
     const u = (Messliner.state && Messliner.state.user) || {};
-    const isManager = (Messliner.state && (Messliner.state.role === 'admin' || Messliner.state.role === 'manager' || Messliner.state.actualRole === 'admin')) ||
-      (u.role === 'admin' || u.role === 'manager') ||
-      (window.UserDashboard && UserDashboard.userData && UserDashboard.userData.role === 'admin') ||
-      (typeof Auth !== 'undefined' && Auth.isAdmin && Auth.isAdmin()) ||
-      document.documentElement.classList.contains('ml-is-admin') ||
-      document.body.classList.contains('role-admin') ||
-      (typeof Router !== 'undefined' && Router.getRole && Router.getRole() === 'admin') ||
-      (localStorage.getItem('ml_user_role') === 'admin');
+    const isManager = (Messliner.state && (Messliner.state.role === 'admin' || Messliner.state.role === 'manager')) ||
+      (typeof Router !== 'undefined' && Router.getRole && Router.getRole() === 'admin');
     const userName = isManager ? 'Manager' : (u.name || 'Member');
     const userAvatar = isManager ? 'M' : ((window.Utils && typeof Utils.initials === 'function') ? Utils.initials(userName) : userName.charAt(0).toUpperCase());
     const diningName = (Messliner.state && Messliner.state.diningName) ||
@@ -443,9 +437,18 @@ const OverviewModule = {
       'Messliner';
     const diningCode = (Messliner.state && Messliner.state.diningCode) || '';
     const messInfoText = diningCode ? `${diningName} · ${diningCode}` : diningName;
-    const unreadCount = (window.Notifications && Array.isArray(Notifications.notifications))
-      ? Notifications.notifications.filter(n => !n.read).length
-      : parseInt(document.getElementById('notifBadge')?.textContent || '0', 10);
+    const notifBadgeEl = document.getElementById('notifBadge');
+    const rawBadgeText = notifBadgeEl?.textContent?.trim() || '';
+    let unreadCount = 0;
+    let isOverNine = false;
+    if (window.Notifications && Array.isArray(Notifications.notifications)) {
+      unreadCount = Notifications.notifications.filter(n => !n.read).length;
+      isOverNine = unreadCount > 9;
+    } else {
+      isOverNine = rawBadgeText.includes('+') || (parseInt(rawBadgeText, 10) > 9);
+      unreadCount = parseInt(rawBadgeText, 10) || (isOverNine ? 10 : 0);
+    }
+    const badgeDisplay = isOverNine ? '9+' : (unreadCount > 0 ? String(unreadCount) : '');
 
     // Custom Minimal Professional SVG Icons
     const icons = {
@@ -560,7 +563,6 @@ const OverviewModule = {
           <div class="mymeal-ambient-circle circle-1"></div>
           <div class="mymeal-ambient-circle circle-2"></div>
 
-          ${isManager ? `
           <!-- Admin / Manager Topbar on Home (Avatar, Mess Name, Hi Greeting, Pro Icon, Notification Bell) -->
           <div class="mymeal-user-topbar overview-user-topbar" id="overviewUserTopBar">
             <div class="mymeal-user-profile-block" onclick="Messliner.router.navigate('profile')" title="View Profile">
@@ -586,13 +588,13 @@ const OverviewModule = {
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
-                <span id="overviewNotifBadge" class="mymeal-notif-badge ${unreadCount > 0 ? '' : 'hidden'}" style="${unreadCount > 0 ? 'display:inline-flex !important;' : 'display:none !important;'}">${unreadCount > 9 ? '9+' : (unreadCount || '')}</span>
+                <span id="overviewNotifBadge" class="mymeal-notif-badge ${(unreadCount > 0 || isOverNine) ? '' : 'hidden'}" style="${(unreadCount > 0 || isOverNine) ? 'display:inline-flex !important;' : 'display:none !important;'}">${badgeDisplay}</span>
               </button>
             </div>
           </div>
-          ` : `
+
           <!-- Dining Overview Header for Member Panel (Icon + Title) -->
-          <div class="overview-hero-top-title" style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding: 2px 2px 4px 2px;">
+          <div class="overview-hero-top-title" id="overviewHeroTopTitle" style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding: 2px 2px 4px 2px;">
             <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: rgba(5, 150, 105, 0.22); border: 1px solid rgba(16, 185, 129, 0.45); flex-shrink: 0;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -603,7 +605,6 @@ const OverviewModule = {
             </div>
             <span style="font-size: 1.15rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em;">Dining Overview</span>
           </div>
-          `}
 
           <div class="mymeal-hero-card">
             <!-- Card Top Header -->
@@ -693,6 +694,11 @@ const OverviewModule = {
     // Populate mobile dropdowns
     this.populateMonthDropdown();
     this.populateYearDropdown();
+
+    // Ensure notification badge is synchronized with Notifications module
+    if (window.Notifications && typeof Notifications.updateBadge === 'function') {
+      Notifications.updateBadge();
+    }
   },
 
   /**
