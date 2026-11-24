@@ -1,0 +1,155 @@
+        <section id="page-fridaymeal" class="page-section">
+          <!-- Page Header -->
+          <div class="friday-page-header">
+            <div class="friday-page-header-left" style="display: flex; flex-wrap: nowrap; gap: 6px; width: 100%;">
+              <!-- Friday Day/Week Dropdown -->
+              <div class="custom-dropdown" id="fridayPageWeekDropdown" style="flex: 1.4; min-width: 0;">
+                <button class="custom-dropdown-trigger" style="padding: 10px 8px; gap: 4px; font-size: 0.83rem;"
+                  onclick="event.stopPropagation(); document.querySelectorAll('.custom-dropdown').forEach(d => d !== this.parentElement && d.classList.remove('active')); this.parentElement.classList.toggle('active')">
+                  <span id="fridayPageWeekValue"
+                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</span>
+                  <div class="custom-dropdown-arrow" style="margin-left: 2px;"></div>
+                </button>
+                <div class="custom-dropdown-menu" id="fridayPageWeekMenu"></div>
+              </div>
+
+              <!-- Friday Month Dropdown -->
+              <div class="custom-dropdown" id="fridayPageMonthDropdown" style="flex: 1; min-width: 0;">
+                <button class="custom-dropdown-trigger" style="padding: 10px 8px; gap: 4px; font-size: 0.83rem;"
+                  onclick="event.stopPropagation(); document.querySelectorAll('.custom-dropdown').forEach(d => d !== this.parentElement && d.classList.remove('active')); this.parentElement.classList.toggle('active')">
+                  <span id="fridayPageMonthValue"
+                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</span>
+                  <div class="custom-dropdown-arrow" style="margin-left: 2px;"></div>
+                </button>
+                <div class="custom-dropdown-menu" id="fridayPageMonthMenu"></div>
+              </div>
+
+              <!-- Friday Year Dropdown -->
+              <div class="custom-dropdown" id="fridayPageYearDropdown" style="flex: 0.8; min-width: 0;">
+                <button class="custom-dropdown-trigger" style="padding: 10px 8px; gap: 4px; font-size: 0.83rem;"
+                  onclick="event.stopPropagation(); document.querySelectorAll('.custom-dropdown').forEach(d => d !== this.parentElement && d.classList.remove('active')); this.parentElement.classList.toggle('active')">
+                  <span id="fridayPageYearValue"
+                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</span>
+                  <div class="custom-dropdown-arrow" style="margin-left: 2px;"></div>
+                </button>
+                <div class="custom-dropdown-menu" id="fridayPageYearMenu"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Bar -->
+          <div class="friday-page-tab-bar">
+            <button class="friday-page-tab active" data-tab="chart"
+              onclick="Messliner.fridayMealPage.switchTab('chart')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="9" y1="9" x2="15" y2="9" />
+                <line x1="9" y1="13" x2="15" y2="13" />
+                <line x1="9" y1="17" x2="13" y2="17" />
+              </svg>
+              Meal Chart
+            </button>
+            <button class="friday-page-tab" data-tab="bazar" onclick="Messliner.fridayMealPage.switchTab('bazar')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <path d="M16 10a4 4 0 01-8 0" />
+              </svg>
+              Bazar
+            </button>
+            <button class="friday-page-tab" data-tab="summary" onclick="Messliner.fridayMealPage.switchTab('summary')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+              Summary
+            </button>
+          </div>
+
+          <!-- Tab: Meal Chart -->
+          <div class="friday-page-tab-content active" data-tabpane="chart">
+            <div id="fridayMealChargeStrip"></div>
+            <div class="card" style="padding:0;overflow:hidden;margin-top:var(--space-4);">
+              <div class="table-wrapper" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                <table class="data-table friday-page-chart-table">
+                  <thead>
+                    <tr>
+                      <th style="text-align:left;">Member</th>
+                      <th style="text-align:center;">Meals</th>
+                      <th style="text-align:center;">Charge</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fridayMealChartBody">
+                    <tr>
+                      <td style="text-align:left;">
+                        <div class="bazar-skeleton-line wide"></div>
+                      </td>
+                      <td style="text-align:center;">
+                        <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                      </td>
+                      <td style="text-align:center;">
+                        <div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="text-align:left;">
+                        <div class="bazar-skeleton-line wide"></div>
+                      </td>
+                      <td style="text-align:center;">
+                        <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                      </td>
+                      <td style="text-align:center;">
+                        <div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="text-align:left;">
+                        <div class="bazar-skeleton-line wide"></div>
+                      </td>
+                      <td style="text-align:center;">
+                        <div class="bazar-skeleton-line" style="width: 36px; margin: 0 auto;"></div>
+                      </td>
+                      <td style="text-align:center;">
+                        <div class="bazar-skeleton-line" style="width: 50px; margin: 0 auto;"></div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Bazar -->
+          <div class="friday-page-tab-content" data-tabpane="bazar">
+            <div id="fridayBazarList" class="bazar-history-list friday-bazar-list" style="margin-top:var(--space-4);">
+              <div class="bazar-skeleton">
+                <div class="bazar-skeleton-card">
+                  <div class="bazar-skeleton-line wide"></div>
+                  <div class="bazar-skeleton-line narrow"></div>
+                </div>
+                <div class="bazar-skeleton-card">
+                  <div class="bazar-skeleton-line wide"></div>
+                  <div class="bazar-skeleton-line narrow"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Summary -->
+          <div class="friday-page-tab-content" data-tabpane="summary">
+            <div id="fridaySummaryContent" style="margin-top:var(--space-4);">
+              <div class="bazar-skeleton">
+                <div class="bazar-skeleton-card">
+                  <div class="bazar-skeleton-line wide"></div>
+                  <div class="bazar-skeleton-line narrow"></div>
+                </div>
+                <div class="bazar-skeleton-card">
+                  <div class="bazar-skeleton-line wide"></div>
+                  <div class="bazar-skeleton-line narrow"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+</body>

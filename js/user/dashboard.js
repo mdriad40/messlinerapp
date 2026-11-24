@@ -134,6 +134,9 @@ const UserDashboard = {
    */
   isDueLocked() {
     if (!this.settings) return false;
+    // Do not lock before deposits and financial data have loaded from Firebase
+    if (!this._depositsDataLoaded || !this._mealsDataLoaded) return false;
+
     const dueLimit = parseFloat(this.settings.dueLimit) || 0;
     const isDueLimitActive = this.settings.dueLimitEnabled !== false && dueLimit > 0;
     if (!isDueLimitActive) return false;
@@ -157,6 +160,9 @@ const UserDashboard = {
   getDueInfo() {
     const dueLimit = parseFloat(this.settings?.dueLimit) || 0;
     const isDueLimitActive = this.settings?.dueLimitEnabled !== false && dueLimit > 0;
+    // Guard against premature calculation before deposits finish loading
+    const isDataSettled = !!(this._depositsDataLoaded && this._mealsDataLoaded);
+
     const mealRate = this._getDynamicMealRate();
     const rateMode = this.settings?.rateMode || 'market';
     const fixedRates = rateMode === 'fixed' ? (this.settings?.fixedRates || null) : null;
@@ -166,7 +172,7 @@ const UserDashboard = {
     const totalCost = mealCost + otherCosting;
     const balance = (this.monthlyDeposit || 0) - totalCost - deduction;
     const due = balance < 0 ? Math.abs(balance) : 0;
-    const isLocked = isDueLimitActive && due >= dueLimit;
+    const isLocked = isDataSettled && isDueLimitActive && due >= dueLimit;
 
     return {
       due,
@@ -234,6 +240,8 @@ const UserDashboard = {
     this.userDepositsData = [];
     this.adminLogsData = [];
     this._activityDataReady = false;  // reset so skeleton shows until data arrives
+    this._depositsDataLoaded = false;
+    this._mealsDataLoaded = false;
 
     // Clean up previous listeners and pending render timer
     if (this._activityRenderTimer) { clearTimeout(this._activityRenderTimer); this._activityRenderTimer = null; }
@@ -244,7 +252,9 @@ const UserDashboard = {
     if (this._adminLogsRef) this._adminLogsRef.off();
 
     // Immediately update My Meal tab visibility from existing/cached settings
-    this.updateMyMealVisibility();
+    if (typeof this.updateMyMealVisibility === 'function') {
+      this.updateMyMealVisibility();
+    }
 
     // Listen to user data
     this._userRef = db.ref(`dinings/${diningId}/users/${userId}`);
@@ -252,7 +262,9 @@ const UserDashboard = {
       this.userData = snap.val();
       this.renderStats();
       this.renderMealToggles();
-      this.updateMyMealVisibility();
+      if (typeof this.updateMyMealVisibility === 'function') {
+        this.updateMyMealVisibility();
+      }
     });
 
     // Listen to all users for managerMealEnabled calculation matching OverviewModule
@@ -268,7 +280,9 @@ const UserDashboard = {
       this.settings = snap.val() || {};
       this.renderStats();
       this.renderMealToggles();
-      this.updateMyMealVisibility();
+      if (typeof this.updateMyMealVisibility === 'function') {
+        this.updateMyMealVisibility();
+      }
     });
 
     const role = Messliner.state.role;
@@ -292,25 +306,23 @@ const UserDashboard = {
       this._debouncedRenderActivity(diningId);
     });
 
-    if (!isMember) {
-      // Admin: Also listen to all dining logs (sorted newest-first)
-      if (this._adminLogsRef) this._adminLogsRef.off();
-      this._adminLogsRef = db.ref(`dinings/${diningId}/logs`).orderByChild('timestamp');
-      this._adminLogsRef.on('value', (snap) => {
-        this.adminLogsData = [];
-        snap.forEach(child => {
-          const val = child.val();
-          if (!val) return;
-          if (val.timestamp && typeof val.timestamp === 'object') {
-            val.timestamp = Date.now();
-          }
-          this.adminLogsData.push(val);
-        });
-        this.adminLogsData.reverse();
-        this._activityDataReady = true;
-        this._debouncedRenderActivity(diningId);
+    // Listen to dining logs (sorted newest-first) for comprehensive toggle history & activity
+    if (this._adminLogsRef) this._adminLogsRef.off();
+    this._adminLogsRef = db.ref(`dinings/${diningId}/logs`).orderByChild('timestamp');
+    this._adminLogsRef.on('value', (snap) => {
+      this.adminLogsData = [];
+      snap.forEach(child => {
+        const val = child.val();
+        if (!val) return;
+        if (val.timestamp && typeof val.timestamp === 'object') {
+          val.timestamp = Date.now();
+        }
+        this.adminLogsData.push(val);
       });
-    }
+      this.adminLogsData.reverse();
+      this._activityDataReady = true;
+      this._debouncedRenderActivity(diningId);
+    });
 
     // Listen to current-month deposits and meals for this user
     this._listenMonthlyData(diningId, userId);
@@ -356,6 +368,7 @@ const UserDashboard = {
       this.monthlyDeposit = depositTotal;
       this.monthlyOtherCosting = otherCostTotal;
       this.monthlyDeduction = deductionTotal;
+      this._depositsDataLoaded = true;
       this.renderStats();
       this._debouncedRenderActivity(diningId);
     });
@@ -408,6 +421,7 @@ const UserDashboard = {
       });
       this.monthlyMeals = total;
       this.monthlyMealsBreakdown = breakdown;
+      this._mealsDataLoaded = true;
       this.renderStats();
       this.renderMealToggles();
     });
@@ -574,7 +588,8 @@ const UserDashboard = {
     this.renderMealToggles();
 
     // If due limit is exceeded, automatically turn OFF all meals in DB if any are currently ON
-    if (dueInfo.isLocked) {
+    // Strictly verify all financial data have fully loaded first to prevent accidental auto-turn-off
+    if (dueInfo.isLocked && this._depositsDataLoaded && this._mealsDataLoaded) {
       const mealStatus = u.mealStatus || {};
       const hasActiveMeals = ['breakfast', 'lunch', 'dinner'].some(t => {
         const v = mealStatus[t];
@@ -596,9 +611,10 @@ const UserDashboard = {
    * Show Meal Rate Info Modal
    */
   showMealRateInfoModal() {
-    const rateMode = this.settings?.rateMode || 'market';
-    const fixedRates = rateMode === 'fixed' ? (this.settings?.fixedRates || { breakfast: 0, lunch: 0, dinner: 0 }) : null;
-    const trackedMeals = this.settings?.trackedMeals || { breakfast: true, lunch: true, dinner: true };
+    const settings = this.settings || Messliner.state?.settings || window.OverviewModule?.cachedData?.settings || {};
+    const rateMode = settings.rateMode || 'market';
+    const fixedRates = rateMode === 'fixed' ? (settings.fixedRates || { breakfast: 0, lunch: 0, dinner: 0 }) : null;
+    const trackedMeals = settings.trackedMeals || { breakfast: true, lunch: true, dinner: true };
 
     const badgeEl = document.getElementById('rateModalModeBadge');
     const contentEl = document.getElementById('rateModalContent');
@@ -719,7 +735,7 @@ const UserDashboard = {
 
       let totalDiningMeals = 0;
       const allUsers = this.allUsers || (window.Messliner && Messliner.overview && Messliner.overview.cachedData && Messliner.overview.cachedData.users) || (window.Messliner && Messliner.users && Messliner.users.users) || {};
-      const isManagerMealEnabled = !!this.settings?.managerMealEnabled;
+      const isManagerMealEnabled = !!settings.managerMealEnabled;
 
       if (this.monthMealsData) {
         Object.values(this.monthMealsData).forEach(dayData => {
@@ -741,8 +757,12 @@ const UserDashboard = {
       if (!totalDiningMeals && Messliner.state?.monthlyTotalMeals) {
         totalDiningMeals = Messliner.state.monthlyTotalMeals;
       }
+      if (!totalDiningMeals && Messliner.state?.totalMeals) {
+        totalDiningMeals = Messliner.state.totalMeals;
+      }
 
-      const mRate = this._getDynamicMealRate();
+      const totalBazarVal = this.monthlyBazar || Messliner.state?.monthlyTotalBazar || Messliner.state?.totalBazar || (window.OverviewModule && (OverviewModule.totalBazar || (OverviewModule.cachedData && OverviewModule.cachedData.bazarTotal))) || 0;
+      const mRate = this._getDynamicMealRate() || Messliner.state?.monthlyMealRate || Messliner.state?.mealRate || (window.OverviewModule && OverviewModule.mealRate) || 0;
 
       contentEl.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 14px;">
@@ -752,7 +772,7 @@ const UserDashboard = {
             <div style="display: flex; flex-direction: column; gap: 8px;">
               <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #E2E8F0;">
                 <span style="font-size: 0.82rem; color: #475569; font-weight: 500;">Total Mess Bazar</span>
-                <span style="font-size: 0.9rem; font-weight: 700; color: #0F172A;">৳${(this.monthlyBazar || 0).toLocaleString('en-BD', { minimumFractionDigits: 2 })}</span>
+                <span style="font-size: 0.9rem; font-weight: 700; color: #0F172A;">৳${(totalBazarVal || 0).toLocaleString('en-BD', { minimumFractionDigits: 2 })}</span>
               </div>
               <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #E2E8F0;">
                 <span style="font-size: 0.82rem; color: #475569; font-weight: 500;">Total Mess Meals</span>
@@ -1022,7 +1042,7 @@ const UserDashboard = {
           : `<svg class="clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; min-width:12px; min-height:12px; display:inline-block; vertical-align:middle; margin-right:4px; color: var(--text-tertiary); flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`);
 
       const subtitleText = isDueLocked
-        ? `<span style="color: #DC2626; font-weight: 600;">Due limit exceeded (Locked)</span>`
+        ? `<span class="due-limit-subtitle-text" style="color: #DC2626; font-weight: 600;">Due limit exceeded</span>`
         : (isLocked ? 'Deadline was ' : 'Cutoff: ') + Utils.formatTime(meal.deadline);
 
       return `
@@ -1590,20 +1610,24 @@ const UserDashboard = {
    * Render Meal Toggle History section (for both member and admin on My Meal / Dashboard)
    */
   renderMealToggleHistory() {
+    // Always keep Meal History subpage content synced
+    this.renderMealHistoryModalContent();
+
     const toggleContainer = document.getElementById('mealToggleHistory');
     const toggleSection = document.getElementById('mealToggleSection');
     if (!toggleContainer) return;
 
     if (toggleSection) toggleSection.style.display = 'block';
 
+    const currentUid = this.userId || Messliner.state?.userId || (firebase.auth().currentUser && firebase.auth().currentUser.uid);
     const userLogs = this.userLogsData || [];
     const adminLogs = (this.adminLogsData || []).filter(l =>
-      (l.action === 'meal_toggled' || l.action === 'meal_updated') &&
-      (l.targetUserId === this.userId || l.performedBy === this.userId)
+      l.action === 'meal_toggled' &&
+      (!l.targetUserId || l.targetUserId === currentUid || l.performedBy === currentUid)
     );
 
-    // Primary source is userLogsData; use adminLogs as fallback if userLogsData is empty
-    const rawLogs = (userLogs.length > 0) ? userLogs : adminLogs;
+    // Merge all user-relevant logs together instead of picking only one source
+    const rawLogs = [...userLogs, ...adminLogs];
 
     // Filter meal toggle actions and deduplicate using a 5-second window key
     const toggleLogs = [];
@@ -1650,11 +1674,12 @@ const UserDashboard = {
           (log.details || '').toUpperCase().includes(' REMOVED') ||
           (log.details || '').toUpperCase().includes(' TO 0')
         );
-        const mealType = this._extractMealType(detail || log.details || '') || 'Meal';
+        const isDueLockLog = (log.details || '').toLowerCase().includes('due limit') || (detail || '').toLowerCase().includes('due limit');
+        const mealType = isDueLockLog ? 'All Meals' : (this._extractMealType(detail || log.details || '') || 'Meal');
 
         // Parse meal count
         let count = 1;
-        if (!isOn) {
+        if (!isOn || isDueLockLog) {
           count = 0;
         } else {
           const plusMatch = detail.match(/ON\s*\(\+(\d+)\)/i);
@@ -1693,7 +1718,7 @@ const UserDashboard = {
           ? '<path d="M5 12l5 5L20 7"/>'
           : '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>';
 
-        const pillText = count > 1 ? `ON (+${count - 1})` : (isOn ? 'ON' : 'OFF');
+        const pillText = isDueLockLog ? 'OFF' : (count > 1 ? `ON (+${count - 1})` : (isOn ? 'ON' : 'OFF'));
 
         return `
           <div class="meal-toggle-history-item">
@@ -1830,20 +1855,39 @@ const UserDashboard = {
 
     if (!container) return;
 
+    const currentUid = this.userId || Messliner.state?.userId || (firebase.auth().currentUser && firebase.auth().currentUser.uid);
     const userLogs = this.userLogsData || [];
     const adminLogs = (this.adminLogsData || []).filter(l =>
-      (l.action === 'meal_toggled' || l.action === 'meal_updated') &&
-      (l.targetUserId === this.userId || l.performedBy === this.userId)
+      l.action === 'meal_toggled' &&
+      (!l.targetUserId || l.targetUserId === currentUid || l.performedBy === currentUid)
     );
 
-    const rawLogs = (userLogs.length > 0) ? userLogs : adminLogs;
+    // If no logs currently in memory, fetch once directly from Firebase
+    const diningId = this.diningId || Messliner.state?.diningId;
+    if (diningId && currentUid && (!this.userLogsData || this.userLogsData.length === 0) && !this._fetchingHistoryLogs) {
+      this._fetchingHistoryLogs = true;
+      db.ref(`dinings/${diningId}/users/${currentUid}/logs`).once('value').then(snap => {
+        const arr = [];
+        snap.forEach(c => { const v = c.val(); if (v) arr.push(v); });
+        this.userLogsData = arr.reverse();
+        db.ref(`dinings/${diningId}/logs`).once('value').then(adminSnap => {
+          const aArr = [];
+          adminSnap.forEach(c => { const v = c.val(); if (v) aArr.push(v); });
+          this.adminLogsData = aArr.reverse();
+          this._fetchingHistoryLogs = false;
+          this.renderMealHistoryModalContent();
+        }).catch(() => { this._fetchingHistoryLogs = false; });
+      }).catch(() => { this._fetchingHistoryLogs = false; });
+    }
+
+    const rawLogs = [...userLogs, ...adminLogs];
 
     // Filter toggle logs
     const toggleLogs = [];
     const seenMap = new Map();
 
     rawLogs.forEach(log => {
-      if (log.action === 'meal_toggled' || log.action === 'meal_updated') {
+      if (log.action === 'meal_toggled') {
         const detail = this._normalizeMealDetail(log.details || '');
         const timeKey = Math.round((log.timestamp || 0) / 5000);
         const key = `${detail}_${timeKey}`;
@@ -1890,10 +1934,11 @@ const UserDashboard = {
         (log.details || '').toUpperCase().includes(' REMOVED') ||
         (log.details || '').toUpperCase().includes(' TO 0')
       );
-      const mealType = this._extractMealType(detail || log.details || '') || 'Meal';
+      const isDueLockLog = (log.details || '').toLowerCase().includes('due limit') || (detail || '').toLowerCase().includes('due limit');
+      const mealType = isDueLockLog ? 'All Meals' : (this._extractMealType(detail || log.details || '') || 'Meal');
 
       let count = 1;
-      if (!isOn) {
+      if (!isOn || isDueLockLog) {
         count = 0;
       } else {
         const plusMatch = detail.match(/ON\s*\(\+(\d+)\)/i);
@@ -1921,21 +1966,21 @@ const UserDashboard = {
         dateTimeStr = `${dateStr} · ${timeStr}`;
       }
 
-      const iconSvg = isOn
+      const iconSvg = (isOn && !isDueLockLog)
         ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>'
         : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
-      const pillText = count > 1 ? `ON (+${count - 1})` : (isOn ? 'ON' : 'OFF');
+      const pillText = isDueLockLog ? 'OFF' : (count > 1 ? `ON (+${count - 1})` : (isOn ? 'ON' : 'OFF'));
 
       return `
-        <div class="mh-log-item ${isOn ? 'item-on' : 'item-off'}">
-          <div class="mh-log-icon-box ${isOn ? 'icon-on' : 'icon-off'}">
+        <div class="mh-log-item ${(isOn && !isDueLockLog) ? 'item-on' : 'item-off'}">
+          <div class="mh-log-icon-box ${(isOn && !isDueLockLog) ? 'icon-on' : 'icon-off'}">
             ${iconSvg}
           </div>
           <div class="mh-log-info">
             <div class="mh-log-title-row">
               <span class="mh-log-meal-title">${mealType}</span>
-              <span class="mh-log-badge ${isOn ? 'badge-on' : 'badge-off'}">${pillText}</span>
+              <span class="mh-log-badge ${(isOn && !isDueLockLog) ? 'badge-on' : 'badge-off'}">${pillText}</span>
             </div>
             <div class="mh-log-time">${dateTimeStr}</div>
           </div>
@@ -2950,71 +2995,75 @@ const UserDashboard = {
    * Update visibility of 'My Meal' section and 'Dining Overview' based on manager settings
    */
   updateMyMealVisibility() {
-    const role = (window.Messliner && Messliner.state && Messliner.state.role) || (this.userData && this.userData.role) || 'user';
-    const isAdmin = role === 'admin';
-    const s = this.settings || (window.Messliner && Messliner.state && Messliner.state.settings) || {};
-    const showMyMeal = isAdmin && !!s.managerMealEnabled;
+    try {
+      const role = (window.Messliner && Messliner.state && Messliner.state.role) || (this.userData && this.userData.role) || 'user';
+      const isAdmin = role === 'admin';
+      const s = this.settings || (window.Messliner && Messliner.state && Messliner.state.settings) || {};
+      const showMyMeal = isAdmin && !!s.managerMealEnabled;
 
-    const navMyMeal = document.getElementById('navMyMeal');
-    const bottomNavMyMeal = document.getElementById('bottomNavMyMeal');
+      const navMyMeal = document.getElementById('navMyMeal');
+      const bottomNavMyMeal = document.getElementById('bottomNavMyMeal');
 
-    if (navMyMeal) navMyMeal.style.display = showMyMeal ? 'flex' : 'none';
-    if (bottomNavMyMeal) bottomNavMyMeal.style.display = isAdmin ? 'flex' : (showMyMeal ? 'flex' : 'none');
-    if (window.Router && typeof Router.updateBottomNavIndicator === 'function') {
-      Router.updateBottomNavIndicator(true);
-    }
+      if (navMyMeal) navMyMeal.style.display = showMyMeal ? 'flex' : 'none';
+      if (bottomNavMyMeal) bottomNavMyMeal.style.display = isAdmin ? 'flex' : (showMyMeal ? 'flex' : 'none');
+      if (window.Router && typeof Router.updateBottomNavIndicator === 'function') {
+        Router.updateBottomNavIndicator(true);
+      }
 
-    // Premium Banner Visibility: Admin panel on desktop only (> 768px)
-    const premiumBanner = document.querySelector('.premium-banner-card');
-    if (premiumBanner) {
-      const isMobile = window.innerWidth <= 768;
-      if (isAdmin && !isMobile) {
-        premiumBanner.classList.remove('hidden');
-        premiumBanner.style.setProperty('display', 'flex', 'important');
+      // Premium Banner Visibility: Admin panel on desktop only (> 768px)
+      const premiumBanner = document.querySelector('.premium-banner-card');
+      if (premiumBanner) {
+        const isMobile = window.innerWidth <= 768;
+        if (isAdmin && !isMobile) {
+          premiumBanner.classList.remove('hidden');
+          premiumBanner.style.setProperty('display', 'flex', 'important');
+        } else {
+          premiumBanner.classList.add('hidden');
+          premiumBanner.style.setProperty('display', 'none', 'important');
+        }
+      }
+
+      // Header updates
+      const headerTitle = document.getElementById('headerTitle');
+      const headerSubtitle = document.getElementById('headerSubtitle');
+
+      if (isAdmin) {
+        // Admin dashboard always shows the Dining Overview, so make sure managerOverviewSection is shown
+        const managerOverview = document.getElementById('managerOverviewSection');
+        if (managerOverview) {
+          managerOverview.style.display = 'block';
+          managerOverview.classList.remove('hidden');
+        }
+
+        if (window.Router && Router.currentPage === 'dashboard') {
+          if (typeof Messliner !== 'undefined' && Messliner.updateHomeHeaderGreeting) {
+            Messliner.updateHomeHeaderGreeting(this.userData ? this.userData.name : null);
+          }
+          if (headerSubtitle) {
+            headerSubtitle.textContent = '';
+            headerSubtitle.style.display = 'none';
+          }
+        } else if (window.Router && Router.currentPage === 'mymeal') {
+          if (headerTitle) headerTitle.textContent = 'My Meal';
+          if (headerSubtitle) {
+            headerSubtitle.textContent = '';
+            headerSubtitle.style.display = 'none';
+          }
+        }
       } else {
-        premiumBanner.classList.add('hidden');
-        premiumBanner.style.setProperty('display', 'none', 'important');
-      }
-    }
-
-    // Header updates
-    const headerTitle = document.getElementById('headerTitle');
-    const headerSubtitle = document.getElementById('headerSubtitle');
-
-    if (isAdmin) {
-      // Admin dashboard always shows the Dining Overview, so make sure managerOverviewSection is shown
-      const managerOverview = document.getElementById('managerOverviewSection');
-      if (managerOverview) {
-        managerOverview.style.display = 'block';
-        managerOverview.classList.remove('hidden');
-      }
-
-      if (Router.currentPage === 'dashboard') {
-        if (typeof Messliner !== 'undefined' && Messliner.updateHomeHeaderGreeting) {
-          Messliner.updateHomeHeaderGreeting(this.userData ? this.userData.name : null);
-        }
-        if (headerSubtitle) {
-          headerSubtitle.textContent = '';
-          headerSubtitle.style.display = 'none';
-        }
-      } else if (Router.currentPage === 'mymeal') {
-        if (headerTitle) headerTitle.textContent = 'My Meal';
-        if (headerSubtitle) {
-          headerSubtitle.textContent = '';
-          headerSubtitle.style.display = 'none';
+        // Normal user
+        if (window.Router && Router.currentPage === 'dashboard') {
+          if (typeof Messliner !== 'undefined' && Messliner.updateHomeHeaderGreeting) {
+            Messliner.updateHomeHeaderGreeting(this.userData ? this.userData.name : null);
+          }
+          if (headerSubtitle) {
+            headerSubtitle.textContent = '';
+            headerSubtitle.style.display = 'none';
+          }
         }
       }
-    } else {
-      // Normal user
-      if (Router.currentPage === 'dashboard') {
-        if (typeof Messliner !== 'undefined' && Messliner.updateHomeHeaderGreeting) {
-          Messliner.updateHomeHeaderGreeting(this.userData ? this.userData.name : null);
-        }
-        if (headerSubtitle) {
-          headerSubtitle.textContent = '';
-          headerSubtitle.style.display = 'none';
-        }
-      }
+    } catch (e) {
+      console.warn('[UserDashboard] updateMyMealVisibility error:', e);
     }
   },
 
@@ -3223,5 +3272,10 @@ const UserDashboard = {
     }
   }
 };
+
+// Globally expose UserDashboard to window and Messliner namespace
+window.UserDashboard = UserDashboard;
+window.Messliner = window.Messliner || {};
+window.Messliner.userDashboard = UserDashboard;
 
 console.log('[Messliner] User Dashboard loaded');

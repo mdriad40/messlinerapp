@@ -1,19 +1,48 @@
-# Admin Dashboard (Separate Project)
-Messliner_Admin/
+# ============================================================
+# Messliner Structured App - Production Git Ignore
+# ============================================================
 
 # Secrets & Environment variables
 .env
+.env.*
+*.env
 .env.local
 .env.*.local
+!.env.example
 js/env.js
+!js/env.example.js
+
+# Service Accounts & Private Keys
+*.pem
+*.key
+*.cert
+*serviceAccount*.json
 
 # Dependencies
 node_modules/
+package-lock.json.backup
 
 # Operating System files
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 .DS_Store
+._*
 
 # IDE & Editor configs
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
+
+# Temporary & Build files
+users_test.json
+*.tmp
+*.temp
+*.log
+supabase/.temp/
+.temp/
+.vercel
+dist/
+build/
+out/

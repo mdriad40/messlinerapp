@@ -1,0 +1,532 @@
+        <section id="page-more" class="page-section">
+
+          <!-- Hero Master Banner Card -->
+          <div class="mymeal-master-card fade-up" style="margin-bottom: var(--space-6);">
+            <div class="mymeal-master-header">
+              <div class="mymeal-master-title-block">
+                <div class="mymeal-master-icon"
+                  style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(5, 150, 105, 0.25)); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2);">
+                  <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2.5"></rect>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                  </svg>
+                </div>
+                <div>
+                  <div class="mymeal-title-row">
+                    <h3 class="mymeal-master-title">More Tools &amp; SMS Gateway</h3>
+                  </div>
+                  <p class="mymeal-master-subtitle">Automated deposit SMS alerts, &amp; balance logs</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ Quick Management Tools (Full Suite - Mobile Only) ═══ -->
+          <style>
+            @media (min-width: 1025px) {
+              #moreQuickManagementSection {
+                display: none !important;
+              }
+            }
+          </style>
+          <div id="moreQuickManagementSection" class="more-pro-card fade-up" style="margin-bottom: var(--space-6); padding: 20px;">
+            <div class="more-card-header" style="margin-bottom: 16px;">
+              <div class="more-card-icon-wrap green">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+              </div>
+              <div>
+                <h4 class="more-card-title">Quick Management Tools</h4>
+                <p class="more-card-desc">Access mess member rosters, shared bills, bazar schedules, and notices</p>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;">
+              <!-- 1. Members -->
+              <div class="more-sheet-card" onclick="Messliner.router.navigate('users');" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div class="more-card-icon-box" style="width: 40px; height: 40px; border-radius: 12px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                </div>
+                <span style="font-size: 0.84rem; font-weight: 700; color: #0F172A;">Members</span>
+              </div>
+
+              <!-- 2. Bazar Routine -->
+              <div class="more-sheet-card" onclick="Messliner.router.navigate('bazar');" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div class="more-card-icon-box" style="width: 40px; height: 40px; border-radius: 12px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                  </svg>
+                </div>
+                <span style="font-size: 0.84rem; font-weight: 700; color: #0F172A;">Bazar Routine</span>
+              </div>
+
+              <!-- 3. Ledger -->
+              <div class="more-sheet-card" onclick="Messliner.router.navigate('ledger');" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div class="more-card-icon-box" style="width: 40px; height: 40px; border-radius: 12px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  </svg>
+                </div>
+                <span style="font-size: 0.84rem; font-weight: 700; color: #0F172A;">Shared Bills</span>
+              </div>
+
+              <!-- 4. Toggle History -->
+              <div class="more-sheet-card" onclick="Messliner.router.navigate('mealhistory');" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div class="more-card-icon-box" style="width: 40px; height: 40px; border-radius: 12px; background: #F1F5F9; color: #475569; display: flex; align-items: center; justify-content: center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </div>
+                <span style="font-size: 0.84rem; font-weight: 700; color: #0F172A;">Toggle Log</span>
+              </div>
+
+              <!-- 5. Notice Board -->
+              <div class="more-sheet-card" onclick="Messliner.router.navigate('notices');" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div class="more-card-icon-box" style="width: 40px; height: 40px; border-radius: 12px; background: #FFF1F2; color: #E11D48; display: flex; align-items: center; justify-content: center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                </div>
+                <span style="font-size: 0.84rem; font-weight: 700; color: #0F172A;">Notice Board</span>
+              </div>
+
+              <!-- 6. Mess Tasks -->
+              <div class="more-sheet-card" onclick="Messliner.router.navigate('tasks');" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div class="more-card-icon-box" style="width: 40px; height: 40px; border-radius: 12px; background: #F0FDF4; color: #16A34A; display: flex; align-items: center; justify-content: center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                  </svg>
+                </div>
+                <span style="font-size: 0.84rem; font-weight: 700; color: #0F172A;">Mess Tasks</span>
+              </div>
+
+              <!-- 7. Export Slips -->
+              <div class="more-sheet-card" onclick="Messliner.router.navigate('export-slip');" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div class="more-card-icon-box" style="width: 40px; height: 40px; border-radius: 12px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </div>
+                <span style="font-size: 0.84rem; font-weight: 700; color: #0F172A;">Export Slips</span>
+              </div>
+
+              <!-- 8. Messliner AI -->
+              <div class="more-sheet-card" onclick="Messliner.router.navigate('aiassistant');" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div class="more-card-icon-box" style="width: 40px; height: 40px; border-radius: 12px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                </div>
+                <span style="font-size: 0.84rem; font-weight: 700; color: #0F172A;">Messliner AI</span>
+              </div>
+
+              <!-- 9. Messliner Pro -->
+              <div class="more-sheet-card" onclick="Messliner.router.navigate('pro');" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div class="more-card-icon-box" style="width: 40px; height: 40px; border-radius: 12px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/>
+                  </svg>
+                </div>
+                <span style="font-size: 0.84rem; font-weight: 700; color: #0F172A;">Messliner Pro</span>
+              </div>
+
+              <!-- 10. Settings -->
+              <div class="more-sheet-card" onclick="Messliner.router.navigate('settings');" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+                <div class="more-card-icon-box" style="width: 40px; height: 40px; border-radius: 12px; background: #F1F5F9; color: #0F172A; display: flex; align-items: center; justify-content: center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  </svg>
+                </div>
+                <span style="font-size: 0.84rem; font-weight: 700; color: #0F172A;">Settings</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Segmented Tab Switcher -->
+          <div class="more-tabs-header-wrapper" style="margin-bottom: var(--space-6);">
+            <div id="moreMenuTabBar" class="more-segmented-tabs">
+              <button class="more-tab-btn active" data-tab="sms" id="moreTab_sms"
+                onclick="Messliner.smsAlert.switchTab('sms')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path
+                    d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z" />
+                </svg>
+                <span>SMS Alert &amp; Config</span>
+              </button>
+              <button class="more-tab-btn" data-tab="sms-history" id="moreTab_sms-history"
+                onclick="Messliner.smsAlert.switchTab('sms-history')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+                <span>Balance &amp; Recharge History</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab: SMS Alert -->
+          <div id="moreTabContent_sms">
+
+            <!-- Card 1: SMS Alert Banner Switch -->
+            <div class="more-pro-card sms-toggle-banner fade-up" style="margin-bottom: var(--space-6);">
+              <div class="sms-toggle-inner">
+                <div class="sms-toggle-info">
+                  <div class="sms-toggle-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.2">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="more-card-title">Instant Deposit SMS Notifications</h4>
+                    <p class="more-card-desc">Automatically send SMS notifications to members upon deposit confirmation
+                    </p>
+                  </div>
+                </div>
+                <div class="sms-toggle-action">
+                  <div class="toggle-switch" id="smsAlertToggleSwitch"
+                    onclick="Messliner.smsAlert.requestToggleEnable(event)"
+                    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Messliner.smsAlert.requestToggleEnable(event);}"
+                    role="button" tabindex="0" style="cursor: pointer;">
+                    <input type="checkbox" id="smsAlertToggle" tabindex="-1" style="pointer-events: none;" readonly>
+                    <span class="toggle-slider"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: SMS Balance & Metric Cards Grid -->
+            <div class="more-pro-card fade-up" style="margin-bottom: var(--space-6);">
+              <div class="more-card-header">
+                <div class="more-card-icon-wrap green">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23" />
+                    <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="more-card-title">SMS Balance &amp; Cost Management</h4>
+                  <p class="more-card-desc">Track real-time SMS credits, rate per SMS, and top up account balance</p>
+                </div>
+              </div>
+
+              <!-- Quick Stats Grid -->
+              <div class="sms-metrics-grid" style="margin-bottom: var(--space-5);">
+                <div class="sms-metric-card">
+                  <div class="sms-metric-icon balance">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="2" y="5" width="20" height="14" rx="2" />
+                      <line x1="2" y1="10" x2="22" y2="10" />
+                    </svg>
+                  </div>
+                  <div class="sms-metric-data">
+                    <span class="sms-metric-label">SMS Balance</span>
+                    <div id="smsBalanceDisplay" class="sms-metric-value">৳0.00</div>
+                  </div>
+                </div>
+
+                <div class="sms-metric-card">
+                  <div class="sms-metric-icon rate">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                      <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                  </div>
+                  <div class="sms-metric-data">
+                    <span class="sms-metric-label">Per SMS Rate</span>
+                    <div id="smsRateDisplay" class="sms-metric-value">৳0.00</div>
+                  </div>
+                </div>
+
+                <div class="sms-metric-card highlight">
+                  <div class="sms-metric-icon remaining">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                  </div>
+                  <div class="sms-metric-data">
+                    <span class="sms-metric-label">Est. Remaining SMS</span>
+                    <div id="smsRemainingDisplay" class="sms-metric-value text-emerald">0</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Two-Column Grid: bKash Recharge (50%) & SMS Info Policy (50%) -->
+              <style>
+                #bkashRechargeAmount::-webkit-outer-spin-button,
+                #bkashRechargeAmount::-webkit-inner-spin-button {
+                  -webkit-appearance: none;
+                  margin: 0;
+                }
+
+                #bkashRechargeAmount {
+                  -moz-appearance: textfield;
+                  appearance: textfield;
+                }
+
+                @media (min-width: 768px) {
+                  .sms-recharge-grid-50 {
+                    display: grid !important;
+                    grid-template-columns: 1fr 1fr !important;
+                    gap: 16px !important;
+                  }
+                }
+
+                @media (max-width: 767px) {
+                  .sms-recharge-grid-50 {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    gap: 16px !important;
+                  }
+                }
+              </style>
+
+              <div class="sms-recharge-grid-50" style="margin-top: 16px;">
+                <!-- Left Column (50%): bKash Instant Auto Recharge -->
+                <div class="sms-bkash-recharge-card"
+                  style="background: linear-gradient(135deg, rgba(226, 19, 110, 0.05) 0%, rgba(226, 19, 110, 0.02) 100%); border: 1.5px solid rgba(226, 19, 110, 0.2); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <div
+                      style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                      <div style="display: flex; align-items: center; gap: 10px;">
+                        <div
+                          style="width: 36px; height: 36px; border-radius: 10px; background: #E2136E; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(226, 19, 110, 0.3); flex-shrink: 0;">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" fill="#ffffff" opacity="0.3" />
+                            <path d="M7 10l5 3 5-3M12 13v7" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h4
+                            style="margin: 0; font-size: 14px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                            <span>bKash Instant Auto Top-up</span>
+                            <span
+                              style="font-size: 10px; font-weight: 800; background: #E2136E; color: #fff; padding: 2px 7px; border-radius: 99px;">AUTO</span>
+                          </h4>
+                          <p style="margin: 2px 0 0; font-size: 11px; color: #64748b;">Instant SMS credit recharge via
+                            secure bKash</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                      <label class="form-label" for="bkashRechargeAmount"
+                        style="font-weight: 700; color: #334155; font-size: 12px;">Recharge Amount (৳)</label>
+                      <div class="input-with-badge">
+                        <span class="input-badge" style="color: #E2136E; font-weight: 800;">৳</span>
+                        <input type="number" id="bkashRechargeAmount" class="form-input"
+                          placeholder="Enter amount (min ৳10)" min="10" step="1" value="100"
+                          oninput="Messliner.smsAlert.calcBkashEstimatedSms(this.value)"
+                          onkeyup="Messliner.smsAlert.calcBkashEstimatedSms(this.value)"
+                          onchange="Messliner.smsAlert.calcBkashEstimatedSms(this.value)"
+                          style="font-weight: 700; font-size: 15px; -moz-appearance: textfield; appearance: textfield;">
+                      </div>
+                    </div>
+
+                    <!-- Quick Select Amount Chips -->
+                    <div style="margin-bottom: 14px;">
+                      <span
+                        style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px; display: block;">Quick
+                        Select Amount:</span>
+                      <div style="display: flex; flex-wrap: wrap; gap: 6px;" id="bkashQuickAmountChips">
+                        <button type="button" class="btn-chip" onclick="Messliner.smsAlert.selectBkashAmount(50)"
+                          style="padding: 5px 12px; font-size: 11px; font-weight: 700; border-radius: 99px; border: 1px solid #cbd5e1; background: #fff; color: #334155; cursor: pointer; transition: all 0.2s;">৳50</button>
+                        <button type="button" class="btn-chip active"
+                          onclick="Messliner.smsAlert.selectBkashAmount(100)"
+                          style="padding: 5px 12px; font-size: 11px; font-weight: 700; border-radius: 99px; border: 1.5px solid #E2136E; background: #FDF2F8; color: #E2136E; cursor: pointer; transition: all 0.2s;">৳100</button>
+                        <button type="button" class="btn-chip" onclick="Messliner.smsAlert.selectBkashAmount(200)"
+                          style="padding: 5px 12px; font-size: 11px; font-weight: 700; border-radius: 99px; border: 1px solid #cbd5e1; background: #fff; color: #334155; cursor: pointer; transition: all 0.2s;">৳200</button>
+                        <button type="button" class="btn-chip" onclick="Messliner.smsAlert.selectBkashAmount(500)"
+                          style="padding: 5px 12px; font-size: 11px; font-weight: 700; border-radius: 99px; border: 1px solid #cbd5e1; background: #fff; color: #334155; cursor: pointer; transition: all 0.2s;">৳500</button>
+                        <button type="button" class="btn-chip" onclick="Messliner.smsAlert.selectBkashAmount(1000)"
+                          style="padding: 5px 12px; font-size: 11px; font-weight: 700; border-radius: 99px; border: 1px solid #cbd5e1; background: #fff; color: #334155; cursor: pointer; transition: all 0.2s;">৳1000</button>
+                      </div>
+                    </div>
+
+                    <!-- Estimated Calculation Bar -->
+                    <div
+                      style="display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: rgba(255,255,255,0.9); border: 1px solid rgba(226, 19, 110, 0.15); border-radius: 10px; margin-bottom: 14px;">
+                      <span style="font-size: 11px; color: #64748b; font-weight: 600;">Estimated Credits:</span>
+                      <span id="bkashEstSmsCount" style="font-size: 12px; font-weight: 800; color: #E2136E;">≈ 142 SMS
+                        Credits</span>
+                    </div>
+                  </div>
+
+                  <!-- bKash Pay Button -->
+                  <button type="button" id="bkashPayBtn" onclick="Messliner.smsAlert.initiateBkashRecharge()"
+                    style="width: 100%; height: 44px; border: none; border-radius: 12px; background: linear-gradient(135deg, #E2136E 0%, #D12053 100%); color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(226, 19, 110, 0.35); transition: all 0.2s;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                      <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    <span>Pay with bKash</span>
+                  </button>
+                </div>
+
+                <!-- Right Column (50%): SMS Info & Safety Policy -->
+                <div class="sms-guide-info-card"
+                  style="background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%); border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <div
+                      style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                      <div style="display: flex; align-items: center; gap: 10px;">
+                        <div
+                          style="width: 36px; height: 36px; border-radius: 10px; background: #059669; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25); flex-shrink: 0; color: #fff;">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h4
+                            style="margin: 0; font-size: 14px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                            <span>SMS Gateway &amp; Safety Policy</span>
+                            <span
+                              style="font-size: 10px; font-weight: 800; background: #ecfdf5; color: #059669; padding: 2px 7px; border-radius: 99px;">VERIFIED</span>
+                          </h4>
+                          <p style="margin: 2px 0 0; font-size: 11px; color: #64748b;">Universal gateway guidelines for
+                            mess managers</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Feature List Items -->
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+                      <div
+                        style="padding: 10px 12px; background: #ffffff; border: 1px solid #f1f5f9; border-radius: 10px;">
+                        <div style="font-size: 12px; font-weight: 700; color: #1e293b;">Automated Deposit Alerts</div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Members receive instant SMS right
+                          when deposit is approved.</div>
+                      </div>
+
+                      <div
+                        style="padding: 10px 12px; background: #ffffff; border: 1px solid #f1f5f9; border-radius: 10px;">
+                        <div style="font-size: 12px; font-weight: 700; color: #1e293b;">Lifetime Credit Validity</div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Recharged SMS balance never
+                          expires and rolls over monthly.</div>
+                      </div>
+
+                      <div
+                        style="padding: 10px 12px; background: #ffffff; border: 1px solid #f1f5f9; border-radius: 10px;">
+                        <div style="font-size: 12px; font-weight: 700; color: #1e293b;">All BD Telecom Operators</div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Full coverage: GP, Banglalink,
+                          Robi, Airtel &amp; Teletalk numbers.</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Bottom Status Dock -->
+                  <div
+                    style="display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                    <span style="font-size: 11px; color: #64748b; font-weight: 600;">Recharge Audit:</span>
+                    <span
+                      style="font-size: 11px; font-weight: 700; color: #2563eb; display: flex; align-items: center; gap: 4px;">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      Logs in Balance Tab
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+            <!-- Card 5: Recent SMS Activity Log -->
+            <div class="more-pro-card fade-up">
+              <div class="more-card-header" style="justify-content: space-between;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div class="more-card-icon-wrap slate">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 8v4l3 3" />
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="more-card-title">Recent SMS Activity Log</h4>
+                    <p class="more-card-desc">Real-time status of sent SMS notifications</p>
+                  </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="Messliner.smsAlert.refreshLog()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                  Refresh
+                </button>
+              </div>
+              <div id="smsLogList" class="sms-log-container">
+                <div class="empty-state" style="padding:var(--space-5);">
+                  <div class="empty-state-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path
+                        d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z" />
+                    </svg>
+                  </div>
+                  <h3>No SMS Sent Yet</h3>
+                  <p>SMS logs will appear here after deposits.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <!-- /Tab: SMS Alert -->
+
+          <!-- Tab: SMS History -->
+          <div id="moreTabContent_sms-history" style="display:none;">
+            <div class="more-pro-card fade-up">
+              <div class="more-card-header" style="justify-content: space-between;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div class="more-card-icon-wrap green">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="more-card-title">SMS Balance &amp; Recharge History</h4>
+                    <p class="more-card-desc">Detailed audit trail of balance recharges, rates and SMS deductions</p>
+                  </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="Messliner.smsAlert.refreshBalanceHistory()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                  Refresh
+                </button>
+              </div>
+              <div id="smsBalanceHistoryList" class="sms-log-container">
+                <div class="empty-state" style="padding:var(--space-5);">
+                  <div class="empty-state-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <line x1="12" y1="1" x2="12" y2="23" />
+                      <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+                    </svg>
+                  </div>
+                  <h3>No Balance History</h3>
+                  <p>Transactions will appear here after updates or SMS sends.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </section>
+<!-- </body> -->

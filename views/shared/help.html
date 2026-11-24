@@ -1,0 +1,407 @@
+        <section id="page-help" class="page-section finance-page-pro"
+          style="max-width: 1100px; width: 100%; margin: 0 auto; padding-top: 0;">
+
+          <!-- ═══ Help Hero Banner (Matching Ledger Page Style) ═══ -->
+          <div class="fp-hero-banner fade-up" style="margin-bottom: 22px;">
+            <div class="fp-hero-glow"></div>
+            <div class="fp-hero-content"
+              style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 18px;">
+                <div class="fp-hero-icon-box">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="12" r="4" />
+                    <line x1="4.93" y1="4.93" x2="9.17" y2="9.17" />
+                    <line x1="14.83" y1="14.83" x2="19.07" y2="19.07" />
+                    <line x1="14.83" y1="9.17" x2="19.07" y2="4.93" />
+                    <line x1="4.93" y1="19.07" x2="9.17" y2="14.83" />
+                  </svg>
+                </div>
+                <div class="fp-hero-text">
+                  <h2 class="fp-hero-title">Help &amp; Support</h2>
+                  <p class="fp-hero-subtitle">Quick guides, frequently asked questions, and support channels</p>
+                </div>
+              </div>
+
+              <!-- Live FAQ Search Input -->
+              <div style="position: relative; width: 100%; max-width: 360px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round"
+                  style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none;">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input type="text" id="helpSearchInput" oninput="filterHelpFaqs()"
+                  placeholder="Search help topics (e.g. meal rate, deposit)..."
+                  style="width: 100%; height: 38px; border-radius: 11px; border: 1.5px solid rgba(255, 255, 255, 0.25); background: #ffffff; padding: 0 34px 0 34px; font-size: 0.84rem; color: #0F172A; box-sizing: border-box; outline: none; box-shadow: 0 2px 10px rgba(0,0,0,0.12); transition: all 0.15s ease;"
+                  onfocus="this.style.borderColor='#10B981'; this.style.boxShadow='0 0 0 3px rgba(16, 185, 129, 0.25)';"
+                  onblur="this.style.borderColor='rgba(255, 255, 255, 0.25)'; this.style.boxShadow='0 2px 10px rgba(0,0,0,0.12)';">
+                <button type="button" onclick="document.getElementById('helpSearchInput').value=''; filterHelpFaqs();"
+                  style="position: absolute; right: 9px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; border-radius: 50%; background: #F1F5F9; border: none; color: #94A3B8; font-size: 0.65rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center;"
+                  title="Clear">
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div class="fp-hero-pattern"></div>
+          </div>
+
+          <!-- 3 Support Channel Cards Grid -->
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 22px;">
+
+            <!-- Channel 1: WhatsApp Support -->
+            <div class="card"
+              style="background: #ffffff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03); display: flex; flex-direction: column; justify-content: space-between; transition: all 0.15s ease;"
+              onmouseenter="this.style.borderColor='#CBD5E1'; this.style.boxShadow='0 4px 12px -2px rgba(15, 23, 42, 0.06)';"
+              onmouseleave="this.style.borderColor='#E2E8F0'; this.style.boxShadow='0 1px 3px rgba(15, 23, 42, 0.03)';">
+              <div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                  <div
+                    style="width: 36px; height: 36px; border-radius: 10px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path
+                        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                    </svg>
+                  </div>
+                  <span
+                    style="font-size: 0.7rem; font-weight: 600; color: #059669; background: #ECFDF5; padding: 2px 7px; border-radius: 6px;">Available</span>
+                </div>
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: #0F172A; margin: 0 0 5px;">WhatsApp Support
+                </h4>
+                <p style="font-size: 0.8rem; color: #64748B; margin: 0 0 14px; line-height: 1.45;">
+                  Direct message our support team for quick assistance and inquiries.
+                </p>
+              </div>
+              <a href="https://wa.me/8801309968240?text=Hello%20Messliner%20Support,%20I%20need%20help" target="_blank"
+                rel="noopener noreferrer"
+                style="width: 100%; height: 36px; border-radius: 8px; background: #059669; color: #ffffff; font-weight: 600; font-size: 0.82rem; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s ease;"
+                onmouseenter="this.style.background='#047857';" onmouseleave="this.style.background='#059669';">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                </svg>
+                Chat on WhatsApp
+              </a>
+            </div>
+
+            <!-- Channel 2: Official Support Email -->
+            <div class="card"
+              style="background: #ffffff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03); display: flex; flex-direction: column; justify-content: space-between; transition: all 0.15s ease;"
+              onmouseenter="this.style.borderColor='#CBD5E1'; this.style.boxShadow='0 4px 12px -2px rgba(15, 23, 42, 0.06)';"
+              onmouseleave="this.style.borderColor='#E2E8F0'; this.style.boxShadow='0 1px 3px rgba(15, 23, 42, 0.03)';">
+              <div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                  <div
+                    style="width: 36px; height: 36px; border-radius: 10px; background: #F1F5F9; color: #475569; display: flex; align-items: center; justify-content: center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                  </div>
+                  <span
+                    style="font-size: 0.7rem; font-weight: 600; color: #475569; background: #F1F5F9; padding: 2px 7px; border-radius: 6px;">Email</span>
+                </div>
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: #0F172A; margin: 0 0 5px;">Email Support</h4>
+                <div
+                  style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; color: #334155; margin-bottom: 14px; font-family: monospace; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 5px 8px; border-radius: 6px;">
+                  <span id="supportEmailText">messliner.app@gmail.com</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button type="button" id="copySupportEmailBtn" onclick="copySupportEmail()"
+                  style="flex: 1; height: 36px; border-radius: 8px; background: #FFFFFF; color: #334155; font-weight: 600; font-size: 0.8rem; border: 1px solid #E2E8F0; cursor: pointer; transition: all 0.15s ease;"
+                  onmouseenter="this.style.background='#F8FAFC'; this.style.borderColor='#CBD5E1';"
+                  onmouseleave="this.style.background='#FFFFFF'; this.style.borderColor='#E2E8F0';">
+                  Copy
+                </button>
+                <a href="mailto:messliner.app@gmail.com?subject=Messliner%20Help%20Request"
+                  style="flex: 1; height: 36px; border-radius: 8px; background: #0F172A; color: #ffffff; font-weight: 600; font-size: 0.8rem; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 4px; transition: background 0.15s ease;"
+                  onmouseenter="this.style.background='#1E293B';" onmouseleave="this.style.background='#0F172A';">
+                  Send Mail
+                </a>
+              </div>
+            </div>
+
+            <!-- Channel 3: Report or Suggestion -->
+            <div class="card"
+              style="background: #ffffff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03); display: flex; flex-direction: column; justify-content: space-between; transition: all 0.15s ease;"
+              onmouseenter="this.style.borderColor='#CBD5E1'; this.style.boxShadow='0 4px 12px -2px rgba(15, 23, 42, 0.06)';"
+              onmouseleave="this.style.borderColor='#E2E8F0'; this.style.boxShadow='0 1px 3px rgba(15, 23, 42, 0.03)';">
+              <div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                  <div
+                    style="width: 36px; height: 36px; border-radius: 10px; background: #F1F5F9; color: #475569; display: flex; align-items: center; justify-content: center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      <line x1="12" y1="8" x2="12" y2="14" />
+                      <line x1="9" y1="11" x2="15" y2="11" />
+                    </svg>
+                  </div>
+                  <span
+                    style="font-size: 0.7rem; font-weight: 600; color: #475569; background: #F1F5F9; padding: 2px 7px; border-radius: 6px;">Feedback</span>
+                </div>
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: #0F172A; margin: 0 0 5px;">Feedback &amp;
+                  Reports
+                </h4>
+                <p style="font-size: 0.8rem; color: #64748B; margin: 0 0 14px; line-height: 1.45;">
+                  Have a feature idea or found a bug? Submit it directly in the form below.
+                </p>
+              </div>
+              <button type="button"
+                onclick="document.getElementById('helpReportSection').scrollIntoView({ behavior: 'smooth' });"
+                style="width: 100%; height: 36px; border-radius: 8px; background: #FFFFFF; color: #0F172A; font-weight: 600; font-size: 0.82rem; border: 1px solid #E2E8F0; cursor: pointer; transition: all 0.15s ease;"
+                onmouseenter="this.style.background='#F8FAFC'; this.style.borderColor='#CBD5E1';"
+                onmouseleave="this.style.background='#FFFFFF'; this.style.borderColor='#E2E8F0';">
+                Write Feedback
+              </button>
+            </div>
+
+          </div>
+
+          <!-- 2-Column Section: FAQs on Left | Report/Suggestion Form on Right -->
+          <div
+            style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; margin-bottom: 24px; align-items: start;">
+
+            <!-- Left Column: Frequently Asked Questions (Accordion) -->
+            <div class="card"
+              style="background: #ffffff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <h3 style="font-size: 0.96rem; font-weight: 700; color: #0F172A; margin: 0;">Frequently Asked
+                    Questions</h3>
+                </div>
+                <span id="helpFaqCount"
+                  style="font-size: 0.7rem; font-weight: 600; color: #64748B; background: #F1F5F9; padding: 2px 7px; border-radius: 6px;">6
+                  Guides</span>
+              </div>
+
+              <!-- FAQ List Container -->
+              <div id="helpFaqList" style="display: flex; flex-direction: column; gap: 8px;">
+
+                <!-- FAQ 1: My Meals -->
+                <div class="help-faq-item"
+                  style="border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; background: #FAFAFA; transition: border-color 0.15s ease;">
+                  <div onclick="toggleFaqItem(this)"
+                    style="padding: 11px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                    <span style="font-size: 0.84rem; font-weight: 600; color: #1E293B;">How do I record or edit my daily
+                      meals?</span>
+                    <svg class="faq-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8"
+                      stroke-width="2" style="transition: transform 0.2s ease;">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                  <div class="faq-body"
+                    style="display: none; padding: 0 14px 12px; font-size: 0.81rem; color: #475569; line-height: 1.55; border-top: 1px solid #F1F5F9; margin-top: 2px; padding-top: 10px;">
+                    Go to the <b>My Meal</b> tab in the sidebar navigation. There you can set your Breakfast, Lunch, and
+                    Dinner counts for today and upcoming dates before your mess manager's cutoff time.
+                  </div>
+                </div>
+
+                <!-- FAQ 2: Meal Rate -->
+                <div class="help-faq-item"
+                  style="border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; background: #FAFAFA; transition: border-color 0.15s ease;">
+                  <div onclick="toggleFaqItem(this)"
+                    style="padding: 11px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                    <span style="font-size: 0.84rem; font-weight: 600; color: #1E293B;">How is the Meal Rate
+                      automatically calculated?</span>
+                    <svg class="faq-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8"
+                      stroke-width="2" style="transition: transform 0.2s ease;">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                  <div class="faq-body"
+                    style="display: none; padding: 0 14px 12px; font-size: 0.81rem; color: #475569; line-height: 1.55; border-top: 1px solid #F1F5F9; margin-top: 2px; padding-top: 10px;">
+                    Meal Rate is calculated with full transparency:
+                    <code
+                      style="background: #F1F5F9; padding: 2px 5px; border-radius: 4px; font-size: 0.78rem; font-family: monospace; color: #0F172A;">Meal Rate = Total Bazar Expenses ÷ Total Consumed Meals</code>
+                    across all active dining members.
+                  </div>
+                </div>
+
+                <!-- FAQ 3: Deposit & Balance -->
+                <div class="help-faq-item"
+                  style="border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; background: #FAFAFA; transition: border-color 0.15s ease;">
+                  <div onclick="toggleFaqItem(this)"
+                    style="padding: 11px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                    <span style="font-size: 0.84rem; font-weight: 600; color: #1E293B;">How do I deposit money into my
+                      mess account?</span>
+                    <svg class="faq-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8"
+                      stroke-width="2" style="transition: transform 0.2s ease;">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                  <div class="faq-body"
+                    style="display: none; padding: 0 14px 12px; font-size: 0.81rem; color: #475569; line-height: 1.55; border-top: 1px solid #F1F5F9; margin-top: 2px; padding-top: 10px;">
+                    Send your deposit money (via bKash, Nagad, or Cash) to your dining meal manager. Once received, the
+                    manager enters it in the <b>Finance / Deposits</b> section, and your balance updates instantly in
+                    your Profile.
+                  </div>
+                </div>
+
+                <!-- FAQ 4: Join Code -->
+                <div class="help-faq-item"
+                  style="border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; background: #FAFAFA; transition: border-color 0.15s ease;">
+                  <div onclick="toggleFaqItem(this)"
+                    style="padding: 11px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                    <span style="font-size: 0.84rem; font-weight: 600; color: #1E293B;">How do new members join our
+                      mess?</span>
+                    <svg class="faq-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8"
+                      stroke-width="2" style="transition: transform 0.2s ease;">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                  <div class="faq-body"
+                    style="display: none; padding: 0 14px 12px; font-size: 0.81rem; color: #475569; line-height: 1.55; border-top: 1px solid #F1F5F9; margin-top: 2px; padding-top: 10px;">
+                    Open the <b>Profile</b> page to copy your unique 6-character <b>Mess Code</b> (e.g.
+                    <code
+                      style="background: #F1F5F9; padding: 2px 5px; border-radius: 4px; font-size: 0.78rem; font-family: monospace; color: #0F172A;">DD-HE2XR</code>).
+                    When your roommates register on Messliner, they enter this code to join your
+                    mess dining.
+                  </div>
+                </div>
+
+                <!-- FAQ 5: Password & Profile -->
+                <div class="help-faq-item"
+                  style="border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; background: #FAFAFA; transition: border-color 0.15s ease;">
+                  <div onclick="toggleFaqItem(this)"
+                    style="padding: 11px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                    <span style="font-size: 0.84rem; font-weight: 600; color: #1E293B;">How do I change my password or
+                      profile name?</span>
+                    <svg class="faq-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8"
+                      stroke-width="2" style="transition: transform 0.2s ease;">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                  <div class="faq-body"
+                    style="display: none; padding: 0 14px 12px; font-size: 0.81rem; color: #475569; line-height: 1.55; border-top: 1px solid #F1F5F9; margin-top: 2px; padding-top: 10px;">
+                    Go to <b>Profile</b> from the top right avatar, click on your avatar to edit your display name and
+                    phone number, or click <b>Change Password</b> under Security &amp; Access.
+                  </div>
+                </div>
+
+                <!-- FAQ 6: Bug Resolution -->
+                <div class="help-faq-item"
+                  style="border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; background: #FAFAFA; transition: border-color 0.15s ease;">
+                  <div onclick="toggleFaqItem(this)"
+                    style="padding: 11px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                    <span style="font-size: 0.84rem; font-weight: 600; color: #1E293B;">What should I do if I face an
+                      issue or calculation bug?</span>
+                    <svg class="faq-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8"
+                      stroke-width="2" style="transition: transform 0.2s ease;">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                  <div class="faq-body"
+                    style="display: none; padding: 0 14px 12px; font-size: 0.81rem; color: #475569; line-height: 1.55; border-top: 1px solid #F1F5F9; margin-top: 2px; padding-top: 10px;">
+                    Use the <b>Report or Suggestion</b> form on this page or message us directly on WhatsApp at
+                    <b>01309968240</b>. Our support team responds promptly to ensure your dining calculations remain
+                    accurate.
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Right Column: Interactive Report / Suggestion Form (W3Forms ready with Sliding 2-Tabs) -->
+            <div id="helpReportSection" class="card"
+              style="background: #ffffff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);">
+
+              <div style="margin-bottom: 12px;">
+                <h3 style="font-size: 0.96rem; font-weight: 700; color: #0F172A; margin: 0 0 3px;">Report or Suggestion
+                </h3>
+                <p style="font-size: 0.8rem; color: #64748B; margin: 0;">
+                  Submit an issue or propose a new feature.
+                </p>
+              </div>
+
+              <form id="helpFeedbackForm" onsubmit="event.preventDefault(); submitFullPageReport();"
+                style="display: flex; flex-direction: column; gap: 10px;">
+
+                <!-- Sliding 2-Tab Segmented Control (Bug Report vs Feature Suggestion) -->
+                <div>
+                  <div
+                    style="position: relative; background: #F1F5F9; border-radius: 8px; padding: 3px; display: flex; align-items: center;">
+                    <!-- Sliding Active Pill Indicator -->
+                    <div id="helpTabIndicator"
+                      style="position: absolute; top: 3px; left: 3px; width: calc(50% - 3px); height: calc(100% - 6px); background: #ffffff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: transform 0.2s ease; pointer-events: none;">
+                    </div>
+
+                    <!-- Tab 1: Bug Report -->
+                    <button type="button" id="helpTabBugBtn" onclick="switchHelpTab('bug')"
+                      style="position: relative; z-index: 1; flex: 1; height: 32px; border: none; background: transparent; font-weight: 600; font-size: 0.8rem; color: #0F172A; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: color 0.15s ease;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="8" y="9" width="8" height="10" rx="4" />
+                        <circle cx="12" cy="5" r="2" />
+                        <line x1="8" y1="2" x2="6" y2="4" />
+                        <line x1="16" y1="2" x2="18" y2="4" />
+                        <line x1="4" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="13" x2="20" y2="13" />
+                      </svg>
+                      Report Issue
+                    </button>
+
+                    <!-- Tab 2: Feature Suggestion -->
+                    <button type="button" id="helpTabSuggestionBtn" onclick="switchHelpTab('suggestion')"
+                      style="position: relative; z-index: 1; flex: 1; height: 32px; border: none; background: transparent; font-weight: 600; font-size: 0.8rem; color: #64748B; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: color 0.15s ease;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4" />
+                        <circle cx="12" cy="12" r="4" />
+                      </svg>
+                      Suggest Feature
+                    </button>
+                  </div>
+                  <input type="hidden" id="helpFormCategory" value="Bug Report">
+                </div>
+
+                <!-- Your Name / Phone -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <div>
+                    <label
+                      style="display: block; font-size: 0.74rem; font-weight: 600; color: #475569; margin-bottom: 3px;">Your
+                      Name</label>
+                    <input type="text" id="helpFormName" class="form-input" placeholder="Your name"
+                      style="width: 100%; height: 36px; font-size: 0.82rem; border-radius: 8px; border: 1px solid #E2E8F0; padding: 0 10px; box-sizing: border-box; background: #FAFAFA;">
+                  </div>
+                  <div>
+                    <label
+                      style="display: block; font-size: 0.74rem; font-weight: 600; color: #475569; margin-bottom: 3px;">Phone
+                      / Email</label>
+                    <input type="text" id="helpFormContact" class="form-input" placeholder="017XXXXXXXX"
+                      style="width: 100%; height: 36px; font-size: 0.82rem; border-radius: 8px; border: 1px solid #E2E8F0; padding: 0 10px; box-sizing: border-box; background: #FAFAFA;">
+                  </div>
+                </div>
+
+                <!-- Message Description -->
+                <div>
+                  <label id="helpFormMessageLabel"
+                    style="display: block; font-size: 0.74rem; font-weight: 600; color: #475569; margin-bottom: 3px;">Issue
+                    Description</label>
+                  <textarea id="helpFormMessage" rows="3" class="form-input"
+                    placeholder="Describe what went wrong, which page or calculation, and what you expected..."
+                    style="width: 100%; font-size: 0.82rem; border-radius: 8px; border: 1px solid #E2E8F0; padding: 8px 10px; box-sizing: border-box; background: #FAFAFA; resize: vertical;"></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="helpFormSubmitBtn"
+                  style="height: 38px; border-radius: 8px; background: #059669; color: #ffffff; font-weight: 600; font-size: 0.84rem; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px; transition: background 0.15s ease;"
+                  onmouseenter="this.style.background='#047857';" onmouseleave="this.style.background='#059669';">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                  </svg>
+                  Submit Report
+                </button>
+              </form>
+
+            </div>
+
+          </div>
+
+        </section>
+</body>

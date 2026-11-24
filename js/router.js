@@ -1,6 +1,75 @@
 /* ============================================
    Messliner — Client-Side Router (router.js)
+   Version: 1.0.0 (Modular View Loader Architecture)
    ============================================ */
+
+const ViewLoader = {
+  cache: new Map(),
+  viewMap: {
+    // Manager views
+    'overview': 'views/manager/overview.html',
+    'users': 'views/manager/users.html',
+    'meals': 'views/manager/meals.html',
+    'finance': 'views/manager/finance.html',
+    'ledger': 'views/manager/ledger.html',
+    'settings': 'views/manager/settings.html',
+
+    // Member views
+    'user-bills': 'views/member/user-bills.html',
+    'profile': 'views/member/profile.html',
+    'mealchart': 'views/member/mealchart.html',
+    'summary': 'views/member/summary.html',
+    'fridaymeal': 'views/member/fridaymeal.html',
+    'prayer': 'views/member/prayer.html',
+    'mealhistory': 'views/member/mealhistory.html',
+    'bazarroster': 'views/member/bazarroster.html',
+    'tasks': 'views/member/tasks.html',
+    'notices': 'views/member/notices.html',
+
+    // Shared views
+    'bazar': 'views/shared/bazar.html',
+    'history': 'views/shared/history.html',
+    'help': 'views/shared/help.html',
+    'notifications': 'views/shared/notifications.html',
+    'more': 'views/shared/more.html',
+    'aiassistant': 'views/shared/aiassistant.html',
+    'export-slip': 'views/shared/export-slip.html',
+    'pro': 'views/shared/pro.html'
+  },
+
+  async ensureView(page) {
+    if (document.getElementById(`page-${page}`)) return true;
+    const viewPath = this.viewMap[page];
+    if (!viewPath) return false;
+
+    let html = this.cache.get(viewPath);
+    if (!html) {
+      try {
+        const fetchUrl = viewPath + (viewPath.includes('?') ? '&' : '?') + 't=' + Date.now();
+        const res = await fetch(fetchUrl);
+        if (res.ok) {
+          html = await res.text();
+          this.cache.set(viewPath, html);
+        }
+      } catch (e) {
+        console.warn('[ViewLoader] Failed to fetch view:', viewPath, e);
+      }
+    }
+
+    if (html) {
+      // Clean any live-server injected script or dummy body comments
+      html = html.replace(/<!-- Code injected by live-server -->[\s\S]*?<\/script>/gi, '');
+      html = html.replace(/<!--\s*<\/body>\s*-->/gi, '');
+      html = html.replace(/<\/?body[^>]*>/gi, '');
+      const container = (page === 'export-slip')
+        ? (document.getElementById('exportSlipContainer') || document.body)
+        : (document.getElementById('dynamicViewsSlot') || document.querySelector('.content-area') || document.body);
+      container.insertAdjacentHTML('beforeend', html);
+      return true;
+    }
+    return false;
+  }
+};
 
 const Router = {
   currentPage: null,
@@ -177,6 +246,11 @@ const Router = {
       return;
     }
 
+    if (this.currentPage === 'pro') {
+      this.navigate('dashboard', true);
+      return;
+    }
+
     // If on Home (dashboard), Home is the root end of the app — never navigate back to other tabs!
     if (this.currentPage === 'dashboard') {
       return;
@@ -190,13 +264,15 @@ const Router = {
     }
 
     if (this.currentPage === 'export-slip') {
-      this.navigate('overview', true);
+      const target = (this.getRole() === 'admin' || this.getRole() === 'manager') ? 'dashboard' : 'overview';
+      this.navigate(target, true);
+      return;
     } else if (['mealhistory', 'bazarroster', 'tasks', 'notices'].includes(this.currentPage)) {
       this.navigate(this.getRole() === 'admin' ? 'mymeal' : 'dashboard', true);
     } else if (['bazar', 'mealchart', 'summary', 'history', 'fridaymeal', 'prayer'].includes(this.currentPage)) {
-      this.navigate('overview', true);
+      this.navigate((this.getRole() === 'admin' || this.getRole() === 'manager') ? 'dashboard' : 'overview', true);
     } else if (this.currentPage === 'meals') {
-      this.navigate('overview', true);
+      this.navigate((this.getRole() === 'admin' || this.getRole() === 'manager') ? 'dashboard' : 'overview', true);
     } else {
       this.navigate('dashboard', true);
     }
@@ -291,6 +367,15 @@ const Router = {
     this._initialNav = true;
     const initialPage = this.getPageFromUrl() || (sessionStorage.getItem('ml_current_page') || '').toLowerCase() || 'dashboard';
     
+    // Preload overview view if admin so syncRoleLayout has overviewContent
+    if (this.getRole() === 'admin' && typeof ViewLoader !== 'undefined') {
+      ViewLoader.ensureView('overview');
+    }
+    // Preload notifications view so Notifications.initListener can populate both mobile & desktop lists
+    if (typeof ViewLoader !== 'undefined') {
+      ViewLoader.ensureView('notifications');
+    }
+    
     // When opening directly into a subpage/tab (e.g. #overview on reload):
     // Put dashboard as the root history entry behind it so browser's ← button is active and returns to Home
     if (initialPage && initialPage !== 'dashboard') {
@@ -330,7 +415,7 @@ const Router = {
   /**
    * Navigate to a page
    */
-  navigate(page, replace = null) {
+  async navigate(page, replace = null) {
     // If already on this page, smoothly scroll to top without re-rendering or interrupting transitions
     if (this.currentPage === page) {
       // Prevent synthetic click from scrolling to top immediately after a tab navigation
@@ -349,6 +434,11 @@ const Router = {
     if (userRole === 'user' && this.adminPages.includes(page)) {
       Notifications.toast('warning', 'Access Denied', 'You do not have permission to view this page.');
       return;
+    }
+
+    // For Admin/Manager, Dining Overview is embedded directly in Dashboard (#page-dashboard)
+    if ((userRole === 'admin' || userRole === 'manager') && page === 'overview') {
+      page = 'dashboard';
     }
 
     // AI Assistant guard
@@ -377,7 +467,7 @@ const Router = {
     }
 
     this.updateUrl(page, replace);
-    this._showPage(page);
+    await this._showPage(page);
 
     // Close mobile sidebar
     const sidebar = document.getElementById('sidebar');
@@ -412,9 +502,14 @@ const Router = {
   /**
    * Show a specific page section and update nav state
    */
-  _showPage(page, force = false) {
+  async _showPage(page, force = false) {
     if (!force && this.currentPage === page && !this._initialNav) {
       return;
+    }
+
+    // Ensure modular view is loaded if not already in DOM
+    if (!document.getElementById(`page-${page}`) && typeof ViewLoader !== 'undefined') {
+      await ViewLoader.ensureView(page);
     }
 
     this._lastNavTime = Date.now();
@@ -604,14 +699,21 @@ const Router = {
       document.documentElement.classList.add(targetLoaderClass);
     }
 
-    // Hide all page sections
+    // Hide all page sections strictly to prevent overlap
     document.querySelectorAll('.page-section').forEach(s => {
       s.classList.remove('active', 'slide-forward', 'slide-backward', 'slide-fade');
+      s.style.display = 'none';
     });
 
     // Show target page with smooth hardware-accelerated transition
     const target = document.getElementById(`page-${page}`);
     if (target) {
+      target.style.removeProperty('display');
+      if (page === 'export-slip') {
+        target.style.setProperty('display', 'flex', 'important');
+      } else {
+        target.style.display = 'block';
+      }
       if (!this._initialNav && transitionClass) {
         target.classList.add(transitionClass);
         target.addEventListener('animationend', () => {
@@ -692,6 +794,7 @@ const Router = {
     document.body.classList.toggle('dining-subpage-active', isDiningSubpage);
     document.body.classList.toggle('user-dining-active', isUserDining);
     document.body.classList.toggle('user-bills-active', page === 'user-bills');
+    document.body.classList.toggle('finance-active', page === 'finance');
 
     // Update page title and subtitle in header
     const titles = {
@@ -837,7 +940,7 @@ const Router = {
       activeNavPage = (isAdminRole && page === 'bazar') ? (isMobileNav ? 'more-sheet' : 'bazar') : 'overview';
     } else if (page === 'mealhistory' || page === 'bazarroster' || page === 'tasks' || page === 'notices') {
       activeNavPage = (isAdminRole ? (['tasks', 'notices'].includes(page) && isMobileNav ? 'more-sheet' : 'mymeal') : 'dashboard');
-    } else if (isAdminRole && ['users', 'ledger', 'settings', 'more', 'aiassistant', 'profile', 'help'].includes(page)) {
+    } else if (isAdminRole && ['users', 'ledger', 'settings', 'more', 'aiassistant', 'profile', 'help', 'pro'].includes(page)) {
       if (isMobileNav) {
         activeNavPage = 'more-sheet';
       }
@@ -924,6 +1027,12 @@ const Router = {
       case 'dashboard':
         if (Messliner.syncRoleLayout) Messliner.syncRoleLayout(this.getRole());
         if (Messliner.userDashboard) Messliner.userDashboard.refresh();
+        if ((this.getRole() === 'admin' || this.getRole() === 'manager') && Messliner.overview) {
+          Messliner.overview.refresh();
+        }
+        if (Messliner._renderSubscriptionUI && (Messliner.state?.subscription || window.currentSubInfo)) {
+          Messliner._renderSubscriptionUI(Messliner.state?.subscription || window.currentSubInfo);
+        }
         break;
       case 'users':
         if (Messliner.users) Messliner.users.refresh();
@@ -1004,6 +1113,16 @@ const Router = {
         if (Messliner.userDashboard) {
           Messliner.userDashboard.renderBazarRosterPage();
         }
+        break;
+      case 'notifications':
+        if (window.Notifications) {
+          Notifications.render();
+          if (typeof Notifications.fetchAndRender === 'function') {
+            Notifications.fetchAndRender();
+          }
+        }
+        break;
+      case 'pro':
         break;
     }
   },

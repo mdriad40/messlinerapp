@@ -1,0 +1,70 @@
+        <section id="page-summary" class="page-section">
+          <!-- Compact Top Bar: Title + Selectors + Meal Rate -->
+          <div class="summary-topbar">
+            <!-- Left: Title -->
+            <div class="summary-topbar-title">
+              <h2>Monthly Summary</h2>
+              <p>Dining costs &amp; balance overview</p>
+            </div>
+            <!-- Right: Selectors + Meal Rate chip -->
+            <div class="summary-topbar-controls">
+              <!-- Month Select -->
+              <div class="custom-dropdown summary-dropdown" id="summaryMonthDropdown">
+                <button class="custom-dropdown-trigger"
+                  onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                  <span id="summaryMonthValue">Loading...</span>
+                  <div class="custom-dropdown-arrow"></div>
+                </button>
+                <div class="custom-dropdown-menu" id="summaryMonthMenu"></div>
+              </div>
+              <!-- Year Select -->
+              <div class="custom-dropdown summary-dropdown" id="summaryYearDropdown">
+                <button class="custom-dropdown-trigger"
+                  onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                  <span id="summaryYearValue">Loading...</span>
+                  <div class="custom-dropdown-arrow"></div>
+                </button>
+                <div class="custom-dropdown-menu" id="summaryYearMenu"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Meal Rate Strip -->
+          <div class="summary-rate-strip" id="summaryRateBanner">
+            <div class="summary-rate-strip-left">
+              <div class="summary-rate-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2" />
+                  <path d="M7 2v20" />
+                  <path d="M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7" />
+                </svg>
+              </div>
+              <div>
+                <div class="summary-rate-label">Meal Rate</div>
+                <div class="summary-rate-month" id="summaryMonthLabel">—</div>
+              </div>
+            </div>
+            <div class="summary-rate-amount" id="summaryMealRate">
+              <div class="summary-rate-skeleton"></div>
+            </div>
+          </div>
+
+          <!-- Members Summary Grid -->
+          <div id="summaryList" class="summary-grid">
+            <div class="bazar-skeleton" style="grid-column: 1 / -1;">
+              <div class="bazar-skeleton-card">
+                <div class="bazar-skeleton-line wide"></div>
+                <div class="bazar-skeleton-line narrow"></div>
+              </div>
+              <div class="bazar-skeleton-card">
+                <div class="bazar-skeleton-line wide"></div>
+                <div class="bazar-skeleton-line narrow"></div>
+              </div>
+              <div class="bazar-skeleton-card">
+                <div class="bazar-skeleton-line wide"></div>
+                <div class="bazar-skeleton-line narrow"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+</body>

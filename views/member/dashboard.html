@@ -1,0 +1,209 @@
+<section id="page-dashboard" class="page-section active">
+  <!-- Dynamic Enterprise Subscription Banner Card (Admin Only) -->
+  <a href="checkout.html?plan=pro" id="dynamicSubCard" class="premium-banner-card sub-theme-trial hidden"
+    style="display:none !important;" title="Manage Subscription">
+    <div class="premium-banner-left">
+      <div class="premium-banner-icon" id="subCardIcon">
+        <!-- Custom Crown SVG Icon -->
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
+        </svg>
+      </div>
+      <div class="premium-banner-text">
+        <div class="premium-banner-header-row">
+          <h4 class="premium-banner-title" id="subCardTitle">Free Trial Active</h4>
+          <span class="sub-status-pill" id="subCardBadge" style="display:none;">
+            <span class="sub-status-dot"></span>
+            <span id="subCardBadgeText">30 Days Trial</span>
+          </span>
+        </div>
+        <p class="premium-banner-subtitle" id="subCardSubtitle">Upgrade to Premium for unlimited members, AI assist
+          &amp; priority support</p>
+      </div>
+    </div>
+    <div class="premium-banner-arrow" id="subCardArrow">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </div>
+  </a>
+
+  <!-- Manager Dining Overview Section (visible to Admin only) -->
+  <div id="managerOverviewSection" class="hidden" style="margin-bottom: var(--space-6);"></div>
+
+  <div id="userDashboardContent" class="mymeal-master-card fade-up">
+    <!-- Desktop Title Banner Matching Finance and Ledger -->
+    <div class="mymeal-desktop-hero-banner fp-hero-banner fade-up" style="margin-bottom: 24px;">
+      <div class="fp-hero-glow"></div>
+      <div class="fp-hero-content">
+        <div class="fp-hero-icon-box">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+            <line x1="6" y1="1" x2="6" y2="4" />
+            <line x1="10" y1="1" x2="10" y2="4" />
+            <line x1="14" y1="1" x2="14" y2="4" />
+          </svg>
+        </div>
+        <div class="fp-hero-text">
+          <h2 class="fp-hero-title">My Meal</h2>
+          <p class="fp-hero-subtitle">Manage your daily meals, balances &amp; dining history</p>
+        </div>
+      </div>
+      <div class="fp-hero-pattern"></div>
+    </div>
+
+    <!-- Mobile & Desktop Meal Card Section -->
+    <div class="mymeal-mobile-hero-wrapper">
+      <div class="mymeal-ambient-circle circle-1"></div>
+      <div class="mymeal-ambient-circle circle-2"></div>
+
+      <!-- User Identity Header (Mess Name, Hi Name >, Bell) -->
+      <div class="mymeal-user-topbar" id="mymealUserTopBar">
+        <div class="mymeal-user-profile-block" onclick="Messliner.router.navigate('profile')" title="View Profile">
+          <div class="mymeal-user-avatar" id="mymealUserAvatar">M</div>
+          <div class="mymeal-user-meta">
+            <div class="mymeal-mess-name" id="mymealMessInfo">Messliner</div>
+            <div class="mymeal-user-greeting">
+              <span>Hi, <strong id="mymealUserName">Member</strong></span>
+              <svg class="mymeal-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="mymeal-topbar-actions">
+          <button type="button" class="mymeal-icon-btn" onclick="Messliner.router.navigate('notifications')"
+            aria-label="Notifications" title="Notifications">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <span id="mymealNotifBadge" class="mymeal-notif-badge hidden" style="display:none !important;"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modern Emerald Forest Hero Summary Card -->
+      <div class="mymeal-hero-card" id="mymealHeroCard">
+        <!-- Card Top Header -->
+        <div class="mymeal-hero-top">
+          <div class="mymeal-hero-badge-tag">
+            <span class="mymeal-hero-tag-text">MY BALANCE · <span id="mymealHeroMonth">OCTOBER</span></span>
+          </div>
+          <div class="mymeal-hero-mode-pill" id="mymealHeroRatePill">Market Rate</div>
+        </div>
+
+        <!-- Main Hero Metric (My Balance) -->
+        <div class="mymeal-hero-main-stat">
+          <div class="mymeal-hero-val-wrap" id="mymealHeroValWrap">
+            <span class="mymeal-hero-currency" id="mymealHeroCurrency"><span class="tk-symbol"></span></span>
+            <span class="mymeal-hero-big-number" id="mymealHeroBalance">0</span>
+          </div>
+        </div>
+
+        <!-- Unified Stats Shelf (6 Core Metrics with thin dividers, NO WHITE BLOCKS) -->
+        <div id="dashboardStats" class="mymeal-hero-stats-shelf">
+          <!-- Dynamically rendered by UserDashboard.renderStats() -->
+        </div>
+      </div>
+    </div>
+
+    <div class="mymeal-body-content">
+      <!-- Due Limit Exceeded Warning Notice (User) -->
+      <div id="userDueLimitNotice" style="display:none; margin-bottom: var(--space-4);"></div>
+
+      <!-- Meal Toggles (User) -->
+      <div id="mealTogglesSection">
+        <div class="section-title-bar">
+          <h3>Meals of,</h3>
+          <div class="sync-indicator connected" style="font-size:var(--font-xs);">
+            <div class="sync-dot"></div>
+            <span id="mealDateDisplay">Loading...</span>
+          </div>
+        </div>
+        <div id="mealCompletedWarningContainer" style="display:none; margin-bottom: var(--space-4);"></div>
+        <div id="mealTogglesGrid" class="meal-toggles-grid"></div>
+      </div>
+
+      <!-- Quick Services 2x2 Block Cards (Bazar Duty, Meal History, Mess Tasks, Notice Board) -->
+      <div id="dashboardQuickFeaturesSection" class="mymeal-quick-features-section">
+        <div class="mymeal-blocks-grid">
+          <!-- Block 1: Toggle History -->
+          <div class="mymeal-block-card" onclick="Messliner.router.navigate('mealhistory')" role="button" tabindex="0">
+            <div class="mb-icon-box mb-icon-history">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div class="mb-content">
+              <h4 class="mb-title">Toggle History</h4>
+              <p class="mb-subtitle">Meal On-Off records</p>
+            </div>
+          </div>
+
+          <!-- Block 2: Bazar Duty -->
+          <div class="mymeal-block-card" onclick="Messliner.router.navigate('bazarroster')" role="button" tabindex="0">
+            <div class="mb-icon-box mb-icon-bazar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+              </svg>
+            </div>
+            <div class="mb-content">
+              <h4 class="mb-title">Bazar Duty</h4>
+              <p class="mb-subtitle">Roster schedule</p>
+            </div>
+          </div>
+
+          <!-- Block 3: Mess Tasks -->
+          <div class="mymeal-block-card" onclick="Messliner.router.navigate('tasks')" role="button" tabindex="0">
+            <div class="mb-icon-box mb-icon-tasks">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <path d="m9 14 2 2 4-4"></path>
+              </svg>
+            </div>
+            <div class="mb-content">
+              <h4 class="mb-title">Mess Tasks</h4>
+              <p class="mb-subtitle">My duties</p>
+            </div>
+          </div>
+
+          <!-- Block 4: Notice Board -->
+          <div class="mymeal-block-card" onclick="Messliner.router.navigate('notices')" role="button" tabindex="0">
+            <div class="mb-icon-box mb-icon-notices">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 11 18-5v12L3 13v-2z"></path>
+                <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"></path>
+              </svg>
+            </div>
+            <div class="mb-content">
+              <h4 class="mb-title">Notice Board</h4>
+              <p class="mb-subtitle">Announcements</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+
+</section>
+</body>

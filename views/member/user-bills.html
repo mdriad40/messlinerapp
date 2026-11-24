@@ -1,0 +1,109 @@
+        <section id="page-user-bills" class="page-section">
+          <!-- Page Header Info -->
+          <div class="user-bills-header-row fade-up" style="display: flex; align-items: center; gap: 12px;">
+            <button type="button" class="notif-circle-back-btn" id="userBillsBackBtn"
+              onclick="Messliner.router.handleBack()" aria-label="Back" title="Back"
+              style="display: none; margin: 0; flex-shrink: 0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <div>
+              <h2 class="user-bills-title">Ledger</h2>
+              <p class="user-bills-subtitle">Bills • balance • history</p>
+            </div>
+          </div>
+
+          <!-- Segmented Tab Navigation with Sliding Indicator -->
+          <div class="user-bills-tabs-wrap fade-up">
+            <div class="user-bills-tabs" id="userBillsTabsContainer" data-active="overview">
+              <div class="user-bills-tab-indicator" id="userBillsTabIndicator" aria-hidden="true"></div>
+              <button type="button" class="user-bills-tab-btn active" data-tab="overview"
+                onclick="Messliner.userBills.switchTab('overview')">
+                Overview
+              </button>
+              <button type="button" class="user-bills-tab-btn" data-tab="bills"
+                onclick="Messliner.userBills.switchTab('bills')">
+                Bills
+              </button>
+              <button type="button" class="user-bills-tab-btn" data-tab="history"
+                onclick="Messliner.userBills.switchTab('history')">
+                History
+              </button>
+            </div>
+          </div>
+
+          <!-- SECTION 1: OVERVIEW TAB -->
+          <div id="userBillsSecOverview" class="user-bills-section-content fade-up">
+            <!-- Balance Card -->
+            <div class="user-bills-balance-card">
+              <div class="user-balance-header">
+                <span class="user-balance-title">YOUR BALANCE • <span id="userBillsOverviewMonth">Sep</span></span>
+                <span class="user-balance-badge credit" id="userBillsBalanceStatus">Current</span>
+              </div>
+              <div class="user-balance-main">
+                <span class="user-balance-currency" id="userBillsBalanceCurrency"><span class="tk-symbol"></span></span>
+                <span class="user-balance-num" id="userBillsBalanceNum">0</span>
+              </div>
+              <div class="user-balance-divider"></div>
+              <div class="user-balance-stats-grid">
+                <!-- 1. Paid Bill (First) -->
+                <div class="user-balance-stat-col">
+                  <span class="user-stat-label">Paid Bill</span>
+                  <strong class="user-stat-val" id="userBillsOverviewPaidBills"><span
+                      class="tk-symbol"></span>0</strong>
+                </div>
+                <div class="user-balance-shelf-divider"></div>
+                <!-- 2. Due Bill (Second) -->
+                <div class="user-balance-stat-col">
+                  <span class="user-stat-label">Due Bill</span>
+                  <strong class="user-stat-val" id="userBillsOverviewBillsDue"><span class="tk-symbol"></span>0</strong>
+                </div>
+                <div class="user-balance-shelf-divider"></div>
+                <!-- 3. In Process (Third) -->
+                <div class="user-balance-stat-col" onclick="Messliner.userBills.switchTab('history')"
+                  style="cursor: pointer;" title="View payment requests">
+                  <span class="user-stat-label">In Process</span>
+                  <strong class="user-stat-val" id="userBillsOverviewInProcess">0</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Prominent Add Money Action Button -->
+            <button type="button" class="btn btn-primary user-add-money-btn" id="userAddMoneyBtn"
+              onclick="Messliner.userBills.openAddMoneyModal()">
+              <span class="user-add-money-icon-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </span>
+              <span>Add money</span>
+            </button>
+
+            <!-- Pending Review Notice Banner -->
+            <div id="userBillsPendingRequestBanner" class="user-bills-pending-banner hidden" style="display:none;">
+            </div>
+          </div>
+
+          <!-- SECTION 2: BILLS TAB -->
+          <div id="userBillsSecBills" class="user-bills-section-content fade-up" style="display:none;">
+            <div id="userBillsListContainer" class="user-bills-list">
+              <!-- Rendered dynamically by UserBillsModule.renderBills() -->
+            </div>
+          </div>
+
+          <!-- SECTION 3: HISTORY TAB -->
+          <div id="userBillsSecHistory" class="user-bills-section-content fade-up" style="display:none;">
+            <div class="user-history-header-box">
+              <h4 class="user-history-heading">Your payment history</h4>
+              <p class="user-history-subheading">Track balance, bills, shared expense and deductions</p>
+            </div>
+            <div id="userBillsHistoryListContainer" class="user-history-list">
+              <!-- Rendered dynamically by UserBillsModule.renderHistory() -->
+            </div>
+          </div>
+        </section>
+</body>

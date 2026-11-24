@@ -43,8 +43,12 @@ const MealsModule = {
       }
     });
 
-    if (this.activeAdminTab === 'friday-meal' && typeof Messliner !== 'undefined' && Messliner.fridayMeals) {
-      Messliner.fridayMeals.refresh();
+    if (this.activeAdminTab === 'friday-meal') {
+      if (typeof Messliner !== 'undefined' && Messliner.fridayMeals) {
+        Messliner.fridayMeals.refresh();
+      } else if (typeof FridayMealsModule !== 'undefined') {
+        FridayMealsModule.refresh();
+      }
     }
     if (this.activeAdminTab === 'meal-settings') {
       this.initMealSettingsView();
@@ -1442,11 +1446,11 @@ const MealsModule = {
           if (user.role === 'admin' && !isManagerMealEnabled) return;
           if (!this.isUserActiveForMonth(userId, targetDate)) return;
 
-          const mealStatus = user.mealStatus || { breakfast: true, lunch: true, dinner: true };
+          const mealStatus = user.mealStatus || {};
           const statusVal = mealStatus[mealType];
 
           let count = 0;
-          if (statusVal === true || statusVal === undefined) {
+          if (statusVal === true) {
             count = 1;
           } else if (typeof statusVal === 'number' && statusVal > 0) {
             count = statusVal;
@@ -2183,23 +2187,25 @@ const MealsModule = {
       if (user.role === 'admin' && !isManagerMealEnabled) return;
       if (!this.isUserActiveForMonth(userId, targetDate)) return;
 
-      const mealStatus = user.mealStatus || { breakfast: true, lunch: true, dinner: true };
+      const mealStatus = user.mealStatus || {};
+      const parseStatusCount = (v) => {
+        if (v === true) return 1;
+        if (typeof v === 'number' && v > 0) return v;
+        return 0;
+      };
 
       let breakfastCount = 0;
       let lunchCount = 0;
       let dinnerCount = 0;
 
       if (selectedMeals.includes('breakfast') && trackedMeals.breakfast !== false) {
-        const statusVal = mealStatus.breakfast;
-        breakfastCount = (statusVal === true || statusVal === undefined) ? 1 : (typeof statusVal === 'number' && statusVal > 0 ? statusVal : 0);
+        breakfastCount = parseStatusCount(mealStatus.breakfast);
       }
       if (selectedMeals.includes('lunch') && trackedMeals.lunch !== false) {
-        const statusVal = mealStatus.lunch;
-        lunchCount = (statusVal === true || statusVal === undefined) ? 1 : (typeof statusVal === 'number' && statusVal > 0 ? statusVal : 0);
+        lunchCount = parseStatusCount(mealStatus.lunch);
       }
       if (selectedMeals.includes('dinner') && trackedMeals.dinner !== false) {
-        const statusVal = mealStatus.dinner;
-        dinnerCount = (statusVal === true || statusVal === undefined) ? 1 : (typeof statusVal === 'number' && statusVal > 0 ? statusVal : 0);
+        dinnerCount = parseStatusCount(mealStatus.dinner);
       }
 
       const total = breakfastCount + lunchCount + dinnerCount;

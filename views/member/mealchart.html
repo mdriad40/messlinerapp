@@ -1,0 +1,65 @@
+        <section id="page-mealchart" class="page-section">
+          <!-- Header and Selectors -->
+          <div class="meal-chart-header">
+            <div class="meal-chart-title">
+              <h2>Meal Chart</h2>
+              <p>Daily summary and detailed meal logs</p>
+            </div>
+            <!-- Selectors -->
+            <div class="meal-chart-selectors">
+              <!-- Day Select -->
+              <div class="custom-dropdown" id="mealChartDayDropdown">
+                <button class="custom-dropdown-trigger"
+                  onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                  <span id="mealChartDayValue">Loading...</span>
+                  <div class="custom-dropdown-arrow"></div>
+                </button>
+                <div class="custom-dropdown-menu" id="mealChartDayMenu"></div>
+              </div>
+
+              <!-- Month Select -->
+              <div class="custom-dropdown" id="mealChartMonthDropdown">
+                <button class="custom-dropdown-trigger"
+                  onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                  <span id="mealChartMonthValue">Loading...</span>
+                  <div class="custom-dropdown-arrow"></div>
+                </button>
+                <div class="custom-dropdown-menu" id="mealChartMonthMenu"></div>
+              </div>
+
+              <!-- Year Select -->
+              <div class="custom-dropdown" id="mealChartYearDropdown">
+                <button class="custom-dropdown-trigger"
+                  onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                  <span id="mealChartYearValue">Loading...</span>
+                  <div class="custom-dropdown-arrow"></div>
+                </button>
+                <div class="custom-dropdown-menu" id="mealChartYearMenu"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Table Area -->
+          <div class="card">
+            <div class="meal-logs-header">
+              <h3 class="meal-logs-title">Daily Meal Logs</h3>
+              <span id="mealChartDetailsDate" class="meal-logs-date-badge">Loading date...</span>
+            </div>
+            <div class="table-wrapper"
+              style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: var(--space-4);">
+              <table class="data-table meal-chart-table">
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th class="text-center" style="width: 120px;">Breakfast</th>
+                    <th class="text-center" style="width: 120px;">Lunch</th>
+                    <th class="text-center" style="width: 120px;">Dinner</th>
+                  </tr>
+                </thead>
+                <tbody id="mealChartDetailsBody">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+</body>

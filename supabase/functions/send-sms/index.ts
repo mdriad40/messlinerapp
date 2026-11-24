@@ -69,7 +69,7 @@ serve(async (req) => {
     }
 
     // 2.1 Server-side SMS Balance Verification
-    const FIREBASE_RTDB_URL = "https://meiner-6ec2e-default-rtdb.firebaseio.com";
+    const FIREBASE_RTDB_URL = Deno.env.get("FIREBASE_RTDB_URL") || "https://meiner-6ec2e-default-rtdb.firebaseio.com";
     let currentBalance = 0;
     let smsRate = 0.30;
 

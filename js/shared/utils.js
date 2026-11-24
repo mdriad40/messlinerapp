@@ -14,9 +14,60 @@ window.openModal = function (id) {
 window.closeModal = function (id) {
   const modal = document.getElementById(id);
   if (modal) {
+    if (document.activeElement && modal.contains(document.activeElement)) {
+      try { document.activeElement.blur(); } catch (_) { }
+    }
     modal.classList.remove('active');
+    document.documentElement.style.setProperty('--kb-height', '0px');
+    document.body.classList.remove('keyboard-open');
   }
 };
+
+/* --- Mobile Native App-like Keyboard Viewport Handler --- */
+(function initMobileKeyboardHandler() {
+  if (typeof window === 'undefined') return;
+
+  let rafId = null;
+  function updateKeyboardState() {
+    if (!window.visualViewport) return;
+    const vv = window.visualViewport;
+    const windowH = window.innerHeight;
+    const keyboardHeight = Math.max(0, Math.round(windowH - vv.height));
+
+    if (keyboardHeight > 90) {
+      document.documentElement.style.setProperty('--kb-height', keyboardHeight + 'px');
+      document.body.classList.add('keyboard-open');
+    } else {
+      document.documentElement.style.setProperty('--kb-height', '0px');
+      document.body.classList.remove('keyboard-open');
+    }
+  }
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updateKeyboardState);
+    });
+    window.visualViewport.addEventListener('scroll', () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updateKeyboardState);
+    });
+  }
+
+  // Smoothly center input within modal without body jitter when focused
+  document.addEventListener('focusin', (e) => {
+    const target = e.target;
+    if (!target || !['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+    const modal = target.closest('.modal-overlay.active');
+    if (!modal) return;
+
+    setTimeout(() => {
+      try {
+        target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      } catch (_) { }
+    }, 100);
+  });
+})();
 
 const Utils = {
   /**

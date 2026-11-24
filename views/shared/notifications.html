@@ -1,0 +1,48 @@
+<section id="page-notifications" class="page-section">
+  <div class="notif-screen-wrapper">
+    <!-- Mobile & Clean Header (Screenshot 1) -->
+    <div class="notif-screen-header">
+      <div class="notif-nav-row">
+        <button type="button" class="notif-circle-back-btn" onclick="Router.handleBack()" aria-label="Back"
+          title="Back">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
+        <h2 class="notif-page-heading">Notification</h2>
+        <div class="notif-nav-actions">
+          <button type="button" class="notif-action-icon-btn" onclick="Notifications.markAllRead()"
+            title="Mark all read">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Underline Tabs Row (Screenshot 1: All, Finance, Meals, Bazar, Unread) -->
+      <div class="notif-tabs-underline-bar">
+        <button type="button" class="notif-u-tab active" data-tab="all"
+          onclick="Notifications.setFilter('all', this)">All</button>
+        <button type="button" class="notif-u-tab" data-tab="deposit"
+          onclick="Notifications.setFilter('deposit', this)">Finance</button>
+        <button type="button" class="notif-u-tab" data-tab="meal"
+          onclick="Notifications.setFilter('meal', this)">Meals</button>
+        <button type="button" class="notif-u-tab" data-tab="bazar"
+          onclick="Notifications.setFilter('bazar', this)">Bazar</button>
+        <button type="button" class="notif-u-tab" data-tab="unread"
+          onclick="Notifications.setFilter('unread', this)">Unread</button>
+      </div>
+    </div>
+
+    <!-- Notification Feed List (Screenshot 2: Minimal double-line cards) -->
+    <div id="notificationsPageList" class="notif-feed-list">
+      <div class="notif-loading-card">
+        <div class="spinner"></div>
+        <p>Loading notifications...</p>
+      </div>
+    </div>
+  </div>
+</section> <!-- </body> -->

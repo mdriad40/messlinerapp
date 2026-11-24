@@ -1135,6 +1135,12 @@ const SettingsModule = {
    * Refresh settings page
    */
   refresh() {
+    if ((!this.settings || Object.keys(this.settings).length === 0) && Messliner.state?.settings) {
+      this.settings = Messliner.state.settings;
+    }
+    if ((!this.info || Object.keys(this.info).length === 0) && Messliner.state?.diningInfo) {
+      this.info = Messliner.state.diningInfo;
+    }
     this._populateUI();
     this._populateDiningInfo();
     this._populateRulesUI();

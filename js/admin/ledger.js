@@ -350,7 +350,7 @@ const LedgerModule = {
     // Sort bills by creation date (newest first)
     cycleBills.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-    const allUsers = Messliner.users.users || {};
+    const allUsers = (Messliner.users && Messliner.users.users) || Messliner.state?.users || (window.OverviewModule?.cachedData?.users) || {};
 
     container.innerHTML = cycleBills.map(bill => {
       const members = bill.members || {};
@@ -385,7 +385,6 @@ const LedgerModule = {
         const user = allUsers[uId];
         const name = user?.name || 'Member';
         const isPaid = m.status === 'collected';
-        const avatarBg = UsersModule._avatarColor(name);
         const isExtra = hasOverflow && idx >= MAX_PREVIEW_CHIPS;
 
         return `
@@ -3051,27 +3050,29 @@ const LedgerModule = {
   /**
    * Open Payment Methods Modal (List View)
    */
-  async openPaymentMethodsModal() {
+  openPaymentMethodsModal() {
+    this.renderPaymentMethodsBanner();
+    this.renderPaymentMethodsModal();
+    openModal('ledgerPaymentMethodsModal');
+
     const diningId = this.getDiningId();
     if (diningId) {
-      try {
-        const [pmSnap, apSnap] = await Promise.all([
-          db.ref(`dinings/${diningId}/settings/paymentMethods`).once('value'),
-          db.ref(`dinings/${diningId}/settings/autoPaymentEnabled`).once('value')
-        ]);
+      Promise.all([
+        db.ref(`dinings/${diningId}/settings/paymentMethods`).once('value'),
+        db.ref(`dinings/${diningId}/settings/autoPaymentEnabled`).once('value')
+      ]).then(([pmSnap, apSnap]) => {
         if (pmSnap && pmSnap.exists()) {
           this.paymentMethods = pmSnap.val() || {};
         }
         if (apSnap && apSnap.exists()) {
           this.autoPaymentEnabled = Boolean(apSnap.val());
         }
-      } catch (err) {
+        this.renderPaymentMethodsBanner();
+        this.renderPaymentMethodsModal();
+      }).catch(err => {
         console.warn('Failed to pre-fetch payment methods:', err);
-      }
+      });
     }
-    this.renderPaymentMethodsBanner();
-    this.renderPaymentMethodsModal();
-    openModal('ledgerPaymentMethodsModal');
   },
 
   /**

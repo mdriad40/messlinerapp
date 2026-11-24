@@ -145,14 +145,16 @@ const UsersModule = {
     const container = document.getElementById('usersGrid');
     if (!container) return;
 
-    const userEntries = Object.entries(this.users).sort((a, b) => {
-      const timeA = a[1].createdAt ? new Date(a[1].createdAt).getTime() : 0;
-      const timeB = b[1].createdAt ? new Date(b[1].createdAt).getTime() : 0;
-      if (timeA !== timeB) {
-        return timeA - timeB;
-      }
-      return (a[1].name || '').localeCompare(b[1].name || '');
-    });
+    const userEntries = Object.entries(this.users || {})
+      .filter(([_, u]) => u && typeof u === 'object')
+      .sort((a, b) => {
+        const timeA = a[1]?.createdAt ? new Date(a[1].createdAt).getTime() : 0;
+        const timeB = b[1]?.createdAt ? new Date(b[1].createdAt).getTime() : 0;
+        if (timeA !== timeB) {
+          return timeA - timeB;
+        }
+        return (a[1]?.name || '').localeCompare(b[1]?.name || '');
+      });
 
     if (userEntries.length === 0) {
       container.innerHTML = `
@@ -583,7 +585,19 @@ const UsersModule = {
    * Refresh users list
    */
   refresh() {
+    if (!this.users || Object.keys(this.users).length === 0) {
+      if (window.Messliner && Messliner.state && Messliner.state.users && Object.keys(Messliner.state.users).length > 0) {
+        this.users = Messliner.state.users;
+      } else if (this.diningId) {
+        db.ref(`dinings/${this.diningId}/users`).once('value').then(snap => {
+          this.users = snap.val() || {};
+          this.render();
+          this._updateUserCount();
+        }).catch(() => {});
+      }
+    }
     this.render();
+    this._updateUserCount();
   },
 
   /**

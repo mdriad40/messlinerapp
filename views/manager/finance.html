@@ -1,0 +1,189 @@
+        <section id="page-finance" class="page-section finance-page-pro">
+
+          <!-- ═══ Finance Hero Banner ═══ -->
+          <div class="fp-hero-banner">
+            <div class="fp-hero-glow"></div>
+            <div class="fp-hero-content">
+              <div class="fp-hero-icon-box">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+                </svg>
+              </div>
+              <div class="fp-hero-text">
+                <h2 class="fp-hero-title">Finance</h2>
+                <p class="fp-hero-subtitle">Manage deposits, expenses, and bazar costs</p>
+              </div>
+            </div>
+            <div class="fp-hero-pattern"></div>
+          </div>
+
+          <!-- ═══ Quick Actions Grid ═══ -->
+          <div class="fp-actions-section">
+            <div class="fp-actions-grid">
+
+              <!-- Add Deposit -->
+              <button class="fp-action-card" data-accent="emerald" onclick="Messliner.finance.showDepositModal()">
+                <div class="fp-action-icon-ring fp-ring-emerald">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                </div>
+                <span class="fp-action-name">Add Deposit</span>
+                <span class="fp-action-hint">Record member payments</span>
+              </button>
+
+              <!-- Other Costing -->
+              <button class="fp-action-card" data-accent="amber" onclick="Messliner.finance.showOtherCostingModal()">
+                <div class="fp-action-icon-ring fp-ring-amber">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="16" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                  </svg>
+                </div>
+                <span class="fp-action-name">Other Costing</span>
+                <span class="fp-action-hint">Add miscellaneous costs</span>
+              </button>
+
+              <!-- Deduct Balance -->
+              <button class="fp-action-card" data-accent="rose" onclick="Messliner.finance.showDeductModal()">
+                <div class="fp-action-icon-ring fp-ring-rose">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                </div>
+                <span class="fp-action-name">Deduct Balance</span>
+                <span class="fp-action-hint">Withdraw from balance</span>
+              </button>
+
+              <!-- Balance Transfer -->
+              <button class="fp-action-card" data-accent="indigo"
+                onclick="Messliner.finance.showBalanceTransferModal()">
+                <div class="fp-action-icon-ring fp-ring-indigo">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="17 1 21 5 17 9" />
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                    <polyline points="7 23 3 19 7 15" />
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                  </svg>
+                </div>
+                <span class="fp-action-name">Balance Transfer</span>
+                <span class="fp-action-hint">Move funds between users</span>
+              </button>
+
+              <!-- Finance Fix -->
+              <button class="fp-action-card" data-accent="slate" onclick="Messliner.finance.showFinanceFixModal()">
+                <div class="fp-action-icon-ring fp-ring-slate">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                </div>
+                <span class="fp-action-name">Finance Fix</span>
+                <span class="fp-action-hint">Correct past entries</span>
+              </button>
+
+              <!-- User Statement -->
+              <button class="fp-action-card" data-accent="cyan" onclick="Messliner.finance.showUserStatementModal()">
+                <div class="fp-action-icon-ring fp-ring-cyan">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                  </svg>
+                </div>
+                <span class="fp-action-name">User Statement</span>
+                <span class="fp-action-hint">View individual reports</span>
+              </button>
+
+            </div>
+          </div>
+
+          <!-- ═══ Transaction History ═══ -->
+          <div class="fp-history-section">
+            <div class="fp-history-header">
+              <div class="fp-history-title-group">
+                <div class="fp-history-dot-pulse"></div>
+                <h3 class="fp-history-title">Transaction History</h3>
+              </div>
+              <div class="fp-history-filters" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <!-- Month Select -->
+                <div class="custom-dropdown" id="financeMonthDropdown">
+                  <button type="button" class="custom-dropdown-trigger"
+                    onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                    <span id="financeMonthValue">Month</span>
+                    <div class="custom-dropdown-arrow"></div>
+                  </button>
+                  <div class="custom-dropdown-menu" id="financeMonthMenu"></div>
+                </div>
+
+                <!-- Year Select -->
+                <div class="custom-dropdown" id="financeYearDropdown">
+                  <button type="button" class="custom-dropdown-trigger"
+                    onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                    <span id="financeYearValue">Year</span>
+                    <div class="custom-dropdown-arrow"></div>
+                  </button>
+                  <div class="custom-dropdown-menu" id="financeYearMenu"></div>
+                </div>
+
+                <!-- Type Filter -->
+                <div class="custom-dropdown" id="financeFilterDropdown">
+                  <button type="button" class="custom-dropdown-trigger"
+                    onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                    <span id="financeFilterValue">All Types</span>
+                    <div class="custom-dropdown-arrow"></div>
+                  </button>
+                  <div class="custom-dropdown-menu" id="financeFilterMenu">
+                    <div class="custom-dropdown-item active"
+                      onclick="Messliner.finance.selectFilterType('all', 'All Types', this)">All Types</div>
+                    <div class="custom-dropdown-item"
+                      onclick="Messliner.finance.selectFilterType('deposit', 'Deposits', this)">Deposits</div>
+                    <div class="custom-dropdown-item"
+                      onclick="Messliner.finance.selectFilterType('deduction', 'Deductions', this)">Deductions</div>
+                    <div class="custom-dropdown-item"
+                      onclick="Messliner.finance.selectFilterType('bill', 'Bill', this)">Bill</div>
+                    <div class="custom-dropdown-item"
+                      onclick="Messliner.finance.selectFilterType('other_costing', 'Other Cost', this)">Other Cost</div>
+                  </div>
+                </div>
+                <select id="financeFilter" style="display:none;"
+                  onchange="Messliner.finance.filterTransactions(this.value)">
+                  <option value="all">All Types</option>
+                  <option value="deposit">Deposits</option>
+                  <option value="deduction">Deductions</option>
+                  <option value="bill">Bill</option>
+                  <option value="other_costing">Other Cost</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="card finance-timeline-card fp-timeline-wrap">
+              <div id="transactionHistory" class="timeline">
+                <div class="empty-state" style="padding:var(--space-6);">
+                  <div class="empty-state-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <line x1="12" y1="1" x2="12" y2="23" />
+                      <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+                    </svg>
+                  </div>
+                  <h3>No Transactions</h3>
+                  <p>Financial transactions will appear here.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </section>
+<!-- </body> -->

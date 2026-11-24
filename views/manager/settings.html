@@ -1,0 +1,1081 @@
+        <section id="page-settings" class="page-section finance-page-pro" style="max-width: 1000px; margin: 0 auto;">
+
+          <!-- Pro Settings Styles -->
+          <style>
+            .pro-settings-card {
+              background: #ffffff;
+              border: 1px solid #E2E8F0;
+              border-radius: 20px;
+              padding: 24px;
+              margin-bottom: 24px;
+              box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+              position: relative;
+              overflow: visible;
+            }
+
+            .pro-settings-card:hover {
+              box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+              border-color: #CBD5E1;
+            }
+
+            .pro-settings-card.danger-card {
+              background: #FFFDFD;
+              border: 1px solid #FECACA;
+              box-shadow: 0 2px 12px rgba(220, 38, 38, 0.03);
+            }
+
+            .pro-settings-card.danger-card:hover {
+              border-color: #FCA5A5;
+              box-shadow: 0 6px 20px rgba(220, 38, 38, 0.06);
+            }
+
+            .pro-settings-header {
+              display: flex;
+              align-items: center;
+              gap: 14px;
+              margin-bottom: 20px;
+              padding-bottom: 16px;
+              border-bottom: 1px solid #F1F5F9;
+            }
+
+            .pro-settings-header-icon {
+              width: 44px;
+              height: 44px;
+              border-radius: 13px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex-shrink: 0;
+            }
+
+            .pro-settings-header-title {
+              font-size: 1.15rem;
+              font-weight: 800;
+              color: #0F2E1E;
+              margin: 0 0 2px 0;
+              letter-spacing: -0.01em;
+            }
+
+            .pro-settings-header-subtitle {
+              font-size: 0.82rem;
+              color: #64748B;
+              margin: 0;
+              line-height: 1.4;
+            }
+
+            .pro-settings-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+              gap: 16px;
+            }
+
+            .pro-settings-item {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 16px 18px;
+              background: #F8FAFC;
+              border: 1px solid #E2E8F0;
+              border-radius: 14px;
+              gap: 14px;
+              transition: all 0.2s ease;
+            }
+
+            .pro-settings-item:hover {
+              background: #F1F5F9;
+              border-color: #CBD5E1;
+            }
+
+            .pro-settings-item-info h5 {
+              font-size: 0.92rem;
+              font-weight: 700;
+              color: #0F172A;
+              margin: 0 0 3px 0;
+            }
+
+            .pro-settings-item-info p {
+              font-size: 0.78rem;
+              color: #64748B;
+              margin: 0;
+              line-height: 1.35;
+            }
+
+            .settings-rules-textarea {
+              width: 100%;
+              box-sizing: border-box;
+              min-height: 140px;
+              background: #FAFAFA;
+              border: 1.5px solid #E2E8F0;
+              border-radius: 14px;
+              padding: 14px 16px;
+              font-family: inherit;
+              font-size: 0.88rem;
+              color: #0F172A;
+              line-height: 1.6;
+              resize: vertical;
+              outline: none;
+              transition: all 0.2s ease;
+            }
+
+            .settings-rules-textarea:focus {
+              background: #ffffff;
+              border-color: #10B981;
+              box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+            }
+
+            .bld-badge-chip {
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
+              padding: 6px 12px;
+              border-radius: 12px;
+              font-size: 0.82rem;
+              font-weight: 700;
+              border: 1px solid transparent;
+            }
+
+            .bld-badge-breakfast {
+              background: linear-gradient(135deg, rgba(254, 243, 199, 0.7), rgba(253, 230, 138, 0.4));
+              border-color: rgba(245, 158, 11, 0.3);
+              color: #B45309;
+            }
+
+            .bld-badge-lunch {
+              background: linear-gradient(135deg, rgba(209, 250, 229, 0.7), rgba(167, 243, 208, 0.4));
+              border-color: rgba(16, 185, 129, 0.3);
+              color: #047857;
+            }
+
+            .bld-badge-dinner {
+              background: linear-gradient(135deg, rgba(237, 233, 254, 0.7), rgba(221, 214, 254, 0.4));
+              border-color: rgba(124, 58, 237, 0.3);
+              color: #6D28D9;
+            }
+
+            .pro-time-input {
+              height: 38px;
+              padding: 0 12px;
+              border-radius: 10px;
+              border: 1px solid #CBD5E1;
+              background: #ffffff;
+              font-weight: 700;
+              font-size: 0.9rem;
+              color: #0F172A;
+              text-align: center;
+              outline: none;
+              transition: all 0.2s;
+            }
+
+            .pro-time-input:focus {
+              border-color: #10B981;
+              box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+            }
+
+            .pro-select-dropdown {
+              height: 40px;
+              padding: 0 14px;
+              border-radius: 10px;
+              border: 1px solid #CBD5E1;
+              background: #ffffff;
+              font-weight: 700;
+              font-size: 0.88rem;
+              color: #0F172A;
+              outline: none;
+              cursor: pointer;
+              transition: all 0.2s;
+            }
+
+            .pro-select-dropdown:focus {
+              border-color: #10B981;
+              box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+            }
+
+            /* Modern Pro Save Button */
+            .pro-save-btn {
+              width: 100%;
+              height: 44px;
+              border-radius: 12px;
+              border: none;
+              background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+              color: #ffffff;
+              font-size: 0.9rem;
+              font-weight: 700;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+              cursor: pointer;
+              box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+              transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+              outline: none;
+              user-select: none;
+              margin-top: 6px;
+            }
+
+            .pro-save-btn:hover:not(:disabled) {
+              background: linear-gradient(135deg, #059669 0%, #047857 100%);
+              box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+              transform: translateY(-1px);
+            }
+
+            .pro-save-btn:active:not(:disabled) {
+              transform: translateY(0);
+              box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+            }
+
+            .pro-save-btn:disabled,
+            .pro-save-btn.disabled-btn {
+              background: #E2E8F0 !important;
+              color: #94A3B8 !important;
+              box-shadow: none !important;
+              cursor: not-allowed !important;
+              opacity: 0.75 !important;
+              transform: none !important;
+            }
+
+            .pro-save-btn:disabled .pro-save-icon {
+              stroke: #94A3B8;
+            }
+
+            /* Settings List Menu Cards (Matching Reference Layout) */
+            .settings-menu-card {
+              background: #ffffff;
+              border: 1px solid #E2E8F0;
+              border-radius: 20px;
+              padding: 24px;
+              margin-bottom: 24px;
+              box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .settings-menu-card:hover {
+              box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+              border-color: #CBD5E1;
+            }
+
+            .settings-card-header {
+              margin-bottom: 6px;
+              padding-bottom: 12px;
+            }
+
+            .settings-card-header h3 {
+              font-size: 0.96rem;
+              font-weight: 700;
+              color: #0F172A;
+              margin: 0 0 2px 0;
+              letter-spacing: -0.01em;
+            }
+
+            .settings-card-header p {
+              font-size: 0.78rem;
+              color: #64748B;
+              margin: 0;
+            }
+
+            .settings-menu-list {
+              display: flex;
+              flex-direction: column;
+            }
+
+            .settings-menu-row {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 9px 0;
+              border-bottom: 1px solid #F8FAFC;
+              cursor: pointer;
+              transition: all 0.18s ease;
+              user-select: none;
+              gap: 12px;
+            }
+
+            .settings-menu-row:first-child {
+              padding-top: 3px;
+            }
+
+            .settings-menu-row:last-child {
+              border-bottom: none;
+              padding-bottom: 2px;
+            }
+
+            .settings-menu-row:hover .settings-menu-title {
+              color: #059669;
+            }
+
+            .settings-menu-row:hover .settings-menu-chevron {
+              transform: translateX(3px);
+              stroke: #059669;
+            }
+
+            .settings-danger-row:hover .settings-menu-title {
+              color: #DC2626 !important;
+            }
+
+            .settings-danger-row:hover .settings-menu-chevron {
+              stroke: #DC2626 !important;
+              transform: translateX(3px);
+            }
+
+            .settings-danger-row:hover .settings-menu-icon {
+              transform: scale(1.04);
+            }
+
+            .settings-menu-left {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              min-width: 0;
+              flex: 1;
+            }
+
+            .settings-menu-icon {
+              width: 38px;
+              height: 38px;
+              min-width: 38px;
+              min-height: 38px;
+              border-radius: 11px;
+              background: #E8F8F2;
+              color: #059669;
+              border: none !important;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex-shrink: 0;
+              transition: transform 0.18s ease;
+            }
+
+            .settings-menu-row:hover .settings-menu-icon {
+              transform: scale(1.04);
+            }
+
+            .settings-menu-text {
+              min-width: 0;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              gap: 1px;
+            }
+
+            .settings-menu-title {
+              font-size: 0.88rem;
+              font-weight: 700;
+              color: #0F172A;
+              margin: 0;
+              line-height: 1.25;
+              transition: color 0.18s ease;
+            }
+
+            .settings-menu-sub {
+              font-size: 0.76rem;
+              color: #64748B;
+              margin: 0;
+              line-height: 1.3;
+            }
+
+            .settings-menu-chevron {
+              stroke: #94A3B8;
+              flex-shrink: 0;
+              transition: all 0.18s ease;
+            }
+
+            @media (max-width: 860px) {
+              .settings-cards-row {
+                grid-template-columns: 1fr !important;
+                gap: 18px !important;
+              }
+            }
+          </style>
+
+          <!-- Top Green Hero Banner Matching Other Pages -->
+          <div class="fp-hero-banner fade-up" style="margin-bottom: 24px;">
+            <div class="fp-hero-glow"></div>
+            <div class="fp-hero-content">
+              <div class="fp-hero-icon-box">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path
+                    d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                </svg>
+              </div>
+              <div class="fp-hero-text">
+                <h2 class="fp-hero-title">Settings</h2>
+                <p class="fp-hero-subtitle">Configure meal automation, admin controls, and mess rules</p>
+              </div>
+            </div>
+            <div class="fp-hero-pattern"></div>
+          </div>
+
+          <!-- Side-by-Side Standalone Cards Container -->
+          <div class="settings-cards-row"
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; margin-bottom: 24px;">
+
+            <!-- STANDALONE CARD A: Dining Information -->
+            <div class="pro-settings-card" style="margin-bottom: 0; position: relative; z-index: 50;">
+              <div class="pro-settings-header" style="margin-bottom: 20px;">
+                <div class="pro-settings-header-icon"
+                  style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(29, 78, 216, 0.06)); color: #2563EB; border: 1px solid rgba(37, 99, 235, 0.2);">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="pro-settings-header-title">Dining Information</h3>
+                  <p class="pro-settings-header-subtitle">Mess identity and join credentials</p>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                  <label
+                    style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Dining
+                    Name</label>
+                  <input type="text" id="settingsDiningName" class="form-input" placeholder="e.g. Dhaka Mess"
+                    style="width: 100%; height: 40px; font-size: 0.88rem; border-radius: 10px;"
+                    oninput="Messliner.settings.checkDiningInfoChanges()">
+                </div>
+
+                <div>
+                  <label
+                    style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Manager
+                    Name</label>
+                  <input type="text" id="settingsManagerName" class="form-input" placeholder="Manager Full Name"
+                    style="width: 100%; height: 40px; font-size: 0.88rem; border-radius: 10px;"
+                    oninput="Messliner.settings.checkDiningInfoChanges()">
+                </div>
+
+                <!-- Join Code Box -->
+                <div
+                  style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #F8FAFC, #F1F5F9); border: 1.5px dashed #CBD5E1; border-radius: 12px; padding: 12px 16px;">
+                  <div>
+                    <span style="font-size: 0.76rem; font-weight: 600; color: #64748B; display: block;">Mess Join
+                      Code</span>
+                    <span id="settingsMessCodeDisplay"
+                      style="font-size: 1.1rem; font-weight: 800; color: #2563EB; letter-spacing: 0.08em;">-</span>
+                  </div>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="Messliner.settings.copyMessCode()"
+                    style="font-size: 0.8rem; gap: 6px; height: 34px; border-radius: 8px; font-weight: 600;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Copy Code
+                  </button>
+                </div>
+
+                <!-- Custom Glass Date Picker Container (Exact 1:1 to Meals Page Manual Add) -->
+                <div class="custom-date-picker-container" id="historyDatePickerWrap"
+                  style="position: relative; width: 100%;">
+
+                  <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                    <span style="font-size: 0.82rem; font-weight: 700; color: #334155;">Active History Start Date</span>
+                    <button type="button" class="info-help-btn" onclick="showSettingInfoModal('historyStartDate')"
+                      title="Info">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Clickable Glass Card Button Area -->
+                  <div class="glass-date-picker-card flex items-center justify-between gap-3"
+                    style="width: 100%; box-sizing: border-box; background: #ffffff; border: 1px solid #E2E8F0; padding: 8px 14px; border-radius: 14px; cursor: pointer;"
+                    onclick="Messliner.settings.toggleHistoryCalendarPopup(event)">
+
+                    <div class="date-picker-trigger-area flex items-center gap-3" style="flex: 1;">
+                      <div class="date-card-icon-badge"
+                        style="width: 36px; height: 36px; border-radius: 10px; background: #ECFDF5; border: 1.5px solid #A7F3D0; color: #047857;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="3.5" ry="3.5" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                      </div>
+                      <div class="date-card-info flex flex-col justify-center select-none">
+                        <span class="date-card-label" style="font-size: 0.72rem; color: #64748B;">Selected Date</span>
+                        <span class="date-card-display-text" id="historyStartDateDisplayText"
+                          style="font-size: 0.88rem; font-weight: 700; color: #0F172A;">Select Date</span>
+                        <input type="hidden" id="settingsHistoryStartDate" value="">
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- Custom Interactive Calendar Popup (Ledger Add Bill Style) -->
+                  <div class="custom-calendar-popup ledger-calendar-popup" id="historyCalendarPopup"
+                    style="display:none; position: absolute; top: calc(100% + 6px); left: 0; right: auto; z-index: 99999; box-sizing: border-box;"
+                    onclick="event.stopPropagation()">
+                    <div class="cal-popup-header">
+                      <button type="button" class="cal-header-arrow"
+                        onclick="Messliner.settings.navHistoryCalendarMonth(-1, event)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="15 18 9 12 15 6" />
+                        </svg>
+                      </button>
+                      <span class="cal-header-title" id="historyCalMonthYearTitle">August 2026</span>
+                      <button type="button" class="cal-header-arrow"
+                        onclick="Messliner.settings.navHistoryCalendarMonth(1, event)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="cal-weekdays-row">
+                      <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                    </div>
+                    <div class="cal-days-grid" id="historyCalDaysGrid"></div>
+                    <div class="cal-popup-footer"
+                      style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.06); display:flex; justify-content:space-between; align-items:center;">
+                      <button type="button" class="date-today-pill"
+                        onclick="Messliner.settings.selectHistoryCalendarDate(Utils.today(), event)"
+                        style="background:rgba(5, 150, 105, 0.12); color:#059669; border:none; padding:4px 12px; border-radius:12px; font-weight:700; font-size:12px; cursor:pointer;">Today</button>
+                      <button type="button" onclick="Messliner.settings.closeHistoryCalendarPopup()"
+                        style="background:none; border:none; color:#64748B; font-weight:600; font-size:12px; cursor:pointer;">Close</button>
+                    </div>
+                  </div>
+
+                </div>
+
+                <button type="button" id="saveDiningInfoBtn" class="pro-save-btn disabled-btn" disabled
+                  onclick="Messliner.settings.saveDiningInfo()">
+                  <svg class="pro-save-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Save Dining Info</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- STANDALONE CARD B: Meal Configuration -->
+            <div class="pro-settings-card" style="margin-bottom: 0; padding: 24px; border-radius: 20px;">
+
+              <!-- Card Header Matching Screenshot UI -->
+              <div class="pro-settings-header"
+                style="margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #F1F5F9;">
+                <div class="pro-settings-header-icon"
+                  style="width: 44px; height: 44px; border-radius: 14px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                </div>
+                <div>
+                  <h3
+                    style="font-size: 1.15rem; font-weight: 800; color: #064E3B; margin: 0 0 3px 0; letter-spacing: -0.01em;">
+                    Meal Configuration</h3>
+                  <p style="font-size: 0.85rem; color: #64748B; margin: 0;">Automation rules and cut-off deadlines</p>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 16px;">
+
+                <!-- Top Controls Card Box Matching Screenshot UI -->
+                <div
+                  style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 18px; padding: 18px 22px; display: flex; flex-direction: column; gap: 16px;">
+
+                  <!-- Row 1: Manager Meal -->
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="font-size: 0.95rem; font-weight: 700; color: #0F172A;">Manager Meal</span>
+                      <button type="button" class="info-help-btn" onclick="showSettingInfoModal('managerMeal')"
+                        title="Info">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.8"
+                          stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="16" x2="12" y2="12" />
+                          <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
+                      </button>
+                    </div>
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="managerMealToggle"
+                        onchange="Messliner.settings.toggleManagerMeal(this.checked)">
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <!-- Row 2: Meal Rate -->
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="font-size: 0.95rem; font-weight: 700; color: #334155;">Meal Rate</span>
+                      <button type="button" class="info-help-btn" onclick="showSettingInfoModal('mealRate')"
+                        title="Info">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.8"
+                          stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="16" x2="12" y2="12" />
+                          <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="m3-custom-dropdown" id="rateModeDropdown">
+                      <button type="button" class="m3-dropdown-btn" onclick="toggleM3Dropdown('rateModeDropdown')"
+                        style="padding: 8px 18px; border-radius: 14px; background: #ECFDF5; border: 1.5px solid #A7F3D0; font-size: 0.92rem; color: #047857; font-weight: 700;">
+                        <span class="m3-dropdown-val" id="rateModeDisplay">Market Rate</span>
+                        <svg class="m3-dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M7 10l5 5 5-5z" />
+                        </svg>
+                      </button>
+                      <div class="m3-dropdown-menu">
+                        <div class="m3-dropdown-item active" data-value="market" onclick="selectM3RateMode('market')">
+                          Market Rate
+                        </div>
+                        <div class="m3-dropdown-item" data-value="fixed" onclick="selectM3RateMode('fixed')">
+                          Fixed Rate
+                        </div>
+                      </div>
+                      <!-- Hidden Select Element for System Handlers -->
+                      <select id="settingsRateMode" style="display:none;"
+                        onchange="Messliner.settings.updateRateMode(this.value)">
+                        <option value="market">market</option>
+                        <option value="fixed">fixed</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Fixed Rates Sub-Card (Visible when Fixed Rate is selected) -->
+                  <div id="settingsFixedRatesSection"
+                    style="display: none; background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 16px; padding: 14px 16px; margin-top: -4px;">
+                    <div
+                      style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                      <span style="font-size: 0.9rem; font-weight: 800; color: #065F46;">Fixed Meal Rates</span>
+                      <div style="font-size: 0.84rem; font-weight: 700; color: #047857;" id="fixedRatesFullMealDisplay">
+                        Full Meal: <span style="font-size: 0.95rem; font-weight: 800; color: #064E3B;">৳0</span>
+                      </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                      <!-- Breakfast Fixed Rate Row -->
+                      <div id="fixedRateBreakfastRow"
+                        style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 0.88rem; font-weight: 600; color: #1E293B;">Breakfast</span>
+                        <div
+                          style="display: flex; align-items: center; background: #ffffff; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 0 12px; height: 36px; gap: 6px; width: 110px; box-sizing: border-box;">
+                          <span style="font-weight: 700; color: #047857; font-size: 0.88rem;">৳</span>
+                          <input type="text" inputmode="decimal" id="settingsFixedRateBreakfast" placeholder="0"
+                            class="settings-rate-num-input"
+                            style="border: none; outline: none; width: 100%; height: 100%; font-size: 0.9rem; font-weight: 700; color: #0F172A; background: transparent; padding: 0;"
+                            onkeydown="if(!/[0-9.]/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete' && event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Tab') event.preventDefault();"
+                            oninput="this.value = this.value.replace(/[^0-9.]/g, ''); Messliner.settings._updateFixedRateFullMealDisplay();">
+                        </div>
+                      </div>
+
+                      <!-- Lunch Fixed Rate Row -->
+                      <div id="fixedRateLunchRow"
+                        style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 0.88rem; font-weight: 600; color: #1E293B;">Lunch</span>
+                        <div
+                          style="display: flex; align-items: center; background: #ffffff; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 0 12px; height: 36px; gap: 6px; width: 110px; box-sizing: border-box;">
+                          <span style="font-weight: 700; color: #047857; font-size: 0.88rem;">৳</span>
+                          <input type="text" inputmode="decimal" id="settingsFixedRateLunch" placeholder="0"
+                            class="settings-rate-num-input"
+                            style="border: none; outline: none; width: 100%; height: 100%; font-size: 0.9rem; font-weight: 700; color: #0F172A; background: transparent; padding: 0;"
+                            onkeydown="if(!/[0-9.]/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete' && event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Tab') event.preventDefault();"
+                            oninput="this.value = this.value.replace(/[^0-9.]/g, ''); Messliner.settings._updateFixedRateFullMealDisplay();">
+                        </div>
+                      </div>
+
+                      <!-- Dinner Fixed Rate Row -->
+                      <div id="fixedRateDinnerRow"
+                        style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 0.88rem; font-weight: 600; color: #1E293B;">Dinner</span>
+                        <div
+                          style="display: flex; align-items: center; background: #ffffff; border: 1.5px solid #86EFAC; border-radius: 12px; padding: 0 12px; height: 36px; gap: 6px; width: 110px; box-sizing: border-box;">
+                          <span style="font-weight: 700; color: #047857; font-size: 0.88rem;">৳</span>
+                          <input type="text" inputmode="decimal" id="settingsFixedRateDinner" placeholder="0"
+                            class="settings-rate-num-input"
+                            style="border: none; outline: none; width: 100%; height: 100%; font-size: 0.9rem; font-weight: 700; color: #0F172A; background: transparent; padding: 0;"
+                            onkeydown="if(!/[0-9.]/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete' && event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Tab') event.preventDefault();"
+                            oninput="this.value = this.value.replace(/[^0-9.]/g, ''); Messliner.settings._updateFixedRateFullMealDisplay();">
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Save Fixed Rates Action Button -->
+                    <div
+                      style="display: flex; justify-content: flex-end; margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(5, 150, 105, 0.15);">
+                      <button type="button" id="btnSaveFixedRates" onclick="Messliner.settings.saveFixedRates()"
+                        style="height: 34px; padding: 0 18px; border-radius: 10px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff; font-size: 0.84rem; font-weight: 700; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.22); transition: all 0.2s ease;"
+                        onmouseenter="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(5, 150, 105, 0.32)';"
+                        onmouseleave="this.style.transform='none'; this.style.boxShadow='0 2px 8px rgba(5, 150, 105, 0.22)';">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        <span>Save Rates</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Row 3: Due Limit -->
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="font-size: 0.95rem; font-weight: 700; color: #334155;">Due Limit</span>
+                      <button type="button" class="info-help-btn" onclick="showSettingInfoModal('dueLimit')"
+                        title="Info">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.8"
+                          stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="16" x2="12" y2="12" />
+                          <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <div
+                        style="display: flex; align-items: center; background: #ffffff; border: 1.5px solid #CBD5E1; border-radius: 14px; padding: 0 14px; height: 38px; gap: 6px; width: 110px; box-sizing: border-box; transition: border-color 0.2s;">
+                        <span style="font-weight: 700; color: #64748B; font-size: 0.92rem;">৳</span>
+                        <input type="number" id="settingsDueLimitAmount" min="0" step="50" placeholder="0"
+                          class="settings-rate-num-input"
+                          style="border: none; outline: none; width: 100%; height: 100%; font-size: 0.92rem; font-weight: 700; color: #0F172A; background: transparent; padding: 0;"
+                          onchange="Messliner.settings.saveDueLimit(this.value)">
+                      </div>
+                      <label class="toggle-switch">
+                        <input type="checkbox" id="settingsDueLimitToggle"
+                          onchange="Messliner.settings.toggleDueLimit(this.checked)">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Meals & Cutoff Card -->
+                <div id="autoMealDeadlines" class="meals-cutoff-card" style="margin-top: 0;">
+
+                  <div class="meals-cutoff-header"
+                    style="margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                    <h4 style="font-size: 0.92rem; font-weight: 700; color: #1E293B; margin: 0;">Meals & Cut-off Times
+                    </h4>
+                    <button type="button" class="info-help-btn" onclick="showSettingInfoModal('mealsCutoff')"
+                      title="Info">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="meals-cutoff-rows">
+
+                    <!-- Breakfast Row -->
+                    <div class="meal-row-item">
+                      <span class="meal-row-name">Breakfast</span>
+                      <div class="meal-row-controls">
+                        <div class="m3-time-trigger-pill"
+                          onclick="M3TimePicker.open(document.getElementById('breakfastDeadline'))">
+                          <span id="breakfastDeadline_display">07:00 AM</span>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          <input type="time" id="breakfastDeadline" class="pro-time-input" value="07:00"
+                            style="display:none;"
+                            onchange="Messliner.settings.saveDeadline('breakfast', this.value); if(window.Utils) document.getElementById('breakfastDeadline_display').textContent = Utils.formatTime(this.value);">
+                        </div>
+                        <label class="toggle-switch">
+                          <input type="checkbox" id="settingsTrackedBreakfast"
+                            onchange="Messliner.settings.updateTrackedMeals()">
+                          <span class="toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <!-- Lunch Row -->
+                    <div class="meal-row-item">
+                      <span class="meal-row-name">Lunch</span>
+                      <div class="meal-row-controls">
+                        <div class="m3-time-trigger-pill"
+                          onclick="M3TimePicker.open(document.getElementById('lunchDeadline'))">
+                          <span id="lunchDeadline_display">08:00 AM</span>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          <input type="time" id="lunchDeadline" class="pro-time-input" value="08:00"
+                            style="display:none;"
+                            onchange="Messliner.settings.saveDeadline('lunch', this.value); if(window.Utils) document.getElementById('lunchDeadline_display').textContent = Utils.formatTime(this.value);">
+                        </div>
+                        <label class="toggle-switch">
+                          <input type="checkbox" id="settingsTrackedLunch"
+                            onchange="Messliner.settings.updateTrackedMeals()">
+                          <span class="toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <!-- Dinner Row -->
+                    <div class="meal-row-item">
+                      <span class="meal-row-name">Dinner</span>
+                      <div class="meal-row-controls">
+                        <div class="m3-time-trigger-pill"
+                          onclick="M3TimePicker.open(document.getElementById('dinnerDeadline'))">
+                          <span id="dinnerDeadline_display">04:00 PM</span>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          <input type="time" id="dinnerDeadline" class="pro-time-input" value="16:00"
+                            style="display:none;"
+                            onchange="Messliner.settings.saveDeadline('dinner', this.value); if(window.Utils) document.getElementById('dinnerDeadline_display').textContent = Utils.formatTime(this.value);">
+                        </div>
+                        <label class="toggle-switch">
+                          <input type="checkbox" id="settingsTrackedDinner"
+                            onchange="Messliner.settings.updateTrackedMeals()">
+                          <span class="toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Side-by-Side Manage & Admin Cards (50/50 Layout: Manage Left, Admin Right) -->
+          <div class="settings-cards-row"
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; margin-bottom: 24px;">
+
+            <!-- CARD C: Manage Menu Card (Left) -->
+            <div class="settings-menu-card"
+              style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: flex-start;">
+              <div class="settings-card-header">
+                <h3>Manage</h3>
+                <p>Approvals &amp; guidelines</p>
+              </div>
+
+              <div class="settings-menu-list">
+                <!-- Row 1: Payment Method -->
+                <div class="settings-menu-row"
+                  onclick="Messliner.router.navigate('ledger'); setTimeout(() => { if (window.Messliner && Messliner.ledger && Messliner.ledger.openPaymentMethodsModal) Messliner.ledger.openPaymentMethodsModal(); }, 150);">
+                  <div class="settings-menu-left">
+                    <div class="settings-menu-icon">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2.5" />
+                        <path d="M2 10h20" />
+                        <path d="M6 15h4" />
+                        <circle cx="17" cy="15" r="1.5" fill="currentColor" />
+                      </svg>
+                    </div>
+                    <div class="settings-menu-text">
+                      <h5 class="settings-menu-title">Payment Method</h5>
+                      <p class="settings-menu-sub">Configure mess payment methods</p>
+                    </div>
+                  </div>
+                  <svg class="settings-menu-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </div>
+
+                <!-- Row 2: House Rules -->
+                <div class="settings-menu-row" onclick="openModal('houseRulesModal')">
+                  <div class="settings-menu-left">
+                    <div class="settings-menu-icon">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                      </svg>
+                    </div>
+                    <div class="settings-menu-text">
+                      <h5 class="settings-menu-title">House Rules</h5>
+                      <p class="settings-menu-sub">House rules for the mess</p>
+                    </div>
+                  </div>
+                  <svg class="settings-menu-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- CARD D: Admin Menu Card (Right) -->
+            <div class="settings-menu-card"
+              style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: flex-start;">
+              <div class="settings-card-header">
+                <h3>Admin</h3>
+                <p>Your admin controls</p>
+              </div>
+
+              <div class="settings-menu-list">
+                <!-- Row 1: Join bazar rotation -->
+                <div class="settings-menu-row" style="cursor: default;">
+                  <div class="settings-menu-left">
+                    <div class="settings-menu-icon">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+                        <path d="M3 6h18" />
+                        <path d="M16 10a4 4 0 0 1-8 0" />
+                      </svg>
+                    </div>
+                    <div class="settings-menu-text">
+                      <h5 class="settings-menu-title">Join bazar rotation</h5>
+                      <p class="settings-menu-sub">You take turns buying bazar</p>
+                    </div>
+                  </div>
+                  <label class="toggle-switch" style="margin: 0; flex-shrink: 0;">
+                    <input type="checkbox" id="settingsManagerBazarToggle"
+                      onchange="Messliner.settings.toggleManagerBazar(this.checked)">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <!-- Row 2: Transfer admin role -->
+                <div class="settings-menu-row" onclick="Messliner.settings.openTransferOwnershipModal()">
+                  <div class="settings-menu-left">
+                    <div class="settings-menu-icon">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z" />
+                        <circle cx="12" cy="19.5" r="1.5" fill="currentColor" />
+                      </svg>
+                    </div>
+                    <div class="settings-menu-text">
+                      <h5 class="settings-menu-title">Transfer admin role</h5>
+                      <p class="settings-menu-sub">Hand the mess to another member</p>
+                    </div>
+                  </div>
+                  <svg class="settings-menu-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- CARD E: Feature Controls -->
+          <div class="pro-settings-card">
+            <div class="pro-settings-header">
+              <div class="pro-settings-header-icon"
+                style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(91, 33, 182, 0.06)); color: #7C3AED; border: 1px solid rgba(124, 58, 237, 0.2);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" />
+                  <path d="M12 6v6l4 2" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="pro-settings-header-title">Feature Controls</h3>
+                <p class="pro-settings-header-subtitle">Manage AI assistant availability and receipt image analysis</p>
+              </div>
+            </div>
+
+            <div class="pro-settings-grid">
+              <!-- AI Assistant Toggle -->
+              <div class="pro-settings-item">
+                <div class="pro-settings-item-info">
+                  <h5>Messliner AI Assistant</h5>
+                  <p>Enable AI assistant chat for members</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="settingsAiAssistantToggle"
+                    onchange="Messliner.settings.toggleAiAssistant(this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- AI File Upload Toggle -->
+              <div class="pro-settings-item">
+                <div class="pro-settings-item-info">
+                  <h5>AI Routine Image Upload</h5>
+                  <p>Allow image analysis in AI Assistant</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="settingsAiFileUploadToggle"
+                    onchange="Messliner.settings.toggleAiFileUpload(this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD F: Danger Zone & Session Control -->
+          <div class="settings-menu-card settings-danger-card"
+            style="margin-bottom: 24px; border: 1px solid #FECACA; background: #ffffff;">
+            <div class="settings-card-header" style="margin-bottom: 6px;">
+              <h3 style="color: #0F172A; font-weight: 800;">Danger zone</h3>
+              <p style="color: #64748B;">Irreversible actions &amp; session control</p>
+            </div>
+
+            <div class="settings-menu-list">
+              <!-- Row 1: Reset Mess Data -->
+              <div class="settings-menu-row settings-danger-row" onclick="Messliner.settings.confirmReset()">
+                <div class="settings-menu-left">
+                  <div class="settings-menu-icon"
+                    style="background: #FEE2E2; color: #DC2626; border: none; border-radius: 10px; width: 36px; height: 36px; min-width: 36px; min-height: 36px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      <line x1="10" y1="11" x2="10" y2="17" />
+                      <line x1="14" y1="11" x2="14" y2="17" />
+                    </svg>
+                  </div>
+                  <div class="settings-menu-text">
+                    <h5 class="settings-menu-title" style="color: #DC2626; font-weight: 700;">Reset mess data</h5>
+                    <p class="settings-menu-sub" style="color: #64748B; font-size: 0.85rem; margin: 0;">Permanently
+                      delete all meals, deposits, and activity records</p>
+                  </div>
+                </div>
+                <svg class="settings-menu-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+
+              <!-- Row 2: Sign out -->
+              <div class="settings-menu-row settings-danger-row" onclick="showSignOutConfirm()">
+                <div class="settings-menu-left">
+                  <div class="settings-menu-icon"
+                    style="background: #FEE2E2; color: #DC2626; border: none; border-radius: 10px; width: 36px; height: 36px; min-width: 36px; min-height: 36px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                  </div>
+                  <div class="settings-menu-text">
+                    <h5 class="settings-menu-title" style="color: #DC2626; font-weight: 700;">Sign out</h5>
+                    <p class="settings-menu-sub" style="color: #64748B; font-size: 0.85rem; margin: 0;">You'll need to
+                      sign in again to access your mess</p>
+                  </div>
+                </div>
+                <svg class="settings-menu-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+        </section>
+<!-- </body> -->

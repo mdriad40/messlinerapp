@@ -76,9 +76,7 @@ const BazarModule = {
     this.populateYearDropdown();
     this.populateMonthDropdown();
     this.setupRealtimeListeners();
-    if (initialData && (initialData.bazar || initialData.deposits)) {
-      this.render();
-    }
+    this.render();
   },
 
   /**
@@ -88,6 +86,33 @@ const BazarModule = {
     this.diningId = Messliner.state?.diningId || this.diningId;
     this.userId = Messliner.state?.userId || this.userId;
     this.role = Messliner.state?.role || this.role;
+
+    // Toggle container views according to active role
+    const isBazarAdmin = (this.role === 'admin' || Messliner.state?.role === 'admin');
+    const userView = document.getElementById('bazarUserViewContainer');
+    const adminView = document.getElementById('bazarAdminViewContainer');
+    if (userView) userView.style.display = isBazarAdmin ? 'none' : 'block';
+    if (adminView) adminView.style.display = isBazarAdmin ? 'block' : 'none';
+
+    // Populate data from state caches if not yet fetched by realtime listener
+    if (!this.rawBazarData && Messliner.state?.diningData?.bazar) {
+      this.rawBazarData = Messliner.state.diningData.bazar;
+    }
+    if (!this.rawBazarData && window.OverviewModule?.cachedData?.bazar) {
+      this.rawBazarData = window.OverviewModule.cachedData.bazar;
+    }
+    if (!this.rawDepositsData && Messliner.state?.diningData?.deposits) {
+      this.rawDepositsData = Messliner.state.diningData.deposits;
+    }
+    if (!this.rawDepositsData && window.OverviewModule?.cachedData?.deposits) {
+      this.rawDepositsData = window.OverviewModule.cachedData.deposits;
+    }
+    if ((!this.users || Object.keys(this.users).length === 0) && Messliner.state?.users) {
+      this.users = Messliner.state.users;
+    }
+
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
 
     if (!this._initialized) {
       this.init(this.diningId, this.userId);
@@ -298,11 +323,13 @@ const BazarModule = {
    * Primary Render Coordinator
    */
   render() {
-    this.renderTopStats();
-    this.renderCalendar();
-    this.renderDutyDistribution();
-    this.renderExpenseLogs();
-    this.updateAdminControls();
+    this.populateYearDropdown();
+    this.populateMonthDropdown();
+    try { this.renderTopStats(); } catch (e) { console.warn('[BazarModule] renderTopStats error:', e); }
+    try { this.renderCalendar(); } catch (e) { console.warn('[BazarModule] renderCalendar error:', e); }
+    try { this.renderDutyDistribution(); } catch (e) { console.warn('[BazarModule] renderDutyDistribution error:', e); }
+    try { this.renderExpenseLogs(); } catch (e) { console.warn('[BazarModule] renderExpenseLogs error:', e); }
+    try { this.updateAdminControls(); } catch (e) { console.warn('[BazarModule] updateAdminControls error:', e); }
   },
 
   /**
@@ -350,12 +377,15 @@ const BazarModule = {
         }
       }
 
-      // Check if entry belongs to selected month
+      // Check if entry belongs to selected month (strictly check date, fallback to timestamp only if no date)
       let isMatch = false;
-      if (entryDate && typeof entryDate === 'string' && entryDate.startsWith(formattedMonth)) {
-        isMatch = true;
-      } else if (Utils.isItemInMonth(entry, formattedMonth)) {
-        isMatch = true;
+      if (entryDate && typeof entryDate === 'string') {
+        isMatch = entryDate.startsWith(formattedMonth);
+      } else if (entry.timestamp && typeof entry.timestamp === 'number') {
+        const dt = new Date(entry.timestamp);
+        const y = dt.getFullYear();
+        const m = String(dt.getMonth() + 1).padStart(2, '0');
+        isMatch = `${y}-${m}` === formattedMonth;
       }
 
       if (!isMatch) return;
@@ -406,8 +436,16 @@ const BazarModule = {
 
     const isMatchMonth = (item) => {
       if (!item) return false;
-      if (item.date && typeof item.date === 'string' && item.date.startsWith(formattedMonth)) return true;
-      return Utils.isItemInMonth(item, formattedMonth);
+      if (item.date && typeof item.date === 'string') {
+        return item.date.startsWith(formattedMonth);
+      }
+      if (item.timestamp && typeof item.timestamp === 'number') {
+        const dt = new Date(item.timestamp);
+        const y = dt.getFullYear();
+        const m = String(dt.getMonth() + 1).padStart(2, '0');
+        return `${y}-${m}` === formattedMonth;
+      }
+      return false;
     };
 
     Object.values(allDeposits).forEach(d => {
@@ -453,7 +491,7 @@ const BazarModule = {
     }
 
     const totalDepEl = document.getElementById('bazarStatTotalDeposit');
-    if (totalDepEl) totalDepEl.textContent = Utils.currency(effectiveDeposit);
+    if (totalDepEl) totalDepEl.textContent = Utils.currency(totalDeposit);
 
     const remainingBalEl = document.getElementById('bazarStatRemainingBalance');
     if (remainingBalEl) {

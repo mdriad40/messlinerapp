@@ -1,0 +1,202 @@
+  <section id="page-export-slip" class="page-section" style="padding:0;">
+    <!-- Premium Hero Header -->
+    <div class="export-page-hero">
+      <div class="export-hero-bg"></div>
+      <div class="export-hero-content">
+        <div class="export-hero-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
+        </div>
+        <div class="export-hero-text">
+          <h1 class="export-hero-title">Member Statistics Export</h1>
+          <p class="export-hero-subtitle" id="exportPagePeriodLabel">Configure &amp; download your monthly financial
+            statement</p>
+        </div>
+        <button class="export-back-btn" onclick="if(window.Router &amp;&amp; typeof Router.handleBack === 'function'){ Router.handleBack(); } else if(window.Messliner &amp;&amp; Messliner.router){ Messliner.router.navigate(Messliner.router.getRole() === 'admin' ? 'dashboard' : 'overview'); } else { window.location.hash = (localStorage.getItem('ml_user_role') === 'admin' ? '#dashboard' : '#overview'); }" title="Back to Dashboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+          <span>Back</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="export-page-body">
+
+      <!-- LEFT CONTROLS PANEL -->
+      <aside class="export-controls-panel">
+
+        <!-- Period Selector Card -->
+        <div class="export-control-card">
+          <div class="export-control-card-header">
+            <div class="export-ctrl-icon export-ctrl-icon-blue">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+            </div>
+            <h4 class="export-control-card-title">Statement Period</h4>
+          </div>
+          <div class="export-period-selectors">
+            <div class="export-select-group">
+              <label class="export-select-label">Month</label>
+              <select id="exportMonthSelect" class="export-select"
+                onchange="Messliner.overview.onExportMonthYearChange()">
+                <!-- Populated by JS -->
+              </select>
+            </div>
+            <div class="export-select-group">
+              <label class="export-select-label">Year</label>
+              <select id="exportYearSelect" class="export-select"
+                onchange="Messliner.overview.onExportMonthYearChange()">
+                <!-- Populated by JS -->
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Format Card -->
+        <div class="export-control-card">
+          <div class="export-control-card-header">
+            <div class="export-ctrl-icon export-ctrl-icon-emerald">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </div>
+            <h4 class="export-control-card-title">Export Format</h4>
+          </div>
+          <div class="export-format-grid">
+            <!-- JPG Format -->
+            <label class="export-format-card" id="exportFormatLabelJpg" data-format="jpg">
+              <input type="radio" name="exportFormat" value="jpg" checked
+                style="position:absolute;opacity:0;pointer-events:none;"
+                onchange="Messliner.overview.updateExportFormatUI()">
+              <div class="export-format-icon-wrap export-format-icon-blue">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              </div>
+              <div class="export-format-info">
+                <span class="export-format-name">JPG Image</span>
+                <span class="export-format-desc">High-resolution image</span>
+              </div>
+              <div class="export-format-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+            </label>
+
+            <!-- PDF Format -->
+            <label class="export-format-card" id="exportFormatLabelPdf" data-format="pdf">
+              <input type="radio" name="exportFormat" value="pdf"
+                style="position:absolute;opacity:0;pointer-events:none;"
+                onchange="Messliner.overview.updateExportFormatUI()">
+              <div class="export-format-icon-wrap export-format-icon-red">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+              </div>
+              <div class="export-format-info">
+                <span class="export-format-name">PDF Document</span>
+                <span class="export-format-desc">Printable PDF file</span>
+              </div>
+              <div class="export-format-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+            </label>
+
+          </div>
+        </div>
+
+        <!-- Member Selection Card -->
+        <div class="export-control-card export-members-card">
+          <div class="export-control-card-header">
+            <div class="export-ctrl-icon export-ctrl-icon-amber">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+            <h4 class="export-control-card-title">Select Members</h4>
+            <label class="export-select-all-label">
+              <input type="checkbox" id="exportSelectAllMembers" checked
+                onchange="Messliner.overview.toggleSelectAllExportMembers(this)">
+              <span>All</span>
+            </label>
+          </div>
+          <div id="exportMembersChecklist" class="export-members-list">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Download Action -->
+        <button class="export-download-btn" onclick="Messliner.overview.downloadMemberStatsSlip()"
+          id="btnDownloadMemberSlip">
+          <div class="export-download-btn-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </div>
+          <div class="export-download-btn-text">
+            <span class="export-download-btn-label">Download Statement</span>
+            <span class="export-download-btn-sub" id="exportDownloadFormatLabel">as JPG Image</span>
+          </div>
+        </button>
+
+      </aside>
+
+      <!-- RIGHT LIVE PREVIEW PANEL -->
+      <main class="export-preview-panel">
+        <div class="export-preview-header">
+          <div class="export-preview-header-left">
+            <div class="export-preview-pulse"></div>
+            <span class="export-preview-title">Live Statement Preview</span>
+            <span class="export-preview-tag">Auto-updates</span>
+          </div>
+          <div class="export-preview-header-right" id="exportPreviewStats">
+            <!-- filled dynamically -->
+          </div>
+        </div>
+        <div class="export-preview-canvas">
+          <div id="exportSlipLivePreview" class="export-slip-inner">
+            <!-- Dynamic live HTML preview loaded here -->
+          </div>
+        </div>
+      </main>
+
+    </div>
+  </section>
+<!-- </body> -->

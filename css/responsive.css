@@ -850,15 +850,19 @@
     display: none !important;
   }
 
-  #memberStatsTable tbody tr {
+  #memberStatsTable tbody tr,
+  #memberStatsTable tbody tr:nth-child(even),
+  #memberStatsTable tbody tr:nth-child(odd) {
     display: grid !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(4, 25%) !important;
     grid-template-rows: auto auto !important;
-    gap: 8px 6px !important;
+    row-gap: 8px !important;
+    column-gap: 0 !important;
     background: #ffffff !important;
+    background-color: #ffffff !important;
     border: 1.5px solid #edf2f7 !important;
     border-radius: 18px !important;
-    padding: 10px 12px !important;
+    padding: 10px 12px 9px 12px !important;
     margin-bottom: 10px !important;
     box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.05) !important;
     box-sizing: border-box !important;
@@ -869,15 +873,20 @@
   }
 
   #memberStatsTable tbody tr:hover,
-  #memberStatsTable tbody tr:active {
+  #memberStatsTable tbody tr:active,
+  #memberStatsTable tbody tr:nth-child(even):hover,
+  #memberStatsTable tbody tr:nth-child(even):active {
     transform: scale(0.99) !important;
     background: #ffffff !important;
+    background-color: #ffffff !important;
   }
 
-  #memberStatsTable tbody tr.selected {
+  #memberStatsTable tbody tr.selected,
+  #memberStatsTable tbody tr.selected:nth-child(even) {
     border-color: #10b981 !important;
     box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15) !important;
     background: #f0fdf4 !important;
+    background-color: #f0fdf4 !important;
   }
 
   #memberStatsTable td {
@@ -894,7 +903,7 @@
     display: flex !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    padding: 0 !important;
+    padding: 0 0 2px 0 !important;
     margin: 0 !important;
     min-width: 0 !important;
     border: none !important;
@@ -939,7 +948,7 @@
     display: flex !important;
     align-items: center !important;
     justify-content: flex-end !important;
-    padding: 0 !important;
+    padding: 0 0 2px 0 !important;
     margin: 0 !important;
   }
 
@@ -971,7 +980,7 @@
     border: 1px solid rgba(239, 68, 68, 0.25) !important;
   }
 
-  /* Row 2: 4-Column Compact Metric Boxes */
+  /* Row 2: 4-Column Minimal Unified Metric Row with Divider Lines (Exact 25% Equal Columns) */
   #memberStatsTable td:nth-child(2),
   #memberStatsTable td:nth-child(3),
   #memberStatsTable td:nth-child(4),
@@ -981,14 +990,18 @@
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    background: #f8fafc !important;
-    border-radius: 10px !important;
-    padding: 5px 3px !important;
+    background: transparent !important;
+    border: none !important;
+    border-top: 1px solid rgba(226, 232, 240, 0.8) !important;
+    border-radius: 0 !important;
+    padding: 8px 2px 2px 2px !important;
     min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
     text-align: center !important;
-    gap: 2px !important;
-    border: 1px solid rgba(226, 232, 240, 0.6) !important;
+    gap: 3px !important;
     box-sizing: border-box !important;
+    overflow: hidden !important;
   }
 
   #memberStatsTable td:nth-child(2) {
@@ -997,14 +1010,17 @@
 
   #memberStatsTable td:nth-child(3) {
     grid-column: 2 / 3 !important;
+    border-left: 1px solid rgba(226, 232, 240, 0.8) !important;
   }
 
   #memberStatsTable td:nth-child(4) {
     grid-column: 3 / 4 !important;
+    border-left: 1px solid rgba(226, 232, 240, 0.8) !important;
   }
 
   #memberStatsTable td:nth-child(5) {
     grid-column: 4 / 5 !important;
+    border-left: 1px solid rgba(226, 232, 240, 0.8) !important;
   }
 
   #memberStatsTable td:nth-child(2)::before,
@@ -2734,6 +2750,7 @@ body:has(#page-pro.active) #headerSubtitle {
   #page-overview .overview-mobile-stats .mymeal-user-topbar {
     display: none !important;
   }
+
   #page-overview .overview-mobile-stats .overview-hero-top-title {
     display: flex !important;
     align-items: center !important;
@@ -2751,6 +2768,7 @@ body:has(#page-pro.active) #headerSubtitle {
     margin-bottom: 14px !important;
     padding: 2px 0 !important;
   }
+
   #managerOverviewSection .overview-mobile-stats .overview-hero-top-title,
   body.role-admin #page-dashboard .overview-mobile-stats .overview-hero-top-title {
     display: none !important;
@@ -2761,6 +2779,7 @@ body:has(#page-pro.active) #headerSubtitle {
   body:not(.role-admin) .overview-mobile-stats .overview-user-topbar {
     display: none !important;
   }
+
   body:not(.role-admin) .overview-mobile-stats .overview-hero-top-title {
     display: flex !important;
   }
@@ -2849,6 +2868,7 @@ body:has(#page-pro.active) #headerSubtitle {
     padding: 0 0 10px 0 !important;
     margin: 0 !important;
     display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
     justify-content: flex-start !important;
     text-align: left !important;
@@ -2861,6 +2881,7 @@ body:has(#page-pro.active) #headerSubtitle {
     color: #0f172a !important;
     text-align: left !important;
     margin: 0 !important;
+    width: auto !important;
   }
 
   .quick-actions {
@@ -2944,8 +2965,11 @@ body:has(#page-pro.active) #headerSubtitle {
     padding: 0 2px 12px 2px !important;
     margin: 0 0 10px 0 !important;
     display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
     align-items: center !important;
     justify-content: space-between !important;
+    gap: 8px !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
@@ -2954,18 +2978,91 @@ body:has(#page-pro.active) #headerSubtitle {
     font-size: 1.05rem !important;
     font-weight: 700 !important;
     color: #0f172a !important;
+    text-align: left !important;
     margin: 0 !important;
+    width: auto !important;
+    flex-shrink: 0 !important;
   }
 
   #overviewMemberStatsSection .export-slip-btn {
-    padding: 7px 12px !important;
-    font-size: 0.8rem !important;
-    font-weight: 600 !important;
-    border-radius: 10px !important;
+    width: auto !important;
+    padding: 7px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em !important;
+    border-radius: 12px !important;
     display: inline-flex !important;
     align-items: center !important;
     gap: 6px !important;
     flex-shrink: 0 !important;
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 3px 10px rgba(5, 150, 105, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    white-space: nowrap !important;
+    user-select: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  #overviewMemberStatsSection .export-slip-btn svg {
+    width: 14px !important;
+    height: 14px !important;
+    stroke: #ffffff !important;
+    stroke-width: 2.4 !important;
+    transition: transform 0.2s ease !important;
+  }
+
+  #overviewMemberStatsSection .export-slip-btn:hover {
+    transform: translateY(-1.5px) !important;
+    box-shadow: 0 6px 16px rgba(5, 150, 105, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+    filter: brightness(1.05) !important;
+  }
+
+  #overviewMemberStatsSection .export-slip-btn:active {
+    transform: translateY(0) scale(0.97) !important;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25) !important;
+  }
+
+  body.dark-theme #overviewMemberStatsSection .export-slip-btn {
+    background: linear-gradient(135deg, #059669 0%, #064e3b 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  }
+
+  body.dark-theme #overviewMemberStatsSection .export-slip-btn svg {
+    stroke: #ffffff !important;
+  }
+
+  body.dark-theme #overviewMemberStatsSection .export-slip-btn:hover {
+    filter: brightness(1.1) !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  body.dark-theme #overviewMemberStatsSection .export-slip-btn:active {
+    transform: translateY(0) scale(0.97) !important;
+  }
+
+  body.dark-theme #memberStatsTable td:nth-child(2),
+  body.dark-theme #memberStatsTable td:nth-child(3),
+  body.dark-theme #memberStatsTable td:nth-child(4),
+  body.dark-theme #memberStatsTable td:nth-child(5) {
+    border-top-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  body.dark-theme #memberStatsTable td:nth-child(3),
+  body.dark-theme #memberStatsTable td:nth-child(4),
+  body.dark-theme #memberStatsTable td:nth-child(5) {
+    border-left-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  body.dark-theme #memberStatsTable tbody tr,
+  body.dark-theme #memberStatsTable tbody tr:nth-child(even),
+  body.dark-theme #memberStatsTable tbody tr:nth-child(odd) {
+    background: #1e293b !important;
+    background-color: #1e293b !important;
   }
 
   #overviewMemberStatsSection .table-wrapper {
@@ -2977,8 +3074,9 @@ body:has(#page-pro.active) #headerSubtitle {
     width: 100% !important;
     box-sizing: border-box !important;
     border-radius: 18px !important;
-    padding: 10px 12px !important;
+    padding: 10px 12px 9px 12px !important;
     margin-bottom: 10px !important;
+    grid-template-columns: repeat(4, 25%) !important;
   }
 
   /* ── Bazar History Section on Mobile ── */
@@ -3137,11 +3235,85 @@ body:has(#page-pro.active) #headerSubtitle {
   }
 
   /* ── 4. Finance Tab (#page-finance) ─────────────────────────── */
-  #page-finance {
-    padding: 0 0 24px 0 !important;
+  /* Hide Top Navbar Header on Mobile for Finance (matching User Panel Ledger) */
+  body.finance-active .top-header,
+  body:has(#page-finance.active) .top-header {
+    display: none !important;
   }
 
-  #page-finance .fp-hero-banner,
+  body.finance-active .content-area,
+  body:has(#page-finance.active) .content-area {
+    padding-top: max(14px, env(safe-area-inset-top, 14px)) !important;
+  }
+
+  #page-finance {
+    margin: 0 !important;
+    padding: 14px 16px 32px 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Finance Header on Mobile: Clean Title + Subtitle matching User Panel Ledger */
+  #page-finance .fp-hero-banner {
+    display: block !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 0 16px 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #page-finance .fp-hero-glow,
+  #page-finance .fp-hero-pattern,
+  #page-finance .fp-hero-icon-box,
+  #page-finance .fp-hero-banner::before,
+  #page-finance .fp-hero-banner::after {
+    display: none !important;
+  }
+
+  #page-finance .fp-hero-content {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+  }
+
+  #page-finance .fp-hero-text {
+    display: block !important;
+  }
+
+  #page-finance .fp-hero-title {
+    font-size: 1.5rem !important;
+    font-weight: 800 !important;
+    color: #0F2E1E !important;
+    letter-spacing: -0.02em !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+  }
+
+  #page-finance .fp-hero-subtitle {
+    font-size: 0.84rem !important;
+    color: #64748B !important;
+    font-weight: 500 !important;
+    margin: 3px 0 0 0 !important;
+    line-height: 1.3 !important;
+  }
+
+  body.dark-theme #page-finance .fp-hero-title {
+    color: #F8FAFC !important;
+  }
+
+  body.dark-theme #page-finance .fp-hero-subtitle {
+    color: #94A3B8 !important;
+  }
+
+  /* Shared Banner for Ledger & Bazar (kept intact) */
   #page-ledger .fp-hero-banner,
   #page-bazar .fp-hero-banner {
     margin: 12px 14px 14px 14px !important;
@@ -3149,8 +3321,6 @@ body:has(#page-pro.active) #headerSubtitle {
     border-radius: 18px !important;
   }
 
-  #page-finance .fp-hero-banner::before,
-  #page-finance .fp-hero-banner::after,
   #page-ledger .fp-hero-banner::before,
   #page-ledger .fp-hero-banner::after,
   #page-bazar .fp-hero-banner::before,
@@ -3158,7 +3328,6 @@ body:has(#page-pro.active) #headerSubtitle {
     display: none !important;
   }
 
-  #page-finance .fp-hero-icon-box,
   #page-ledger .fp-hero-icon-box,
   #page-bazar .fp-hero-icon-box {
     width: 44px !important;
@@ -3166,83 +3335,237 @@ body:has(#page-pro.active) #headerSubtitle {
     border-radius: 12px !important;
   }
 
-  #page-finance .fp-hero-icon-box svg,
   #page-ledger .fp-hero-icon-box svg,
   #page-bazar .fp-hero-icon-box svg {
     width: 22px !important;
     height: 22px !important;
   }
 
-  #page-finance .fp-hero-title,
   #page-ledger .fp-hero-title,
   #page-bazar .fp-hero-title {
     font-size: 1.25rem !important;
   }
 
-  #page-finance .fp-hero-subtitle,
   #page-ledger .fp-hero-subtitle,
   #page-bazar .fp-hero-subtitle {
     font-size: 0.78rem !important;
   }
 
+  /* Finance Quick Actions Grid (Clean 2-Col aligned with 16px page padding) */
   #page-finance .fp-actions-section {
-    padding: 0 14px !important;
-    margin-bottom: 14px !important;
+    padding: 0 !important;
+    margin: 0 0 22px 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   #page-finance .fp-actions-grid {
+    display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px !important;
+    gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   #page-finance .fp-action-card {
-    padding: 12px 10px !important;
-    border-radius: 15px !important;
-    min-height: 80px !important;
+    padding: 14px 10px !important;
+    border-radius: 16px !important;
+    min-height: 84px !important;
     gap: 6px !important;
+    background: #ffffff !important;
+    border: 1.5px solid #edf2f7 !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+    user-select: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  #page-finance .fp-action-card:active {
+    transform: scale(0.97) !important;
   }
 
   #page-finance .fp-action-icon-ring {
-    width: 36px !important;
-    height: 36px !important;
-    border-radius: 11px !important;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    margin-bottom: 2px !important;
   }
 
   #page-finance .fp-action-icon-ring svg {
-    width: 18px !important;
-    height: 18px !important;
+    width: 19px !important;
+    height: 19px !important;
   }
 
   #page-finance .fp-action-name {
-    font-size: 0.82rem !important;
+    font-size: 0.84rem !important;
     font-weight: 700 !important;
+    color: #0f172a !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    width: 100% !important;
+    text-align: center !important;
   }
 
   #page-finance .fp-action-hint {
-    font-size: 0.68rem !important;
+    font-size: 0.69rem !important;
+    color: #64748b !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    width: 100% !important;
+    text-align: center !important;
   }
 
+  /* Finance Transaction History Section */
   #page-finance .fp-history-section {
-    padding: 0 14px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   #page-finance .fp-history-header {
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 10px !important;
-    padding: 12px 14px !important;
+    gap: 12px !important;
+    padding: 0 0 12px 0 !important;
+    background: transparent !important;
+    border: none !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #page-finance .fp-history-title-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  #page-finance .fp-history-title {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
   }
 
   #page-finance .fp-history-filters {
     width: 100% !important;
     display: flex !important;
     flex-wrap: wrap !important;
-    gap: 6px !important;
+    gap: 8px !important;
+    box-sizing: border-box !important;
   }
 
   #page-finance .fp-history-filters .custom-dropdown {
-    flex: 1 1 calc(50% - 6px) !important;
-    min-width: 110px !important;
+    flex: 1 1 calc(50% - 4px) !important;
+    min-width: 0 !important;
+  }
+
+  #page-finance .fp-history-filters #financeFilterDropdown {
+    flex: 1 1 100% !important;
+  }
+
+  #page-finance .fp-history-filters .custom-dropdown-trigger {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Finance Timeline & Cards (Ultra Clean Matching Home) */
+  #page-finance .finance-timeline-card {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #page-finance .timeline {
+    padding-left: 24px !important;
+    position: relative !important;
+    margin: 0 !important;
+  }
+
+  #page-finance .timeline::before {
+    left: 7px !important;
+    top: 10px !important;
+    bottom: 10px !important;
+    background: #e2e8f0 !important;
+    width: 2px !important;
+  }
+
+  #page-finance .timeline-dot {
+    left: -24px !important;
+    top: 14px !important;
+    width: 16px !important;
+    height: 16px !important;
+    border-width: 3px !important;
+    background: #ffffff !important;
+  }
+
+  #page-finance .timeline-item {
+    padding-bottom: 10px !important;
+  }
+
+  #page-finance .timeline-content {
+    background: #ffffff !important;
+    border: 1.5px solid #edf2f7 !important;
+    border-radius: 18px !important;
+    padding: 12px 14px !important;
+    box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.05) !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+  }
+
+  #page-finance .timeline-content:active {
+    transform: scale(0.99) !important;
+  }
+
+  /* Dark Theme Support for Finance Mobile */
+  body.dark-theme #page-finance .fp-action-card,
+  body.dark-theme #page-finance .timeline-content {
+    background: #1e293b !important;
+    background-color: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  body.dark-theme #page-finance .fp-action-name,
+  body.dark-theme #page-finance .fp-history-title {
+    color: #f8fafc !important;
+  }
+
+  body.dark-theme #page-finance .fp-action-hint {
+    color: #94a3b8 !important;
+  }
+
+  body.dark-theme #page-finance .fp-history-filters .custom-dropdown-trigger {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #f8fafc !important;
+  }
+
+  body.dark-theme #page-finance .timeline-dot {
+    background: #0f172a !important;
+  }
+
+  body.dark-theme #page-finance .timeline::before {
+    background: rgba(255, 255, 255, 0.1) !important;
   }
 
   /* ── 5. Ledger Tab (#page-ledger) ────────────────────────────── */
@@ -3514,8 +3837,10 @@ body:has(#page-pro.active) #headerSubtitle {
     justify-content: center !important;
     padding: 0 !important;
     background: rgba(15, 23, 42, 0.55) !important;
-    backdrop-filter: blur(4px) !important;
-    -webkit-backdrop-filter: blur(4px) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    z-index: 10005 !important;
+    overflow-x: hidden !important;
   }
 
   #depositModal .modal,
@@ -3525,9 +3850,8 @@ body:has(#page-pro.active) #headerSubtitle {
   #financeFixModal .modal,
   #userModal .modal {
     width: 100% !important;
-    max-width: 100% !important;
-    min-width: 100% !important;
-    margin: 0 !important;
+    max-width: 500px !important;
+    margin: 0 auto !important;
     border-radius: 26px 26px 0 0 !important;
     border-bottom: none !important;
     border-left: none !important;
@@ -3536,15 +3860,45 @@ body:has(#page-pro.active) #headerSubtitle {
     max-height: 88dvh !important;
     overflow-y: auto !important;
     box-sizing: border-box !important;
-    padding: 12px 18px calc(24px + env(safe-area-inset-bottom, 16px)) 18px !important;
+    padding: 0 !important;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
     animation: quickActionSheetSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
     position: relative !important;
     box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.2) !important;
   }
 
+  @media (max-width: 640px) {
+
+    #depositModal .modal,
+    #otherCostingModal .modal,
+    #bazarModal .modal,
+    #bazarModal .modal.bazar-modal-dialog,
+    #financeFixModal .modal,
+    #userModal .modal {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      border-radius: 24px 24px 0 0 !important;
+    }
+  }
+
   #depositModal .modal::before,
+  #bazarModal .modal::before {
+    display: none !important;
+  }
+
+  #depositModal .modal-drag-indicator,
+  #bazarModal .modal-drag-indicator {
+    display: block !important;
+    width: 42px !important;
+    height: 4.5px !important;
+    background: #cbd5e1 !important;
+    border-radius: 999px !important;
+    margin: 12px auto 4px auto !important;
+    flex-shrink: 0 !important;
+  }
+
   #otherCostingModal .modal::before,
-  #bazarModal .modal::before,
   #financeFixModal .modal::before,
   #userModal .modal::before {
     content: '' !important;
@@ -3553,19 +3907,26 @@ body:has(#page-pro.active) #headerSubtitle {
     height: 4px !important;
     border-radius: 99px !important;
     background: #cbd5e1 !important;
-    margin: 2px auto 14px auto !important;
+    margin: 12px auto 6px auto !important;
   }
 
+  #depositModal .modal-header,
   #bazarModal .modal-header {
     border-top-left-radius: 26px !important;
     border-top-right-radius: 26px !important;
-    padding: 14px 18px 12px 18px !important;
+    padding: 12px 20px 12px 20px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    border-bottom: 1px solid #F1F5F9 !important;
   }
 
+  #depositModal .modal-body,
   #bazarModal .modal-body {
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
-    padding: 14px 18px calc(24px + env(safe-area-inset-bottom, 16px)) 18px !important;
+    padding: 16px 20px calc(20px + env(safe-area-inset-bottom, 16px)) 20px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   #depositModal .modal-footer,
@@ -3815,4 +4176,290 @@ body.dark-theme .more-sheet-action-btn {
 
 body.dark-theme .more-sheet-action-btn:active {
   background: #334155;
+}
+
+/* =========================================================
+   Due Limit Modal & Mobile Bottom Sheet Polish
+   ========================================================= */
+.bottom-sheet-drag-handle {
+  display: none;
+}
+
+@media (max-width: 640px) {
+
+  /* Make the subtitle on the meal card never wrap or overflow */
+  .due-limit-subtitle-text {
+    font-size: 11px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: inline-block !important;
+    max-width: 140px !important;
+  }
+
+  /* Due Limit Exceeded: Bottom Sheet matching Add Money Modal */
+  #userDueLimitModal.modal-overlay {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    background: rgba(15, 23, 42, 0.55) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    z-index: 10005 !important;
+  }
+
+  #userDueLimitModal.modal-overlay:not(.active) {
+    display: none !important;
+  }
+
+  #userDueLimitModal .due-limit-modal-dialog {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 24px 24px 0 0 !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    border-bottom: none !important;
+    box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.28) !important;
+    background: #ffffff !important;
+    max-height: 88vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
+  }
+
+  #userDueLimitModal .modal-drag-indicator {
+    display: block !important;
+    width: 42px !important;
+    height: 4.5px !important;
+    background: #cbd5e1 !important;
+    border-radius: 999px !important;
+    margin: 12px auto 4px auto !important;
+    flex-shrink: 0 !important;
+  }
+
+  #userDueLimitModal .modal-header {
+    padding: 12px 20px 14px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+
+  #userDueLimitModal .modal-body {
+    padding: 16px 20px 18px !important;
+  }
+
+  #userDueLimitModal .modal-actions {
+    padding: 12px 20px 16px !important;
+    border-top: 1px solid #f1f5f9 !important;
+  }
+
+  #userDueLimitModal .modal-actions .btn-primary {
+    width: 100% !important;
+    height: 46px !important;
+    border-radius: 14px !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%) !important;
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25) !important;
+    border: none !important;
+  }
+
+  /* Log Bazar Modal Mobile Polish (Single-line Date Picker & Balanced Grid) */
+  #bazarModal .bazar-row-grid {
+    gap: 8px !important;
+    margin-bottom: 14px !important;
+  }
+
+  #bazarModal .bazar-date-picker-wrap {
+    padding: 0 8px 0 10px !important;
+    height: 44px !important;
+    gap: 4px !important;
+  }
+
+  #bazarModal .bazar-date-display-text {
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  #bazarModal .bazar-date-icon-badge {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    border-radius: 6px !important;
+    margin-left: 2px !important;
+  }
+
+  #bazarModal .bazar-date-icon-badge svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+
+  #bazarModal .bazar-select-box {
+    padding: 0 8px 0 10px !important;
+    height: 44px !important;
+    gap: 4px !important;
+  }
+
+  #bazarModal #bazarShopperValue {
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  #bazarModal .bazar-dropdown-chevron-badge {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    border-radius: 6px !important;
+    margin-left: 2px !important;
+  }
+
+  #bazarModal .bazar-dropdown-chevron-badge svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+
+  #bazarModal .bazar-calendar-popup,
+  #bazarDateCalendarPopup {
+    left: 0 !important;
+    max-width: calc(100vw - 32px) !important;
+    width: 280px !important;
+  }
+
+  /* Modal Member Dropdowns (Never overflow or push popup sideways) */
+  #bazarShopperDropdown,
+  #depositUserDropdown,
+  #deductUserDropdown {
+    position: relative !important;
+  }
+
+  /* Bazar Shopper Menu: Anchored to right, expands left so full names fit without clipping */
+  #bazarShopperMenu {
+    right: 0 !important;
+    left: auto !important;
+    min-width: 100% !important;
+    width: max-content !important;
+    max-width: calc(100vw - 48px) !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  #bazarShopperMenu .custom-dropdown-item {
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    padding: 10px 14px !important;
+    font-size: 0.86rem !important;
+  }
+
+  #depositUserMenu,
+  #deductUserMenu {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  #depositUserMenu .custom-dropdown-item,
+  #deductUserMenu .custom-dropdown-item {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    padding: 9px 12px !important;
+    font-size: 0.84rem !important;
+  }
+
+  /* ── Mobile Native-App Keyboard & Bottom Sheet Smooth Lift ───────── */
+  #depositModal.modal-overlay,
+  #bazarModal.modal-overlay,
+  #deductModal.modal-overlay,
+  #otherCostingModal.modal-overlay,
+  #addMoneyModal.modal-overlay,
+  #payBillModal.modal-overlay,
+  #userDueLimitModal.modal-overlay {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    overscroll-behavior: contain !important;
+  }
+
+  #depositModal .bazar-modal-dialog,
+  #bazarModal .bazar-modal-dialog,
+  #deductModal .bazar-modal-dialog,
+  #otherCostingModal .bazar-modal-dialog,
+  #addMoneyModal .add-money-modal-dialog,
+  #payBillModal .pay-bill-modal-dialog,
+  #userDueLimitModal .due-limit-modal-dialog {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 26px 26px 0 0 !important;
+    border-bottom: none !important;
+    max-height: calc(100dvh - var(--kb-height, 0px) - 16px) !important;
+    bottom: var(--kb-height, 0px) !important;
+    position: relative !important;
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), bottom 0.24s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    will-change: transform, bottom, max-height;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  #depositModal:not(.active) .bazar-modal-dialog,
+  #bazarModal:not(.active) .bazar-modal-dialog,
+  #deductModal:not(.active) .bazar-modal-dialog,
+  #otherCostingModal:not(.active) .bazar-modal-dialog,
+  #addMoneyModal:not(.active) .add-money-modal-dialog,
+  #payBillModal:not(.active) .pay-bill-modal-dialog,
+  #userDueLimitModal:not(.active) .due-limit-modal-dialog {
+    transform: translateY(100%) !important;
+  }
+
+  #depositModal.active .bazar-modal-dialog,
+  #bazarModal.active .bazar-modal-dialog,
+  #deductModal.active .bazar-modal-dialog,
+  #otherCostingModal.active .bazar-modal-dialog,
+  #addMoneyModal.active .add-money-modal-dialog,
+  #payBillModal.active .pay-bill-modal-dialog,
+  #userDueLimitModal.active .due-limit-modal-dialog {
+    transform: translateY(0) !important;
+  }
+
+  /* Internal Body Smooth Scroll with Rubberband Containment */
+  #depositModal .modal-body,
+  #bazarModal .modal-body,
+  #deductModal .modal-body,
+  #otherCostingModal .modal-body,
+  #addMoneyModal .modal-body,
+  #payBillModal .modal-body,
+  #userDueLimitModal .modal-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Prevent browser viewport auto-zoom lag by enforcing 16px minimum font-size */
+  .modal-overlay input,
+  .modal-overlay select,
+  .modal-overlay textarea,
+  .modal-overlay .bazar-amount-input,
+  .modal-overlay .form-input {
+    font-size: 16px !important;
+  }
 }

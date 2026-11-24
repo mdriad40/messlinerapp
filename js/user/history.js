@@ -927,7 +927,7 @@ const HistoryModule = {
     const countEl = document.getElementById('historyActivityCount');
     if (!container) return;
 
-    let allowedActions;
+    let allowedActions = null;
     const filterType = this.selectedActivityType || 'all';
 
     if (filterType === 'meals') {
@@ -941,17 +941,12 @@ const HistoryModule = {
         'meal_toggled'
       ]);
     } else {
-      allowedActions = new Set([
-        'meals_updated',
-        'meal_updated',
-        'meals_updated_group',
-        'meal_toggled'
-      ]);
+      allowedActions = null; // 'all' allows every activity log
     }
 
     const rawLogs = (this.globalLogs || []).filter(log => {
       const action = log.action || '';
-      if (!allowedActions.has(action)) return false;
+      if (allowedActions && !allowedActions.has(action)) return false;
 
       // Filter by selected Month and Year
       if (!log.timestamp) return false;
@@ -982,22 +977,37 @@ const HistoryModule = {
               <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
-          <p style="margin-top:var(--space-2);font-size:var(--font-sm);color:var(--text-secondary);">No meal history logs found for <strong>${this.monthNames[this.selectedMonth - 1]} ${this.selectedYear}</strong>.</p>
+          <p style="margin-top:var(--space-2);font-size:var(--font-sm);color:var(--text-secondary);">No activity logs found for <strong>${this.monthNames[this.selectedMonth - 1]} ${this.selectedYear}</strong>.</p>
         </div>
       `;
       return;
     }
 
     let html = displayLogs.map(log => {
-      const dotClass = log.action === 'meal_toggled'
-        ? (log.details?.toUpperCase().includes('OFF') ? 'danger' : 'accent')
-        : 'warning';
-
-      let title;
-      if (log.action === 'meal_toggled') {
+      let dotClass = 'accent';
+      let title = 'Activity';
+      const action = (log.action || '').toLowerCase();
+      if (action === 'meal_toggled') {
+        dotClass = log.details?.toUpperCase().includes('OFF') ? 'danger' : 'accent';
         title = 'Meal Status';
+      } else if (action.includes('meal')) {
+        dotClass = 'warning';
+        title = 'Meals Updated';
+      } else if (action.includes('deposit')) {
+        dotClass = 'accent';
+        title = 'Deposit Added';
+      } else if (action.includes('deduct')) {
+        dotClass = 'danger';
+        title = 'Deduction';
+      } else if (action.includes('bazar')) {
+        dotClass = 'accent';
+        title = 'Bazar Expense';
+      } else if (action.includes('user') || action.includes('member')) {
+        dotClass = 'warning';
+        title = 'Member Activity';
       } else {
-        title = 'Meals';
+        dotClass = 'accent';
+        title = log.title || 'Activity';
       }
 
       let desc = log.details || '';
@@ -2871,11 +2881,14 @@ const HistoryPageModule = {
 
   async init(diningId) {
     const targetDiningId = diningId || (window.Messliner && Messliner.state && Messliner.state.diningId);
-    if (this._initialized && this.diningId === targetDiningId) {
+    this.diningId = targetDiningId;
+    if (window.Messliner && Messliner.history) {
+      Messliner.history.diningId = targetDiningId;
+    }
+    if (this._initialized && document.getElementById('page-history')) {
       this.refresh();
       return;
     }
-    this.diningId = targetDiningId;
     this._initialized = true;
 
     await this.fetchStartDate();
@@ -2917,28 +2930,32 @@ const HistoryPageModule = {
   },
 
   populateYearDropdown() {
-    const valueEl = document.getElementById('historyYearValue');
-    const menuEl = document.getElementById('historyYearMenu');
-    if (!valueEl || !menuEl) return;
-
     const startYear = (this.createdDate || new Date(2026, 0, 1)).getFullYear();
     const endYear = new Date().getFullYear();
 
-    let html = '';
-    for (let y = startYear; y <= endYear; y++) {
-      const sel = y === this.selectedYear ? 'selected' : '';
-      html += `<div class="custom-dropdown-item ${sel}" data-value="${y}"
-                    onclick="HistoryPageModule.selectYear(${y})">${y}</div>`;
-    }
-    menuEl.innerHTML = html;
-    valueEl.textContent = this.selectedYear;
+    ['historyYear', 'activityYear'].forEach(prefix => {
+      const valueEl = document.getElementById(`${prefix}Value`);
+      const menuEl = document.getElementById(`${prefix}Menu`);
+      if (!valueEl || !menuEl) return;
+
+      let html = '';
+      for (let y = startYear; y <= endYear; y++) {
+        const sel = y === this.selectedYear ? 'selected' : '';
+        html += `<div class="custom-dropdown-item ${sel}" data-value="${y}"
+                      onclick="HistoryPageModule.selectYear(${y})">${y}</div>`;
+      }
+      menuEl.innerHTML = html;
+      valueEl.textContent = this.selectedYear;
+    });
   },
 
   selectYear(year) {
     this.selectedYear = parseInt(year, 10);
     this._lastBazarHtml = null;
-    const dd = document.getElementById('historyYearDropdown');
-    if (dd) dd.classList.remove('active');
+    const dd1 = document.getElementById('historyYearDropdown');
+    const dd2 = document.getElementById('activityYearDropdown');
+    if (dd1) dd1.classList.remove('active');
+    if (dd2) dd2.classList.remove('active');
     this.populateYearDropdown();
     this.populateMonthDropdown();
 
@@ -2953,10 +2970,6 @@ const HistoryPageModule = {
   },
 
   populateMonthDropdown() {
-    const valueEl = document.getElementById('historyMonthValue');
-    const menuEl = document.getElementById('historyMonthMenu');
-    if (!valueEl || !menuEl) return;
-
     const createdDate = this.createdDate || new Date(2026, 0, 1);
     const startYear = createdDate.getFullYear();
     const currentYear = new Date().getFullYear();
@@ -2974,21 +2987,29 @@ const HistoryPageModule = {
     if (this.selectedMonth < startMonth) this.selectedMonth = startMonth;
     if (this.selectedMonth > endMonth) this.selectedMonth = endMonth;
 
-    let html = '';
-    for (let m = startMonth; m <= endMonth; m++) {
-      const sel = m === this.selectedMonth ? 'selected' : '';
-      html += `<div class="custom-dropdown-item ${sel}" data-value="${m}"
-                    onclick="HistoryPageModule.selectMonth(${m})">${this.monthNames[m - 1]}</div>`;
-    }
-    menuEl.innerHTML = html;
-    valueEl.textContent = this.monthNames[this.selectedMonth - 1];
+    ['historyMonth', 'activityMonth'].forEach(prefix => {
+      const valueEl = document.getElementById(`${prefix}Value`);
+      const menuEl = document.getElementById(`${prefix}Menu`);
+      if (!valueEl || !menuEl) return;
+
+      let html = '';
+      for (let m = startMonth; m <= endMonth; m++) {
+        const sel = m === this.selectedMonth ? 'selected' : '';
+        html += `<div class="custom-dropdown-item ${sel}" data-value="${m}"
+                      onclick="HistoryPageModule.selectMonth(${m})">${this.monthNames[m - 1]}</div>`;
+      }
+      menuEl.innerHTML = html;
+      valueEl.textContent = this.monthNames[this.selectedMonth - 1];
+    });
   },
 
   selectMonth(month) {
     this.selectedMonth = parseInt(month, 10);
     this._lastBazarHtml = null;
-    const dd = document.getElementById('historyMonthDropdown');
-    if (dd) dd.classList.remove('active');
+    const dd1 = document.getElementById('historyMonthDropdown');
+    const dd2 = document.getElementById('activityMonthDropdown');
+    if (dd1) dd1.classList.remove('active');
+    if (dd2) dd2.classList.remove('active');
     this.populateMonthDropdown();
 
     if (window.Messliner && Messliner.history) {
@@ -3234,7 +3255,14 @@ const HistoryPageModule = {
         bazarBlock.style.display = 'none';
         activityBlock.style.display = 'block';
         if (grid) grid.style.gridTemplateColumns = '1fr';
+        this.populateYearDropdown();
+        this.populateMonthDropdown();
         if (window.Messliner && Messliner.history) {
+          Messliner.history.diningId = this.diningId || (window.Messliner.state && window.Messliner.state.diningId);
+          Messliner.history.selectedYear = this.selectedYear;
+          Messliner.history.selectedMonth = this.selectedMonth;
+          Messliner.history.populateYearDropdown();
+          Messliner.history.populateMonthDropdown();
           Messliner.history.listenToLogs();
         }
       } else {
@@ -3243,6 +3271,12 @@ const HistoryPageModule = {
         if (grid) grid.style.gridTemplateColumns = '1fr';
         this.renderBazarForSelectedMonth();
       }
+    }
+  },
+
+  selectActivityType(type) {
+    if (window.Messliner && Messliner.history) {
+      Messliner.history.selectActivityType(type);
     }
   },
 
@@ -3376,5 +3410,9 @@ window.openMessRulesModal = async function () {
   }
 };
 
+window.HistoryModule = HistoryModule;
 window.HistoryPageModule = HistoryPageModule;
+if (window.Messliner && !window.Messliner.history) {
+  window.Messliner.history = HistoryModule;
+}
 console.log('[Messliner] History module loaded');

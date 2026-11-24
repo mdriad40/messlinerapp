@@ -345,7 +345,7 @@ const MesslinerSubscription = {
     const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
 
     // Active
-    if (now <= expiresAt) {
+    if (now <= expiresAt && subData.status !== 'suspended' && subData.status !== 'cancelled' && subData.status !== 'expired') {
       return {
         status: 'active',
         plan: plan,
@@ -366,7 +366,7 @@ const MesslinerSubscription = {
     }
 
     // Grace Period (Within 3 days after expiry)
-    if (now > expiresAt && now <= graceEndsAt) {
+    if (now > expiresAt && now <= graceEndsAt && subData.status !== 'suspended' && subData.status !== 'cancelled') {
       const graceMsLeft = graceEndsAt - now;
       const graceDaysLeft = Math.ceil(graceMsLeft / (1000 * 60 * 60 * 24));
       return {

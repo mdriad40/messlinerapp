@@ -1,0 +1,186 @@
+        <section id="page-ledger" class="page-section finance-page-pro">
+          <!-- ═══ Ledger Hero Banner ═══ -->
+          <div class="fp-hero-banner fade-up">
+            <div class="fp-hero-glow"></div>
+            <div class="fp-hero-content">
+              <div class="fp-hero-icon-box">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+              </div>
+              <div class="fp-hero-text">
+                <h2 class="fp-hero-title">Ledger</h2>
+                <p class="fp-hero-subtitle">Manage shared bills, collections, and payment methods</p>
+              </div>
+            </div>
+            <div class="fp-hero-pattern"></div>
+          </div>
+
+          <!-- Payment Methods Setup Top Banner Card -->
+          <div class="ledger-methods-banner fade-up" id="ledgerPaymentMethodsBanner"
+            onclick="Messliner.ledger.openPaymentMethodsModal()">
+            <div class="ledger-methods-banner-left">
+              <div class="ledger-methods-banner-icon" id="ledgerPaymentMethodsBannerIcon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" />
+                  <path d="M4 6v12a2 2 0 0 0 2 2h14v-4" />
+                  <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" />
+                  <circle cx="18" cy="14" r="1" fill="currentColor" />
+                </svg>
+              </div>
+              <div class="ledger-methods-banner-text">
+                <div class="ledger-methods-banner-title">PAYMENT METHODS</div>
+                <div class="ledger-methods-banner-sub" id="ledgerPaymentMethodsBannerSub"></div>
+              </div>
+            </div>
+            <div class="ledger-methods-banner-right">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Main 2-Column Responsive Layout -->
+          <div class="ledger-layout-grid">
+            <!-- Left Main Column: Shared Bills & Stats -->
+            <div class="ledger-main-col">
+              <!-- Shared Bills Top Control Bar -->
+              <div class="ledger-cycle-header-card fade-up">
+                <div class="ledger-cycle-left">
+                  <div class="ledger-cycle-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="ledger-cycle-title">Shared bills</h3>
+                    <p class="ledger-cycle-sub" id="ledgerCycleSubtitle">September 2026 cycle</p>
+                  </div>
+                </div>
+
+                <!-- Cycle Navigation & Actions -->
+                <div class="ledger-cycle-right">
+                  <div class="ledger-cycle-nav">
+                    <button class="ledger-cycle-btn" onclick="Messliner.ledger.prevCycle()" title="Previous Month">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <polyline points="15 18 9 12 15 6" />
+                      </svg>
+                    </button>
+                    <span class="ledger-cycle-display" id="ledgerCycleTitle">September 2026</span>
+                    <button class="ledger-cycle-btn" onclick="Messliner.ledger.nextCycle()" title="Next Month">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Add Bill Button -->
+                  <button class="btn btn-primary ledger-add-bill-btn" onclick="Messliner.ledger.showAddBillModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    <span>Add bill</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quick Cycle Stats -->
+              <div class="stats-grid ledger-stats-grid">
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                  </div>
+                  <div class="stat-info">
+                    <div class="stat-value" id="ledgerStatTotalBilled">৳0.00</div>
+                    <div class="stat-label">Total Cycle Bills</div>
+                  </div>
+                </div>
+
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(14, 165, 233, 0.12); color: #0284c7;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                  </div>
+                  <div class="stat-info">
+                    <div class="stat-value" id="ledgerStatTotalCollected">৳0.00</div>
+                    <div class="stat-label">Total Collected</div>
+                  </div>
+                </div>
+
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #d97706;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </div>
+                  <div class="stat-info">
+                    <div class="stat-value" id="ledgerStatPending">৳0.00</div>
+                    <div class="stat-label">Pending Dues</div>
+                  </div>
+                </div>
+
+                <div class="stat-card">
+                  <div class="stat-icon" style="background: rgba(139, 92, 246, 0.12); color: #7c3aed;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <line x1="9" y1="9" x2="15" y2="9" />
+                      <line x1="9" y1="13" x2="15" y2="13" />
+                    </svg>
+                  </div>
+                  <div class="stat-info">
+                    <div class="stat-value" id="ledgerStatBillCount">0</div>
+                    <div class="stat-label">Active Bills</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bills Listing Container -->
+              <div id="ledgerBillsList" class="ledger-bills-container">
+                <!-- Dynamically rendered by LedgerModule.render() -->
+              </div>
+            </div>
+
+            <!-- Right Sidebar Column: Payment Verification & Requests -->
+            <div class="ledger-side-col">
+              <!-- Expanded Payment Requests & Verification Card -->
+              <div class="ledger-widget-card ledger-widget-card-expanded fade-up">
+                <div class="ledger-widget-header">
+                  <div>
+                    <h4 class="ledger-widget-title">Payment Verification</h4>
+                    <p class="ledger-widget-sub">Verify TrxIDs and approve balance credits</p>
+                  </div>
+                </div>
+
+                <div id="ledgerWidgetPaymentRequestsList" class="ledger-widget-requests-list expanded">
+                  <!-- Populated dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+<!-- </body> -->

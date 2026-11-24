@@ -123,6 +123,10 @@ const FridayMealsModule = {
      Refresh when admin opens meals page
   ───────────────────────────── */
   refresh() {
+    if (!this.diningId) {
+      this.diningId = Messliner.state?.diningId || (window.App && window.App.state?.diningId);
+      if (this.diningId) this.init(this.diningId);
+    }
     this.renderFridaySelector();
     this.renderFridayAutoCompleteSection();
     this.renderFridayMemberGrid();

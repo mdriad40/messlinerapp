@@ -1,0 +1,1301 @@
+        <section id="page-aiassistant" class="page-section" style="padding:0;height:100%;min-height:0;">
+
+          <!-- ── PROFESSIONAL AI ASSISTANT UI ── -->
+          <style>
+            /* ─── AI Assistant Pro Styles ─── */
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+            #page-aiassistant {
+              font-family: 'Inter', sans-serif;
+              min-height: 0 !important;
+              display: none;
+              flex-direction: column !important;
+              padding: 0 !important;
+              max-width: 100% !important;
+              width: 100% !important;
+              margin: 0 !important;
+              flex: 1 1 0% !important;
+              height: 100% !important;
+              box-sizing: border-box !important;
+            }
+
+            #page-aiassistant.active {
+              display: flex !important;
+              flex-direction: column !important;
+              flex: 1 1 0% !important;
+              height: 100% !important;
+              min-height: 0 !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+            }
+
+            @media (max-width: 1023px) {
+              #page-aiassistant {
+                height: 100% !important;
+              }
+            }
+
+            /* Hero Banner */
+            .ai-hero-banner {
+              background: linear-gradient(135deg, #064E3B 0%, #065F46 40%, #047857 70%, #059669 100%);
+              border-radius: 16px 16px 0 0;
+              padding: 14px 18px 12px;
+              position: relative;
+              overflow: hidden;
+              margin-bottom: 0;
+              flex-shrink: 0;
+            }
+
+            .ai-hero-banner::before {
+              content: '';
+              position: absolute;
+              top: -60px;
+              right: -60px;
+              width: 220px;
+              height: 220px;
+              background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+              border-radius: 50%;
+            }
+
+            .ai-hero-banner::after {
+              content: '';
+              position: absolute;
+              bottom: -40px;
+              left: -40px;
+              width: 160px;
+              height: 160px;
+              background: radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, transparent 70%);
+              border-radius: 50%;
+            }
+
+            .ai-hero-grid {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 10px;
+              flex-wrap: nowrap;
+              position: relative;
+              z-index: 1;
+            }
+
+            .ai-hero-left {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+            }
+
+            .ai-bot-avatar {
+              width: 40px;
+              height: 40px;
+              background: rgba(255, 255, 255, 0.15);
+              backdrop-filter: blur(10px);
+              border-radius: 12px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border: 1.5px solid rgba(255, 255, 255, 0.25);
+              flex-shrink: 0;
+              position: relative;
+            }
+
+            .ai-bot-avatar::after {
+              content: '';
+              position: absolute;
+              bottom: 2px;
+              right: 2px;
+              width: 8px;
+              height: 8px;
+              background: #34D399;
+              border-radius: 50%;
+              border: 1.5px solid #047857;
+              animation: aiBotPulse 2s infinite;
+            }
+
+            @keyframes aiBotPulse {
+
+              0%,
+              100% {
+                transform: scale(1);
+                opacity: 1;
+              }
+
+              50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+              }
+            }
+
+            .ai-hero-info h1 {
+              margin: 0 0 2px;
+              font-size: 1rem;
+              font-weight: 700;
+              color: #fff;
+              letter-spacing: -0.02em;
+            }
+
+            .ai-hero-info p {
+              margin: 0;
+              font-size: 0.7rem;
+              color: rgba(255, 255, 255, 0.7);
+            }
+
+            .ai-status-pill {
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
+              background: rgba(52, 211, 153, 0.2);
+              border: 1px solid rgba(52, 211, 153, 0.35);
+              border-radius: 20px;
+              padding: 2px 8px;
+              font-size: 0.62rem;
+              font-weight: 600;
+              color: #6EE7B7;
+              margin-top: 4px;
+            }
+
+            .ai-status-dot {
+              width: 5px;
+              height: 5px;
+              background: #34D399;
+              border-radius: 50%;
+              animation: aiBotPulse 1.5s infinite;
+            }
+
+            /* Center Greeting */
+            .ai-greeting-center {
+              text-align: center;
+              padding: 0 10px;
+              position: relative;
+              z-index: 1;
+            }
+
+            .ai-greeting-center h2 {
+              margin: 0 0 2px;
+              font-size: 0.9rem;
+              font-weight: 700;
+              color: rgba(255, 255, 255, 0.95);
+              letter-spacing: -0.01em;
+            }
+
+            .ai-greeting-center p {
+              margin: 0;
+              font-size: 0.68rem;
+              color: rgba(255, 255, 255, 0.6);
+            }
+
+            /* Auto Meal Toggle Bar */
+            .ai-toggle-bar {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              background: rgba(255, 255, 255, 0.1);
+              backdrop-filter: blur(8px);
+              border: 1px solid rgba(255, 255, 255, 0.15);
+              border-radius: 10px;
+              padding: 7px 12px;
+              margin-top: 10px;
+              position: relative;
+              z-index: 1;
+            }
+
+            .ai-toggle-bar-left {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            }
+
+            .ai-toggle-icon {
+              width: 28px;
+              height: 28px;
+              background: rgba(52, 211, 153, 0.2);
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex-shrink: 0;
+            }
+
+            .ai-toggle-texts h6 {
+              margin: 0 0 1px;
+              font-size: 0.75rem;
+              font-weight: 700;
+              color: #fff;
+            }
+
+            .ai-toggle-texts p {
+              margin: 0;
+              font-size: 0.62rem;
+              color: rgba(255, 255, 255, 0.6);
+            }
+
+            /* Main Chat Container */
+            .ai-chat-container {
+              background: #fff;
+              border-radius: 16px;
+              border: 1px solid #D1FAE5;
+              display: flex !important;
+              flex-direction: row !important;
+              overflow: hidden !important;
+              flex: 1 1 0% !important;
+              height: 100% !important;
+              min-height: 0 !important;
+              width: 100% !important;
+              box-sizing: border-box !important;
+              box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            }
+
+            /* Chat Sidebar (History) */
+            .ai-chat-sidebar {
+              width: 220px;
+              min-width: 220px;
+              background: #F9FAFB;
+              border-right: 1px solid #E5E7EB;
+              display: flex !important;
+              flex-direction: column !important;
+              overflow: hidden !important;
+              height: 100% !important;
+              flex-shrink: 0 !important;
+            }
+
+            .ai-sidebar-header {
+              padding: 14px 14px 10px;
+              border-bottom: 1px solid #E5E7EB;
+            }
+
+            .ai-sidebar-header span {
+              font-size: 0.7rem;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.06em;
+              color: #6B7280;
+            }
+
+            .ai-sidebar-btn {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              width: 100%;
+              background: linear-gradient(135deg, #059669, #047857);
+              color: #fff;
+              border: none;
+              border-radius: 10px;
+              padding: 9px 12px;
+              font-size: 0.78rem;
+              font-weight: 600;
+              cursor: pointer;
+              margin-top: 10px;
+              transition: all 0.2s;
+              box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+            }
+
+            .ai-sidebar-btn:hover {
+              background: linear-gradient(135deg, #047857, #065F46);
+              box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+              transform: translateY(-1px);
+            }
+
+            .ai-history-list {
+              flex: 1;
+              min-height: 0;
+              overflow-y: auto;
+              overscroll-behavior-y: contain;
+              padding: 8px 8px;
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
+            }
+
+            .ai-history-item {
+              padding: 9px 10px;
+              border-radius: 10px;
+              cursor: pointer;
+              transition: all 0.18s;
+              border: 1px solid transparent;
+            }
+
+            .ai-history-item:hover {
+              background: rgba(5, 150, 105, 0.06);
+              border-color: rgba(5, 150, 105, 0.12);
+            }
+
+            .ai-history-item.active {
+              background: linear-gradient(135deg, rgba(5, 150, 105, 0.1), rgba(5, 150, 105, 0.06));
+              border-color: rgba(5, 150, 105, 0.2);
+            }
+
+            .ai-history-title {
+              font-size: 0.75rem;
+              font-weight: 600;
+              color: #1F2937;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              margin-bottom: 2px;
+            }
+
+            .ai-history-date {
+              font-size: 0.65rem;
+              color: #9CA3AF;
+            }
+
+            .ai-history-empty {
+              text-align: center;
+              padding: 24px 10px;
+              color: #9CA3AF;
+              font-size: 0.72rem;
+            }
+
+            /* Main Chat Panel */
+            .ai-chat-main {
+              flex: 1 1 0% !important;
+              display: flex !important;
+              flex-direction: column !important;
+              overflow: hidden !important;
+              height: 100% !important;
+              min-height: 0 !important;
+            }
+
+            /* Chat Messages */
+            .ai-messages-area {
+              flex: 1 1 0% !important;
+              min-height: 0 !important;
+              overflow-y: auto !important;
+              overscroll-behavior-y: contain;
+              -webkit-overflow-scrolling: touch;
+              padding: 20px 20px 12px;
+              display: flex;
+              flex-direction: column;
+              gap: 14px;
+              scroll-behavior: smooth;
+              background: linear-gradient(to bottom, #F9FFFC 0%, #fff 80px);
+              scrollbar-width: none !important;
+              -ms-overflow-style: none !important;
+            }
+
+            .ai-messages-area::-webkit-scrollbar {
+              display: none !important;
+              width: 0 !important;
+              height: 0 !important;
+            }
+
+            /* Capability chips (welcome screen) */
+            .ai-welcome-section {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              padding: 16px 0 8px;
+              gap: 12px;
+            }
+
+            .ai-welcome-icon {
+              width: 52px;
+              height: 52px;
+              background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
+              border-radius: 16px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border: 1.5px solid #A7F3D0;
+            }
+
+            .ai-welcome-title {
+              font-size: 1.45rem;
+              font-weight: 800;
+              color: #0F2E1E;
+              text-align: center;
+              letter-spacing: -0.02em;
+              margin-bottom: 2px;
+            }
+
+            .ai-welcome-sub {
+              font-size: 0.85rem;
+              color: #6B7280;
+              text-align: center;
+              max-width: 320px;
+              line-height: 1.4;
+            }
+
+            .ai-chip-row {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 6px;
+              justify-content: center;
+              margin-top: 4px;
+            }
+
+            .ai-chip {
+              backdrop-filter: blur(6px);
+              -webkit-backdrop-filter: blur(6px);
+              border-radius: 24px;
+              padding: 5px 12px 5px 6px;
+              font-size: 0.72rem;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+              white-space: nowrap;
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+            }
+
+            .ai-chip:hover {
+              transform: translateY(-1px);
+            }
+
+            .ai-chip-icon-plate {
+              width: 20px;
+              height: 20px;
+              background: rgba(255, 255, 255, 0.85);
+              border: 1px solid rgba(255, 255, 255, 0.95);
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 1.5px 4px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+              flex-shrink: 0;
+              transition: all 0.2s;
+            }
+
+            .ai-chip:hover .ai-chip-icon-plate {
+              color: #fff !important;
+            }
+
+            /* Blue variation (Meal Rate) */
+            .ai-chip.chip-blue {
+              background: rgba(239, 246, 255, 0.65);
+              border: 1px solid rgba(147, 197, 253, 0.6);
+              color: #1D4ED8;
+              box-shadow: 0 2px 6px rgba(37, 99, 235, 0.04);
+            }
+
+            .ai-chip.chip-blue:hover {
+              background: #DBEAFE;
+              border-color: #2563EB;
+              box-shadow: 0 4px 10px rgba(37, 99, 235, 0.12);
+            }
+
+            .ai-chip.chip-blue .ai-chip-icon-plate {
+              color: #2563EB;
+            }
+
+            .ai-chip.chip-blue:hover .ai-chip-icon-plate {
+              background: #2563EB;
+              border-color: #2563EB;
+            }
+
+            /* Red variation (Off my meal) */
+            .ai-chip.chip-red {
+              background: rgba(254, 242, 242, 0.65);
+              border: 1px solid rgba(252, 165, 165, 0.6);
+              color: #B91C1C;
+              box-shadow: 0 2px 6px rgba(220, 38, 38, 0.04);
+            }
+
+            .ai-chip.chip-red:hover {
+              background: #FEE2E2;
+              border-color: #DC2626;
+              box-shadow: 0 4px 10px rgba(220, 38, 38, 0.12);
+            }
+
+            .ai-chip.chip-red .ai-chip-icon-plate {
+              color: #DC2626;
+            }
+
+            .ai-chip.chip-red:hover .ai-chip-icon-plate {
+              background: #DC2626;
+              border-color: #DC2626;
+            }
+
+            /* Amber variation (Mess rules) */
+            .ai-chip.chip-amber {
+              background: rgba(255, 253, 235, 0.65);
+              border: 1px solid rgba(252, 211, 77, 0.6);
+              color: #B45309;
+              box-shadow: 0 2px 6px rgba(217, 119, 6, 0.04);
+            }
+
+            .ai-chip.chip-amber:hover {
+              background: #FEF3C7;
+              border-color: #D97706;
+              box-shadow: 0 4px 10px rgba(217, 119, 6, 0.12);
+            }
+
+            .ai-chip.chip-amber .ai-chip-icon-plate {
+              color: #D97706;
+            }
+
+            .ai-chip.chip-amber:hover .ai-chip-icon-plate {
+              background: #D97706;
+              border-color: #D97706;
+            }
+
+            /* Green variation (My balance) */
+            .ai-chip.chip-green {
+              background: rgba(240, 253, 244, 0.65);
+              border: 1px solid rgba(167, 243, 208, 0.6);
+              color: #047857;
+              box-shadow: 0 2px 6px rgba(5, 150, 105, 0.04);
+            }
+
+            .ai-chip.chip-green:hover {
+              background: #D1FAE5;
+              border-color: #059669;
+              box-shadow: 0 4px 10px rgba(5, 150, 105, 0.12);
+            }
+
+            .ai-chip.chip-green .ai-chip-icon-plate {
+              color: #059669;
+            }
+
+            .ai-chip.chip-green:hover .ai-chip-icon-plate {
+              background: #059669;
+              border-color: #059669;
+            }
+
+            /* Purple variation (Today's status) */
+            .ai-chip.chip-purple {
+              background: rgba(245, 243, 255, 0.65);
+              border: 1px solid rgba(196, 181, 253, 0.6);
+              color: #6D28D9;
+              box-shadow: 0 2px 6px rgba(124, 58, 237, 0.04);
+            }
+
+            .ai-chip.chip-purple:hover {
+              background: #EDE9FE;
+              border-color: #7C3AED;
+              box-shadow: 0 4px 10px rgba(124, 58, 237, 0.12);
+            }
+
+            .ai-chip.chip-purple .ai-chip-icon-plate {
+              color: #7C3AED;
+            }
+
+            .ai-chip.chip-purple:hover .ai-chip-icon-plate {
+              background: #7C3AED;
+              border-color: #7C3AED;
+            }
+
+            /* Teal variation (Analyze) */
+            .ai-chip.chip-teal {
+              background: rgba(240, 253, 250, 0.65);
+              border: 1px solid rgba(94, 234, 212, 0.7);
+              color: #0F766E;
+              box-shadow: 0 2px 6px rgba(13, 148, 136, 0.04);
+            }
+
+            .ai-chip.chip-teal:hover {
+              background: #CCFBF1;
+              border-color: #0D9488;
+              box-shadow: 0 4px 10px rgba(13, 148, 136, 0.12);
+            }
+
+            .ai-chip.chip-teal .ai-chip-icon-plate {
+              color: #0D9488;
+            }
+
+            .ai-chip.chip-teal:hover .ai-chip-icon-plate {
+              background: #0D9488;
+              border-color: #0D9488;
+              color: #ffffff;
+            }
+
+            /* Message bubbles */
+            .ai-msg-row {
+              display: flex;
+              justify-content: flex-start;
+              align-items: flex-end;
+              gap: 8px;
+            }
+
+            .ai-msg-row.user-row {
+              justify-content: flex-end;
+            }
+
+            .ai-msg-avatar {
+              width: 28px;
+              height: 28px;
+              border-radius: 50%;
+              flex-shrink: 0;
+              display: none;
+              /* Hide avatars */
+              align-items: center;
+              justify-content: center;
+              font-size: 0.7rem;
+              font-weight: 700;
+            }
+
+            .ai-msg-avatar.bot-av {
+              background: linear-gradient(135deg, #059669, #047857);
+              color: #fff;
+            }
+
+            .ai-msg-avatar.user-av {
+              background: linear-gradient(135deg, #1D4ED8, #1E40AF);
+              color: #fff;
+            }
+
+            .ai-chat-bubble-bot {
+              align-self: flex-start;
+              background: #F0FDF4;
+              border: 1px solid #D1FAE5;
+              color: #0F2E1E;
+              padding: 10px 14px;
+              border-radius: 14px 14px 14px 3px;
+              max-width: 100%;
+              width: fit-content;
+              font-size: 0.82rem;
+              line-height: 1.55;
+              box-shadow: 0 2px 8px rgba(5, 150, 105, 0.07);
+              animation: bubbleSlideInLeft 0.22s cubic-bezier(0.1, 0.8, 0.25, 1);
+              white-space: pre-wrap;
+              word-break: break-word;
+            }
+
+            .ai-chat-bubble-user {
+              align-self: flex-end;
+              background: linear-gradient(135deg, #059669, #047857);
+              color: #fff;
+              padding: 10px 14px;
+              border-radius: 14px 14px 3px 14px;
+              max-width: 100%;
+              width: fit-content;
+              font-size: 0.82rem;
+              line-height: 1.55;
+              box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+              animation: bubbleSlideInRight 0.22s cubic-bezier(0.1, 0.8, 0.25, 1);
+            }
+
+            .ai-msg-time {
+              font-size: 0.62rem;
+              color: #9CA3AF;
+              margin-top: 3px;
+              padding: 0 4px;
+            }
+
+            .user-row .ai-msg-time {
+              text-align: right;
+            }
+
+            /* Loading dots */
+            .ai-loading-dots {
+              display: inline-flex;
+              gap: 4px;
+              align-items: center;
+            }
+
+            .ai-loading-dot {
+              width: 7px;
+              height: 7px;
+              background: #059669;
+              border-radius: 50%;
+              animation: aiDotPulse 1.4s infinite ease-in-out both;
+            }
+
+            .ai-loading-dot:nth-child(2) {
+              animation-delay: 0.2s;
+            }
+
+            .ai-loading-dot:nth-child(3) {
+              animation-delay: 0.4s;
+            }
+
+            /* AI Action Confirmation Cards & Buttons */
+            .ai-confirm-container {
+              margin-top: 10px;
+              padding: 10px 12px;
+              background: linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%);
+              border: 1px solid #A7F3D0;
+              border-radius: 14px;
+              box-shadow: 0 3px 12px rgba(5, 150, 105, 0.08);
+            }
+
+            .ai-confirm-header {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              font-size: 0.72rem;
+              font-weight: 700;
+              color: #064E3B;
+              margin-bottom: 8px;
+              padding-bottom: 6px;
+              border-bottom: 1px solid rgba(167, 243, 208, 0.6);
+            }
+
+            .ai-confirm-actions {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 8px;
+            }
+
+            .ai-confirm-btn {
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              padding: 7px 14px;
+              border-radius: 24px;
+              font-size: 0.75rem;
+              font-weight: 600;
+              cursor: pointer;
+              border: none;
+              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+              outline: none;
+              font-family: 'Inter', sans-serif;
+            }
+
+            .ai-confirm-btn:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+            }
+
+            .ai-confirm-btn:active {
+              transform: translateY(0);
+            }
+
+            .ai-confirm-btn.btn-turn-on {
+              background: linear-gradient(135deg, #059669, #047857);
+              color: #ffffff;
+              box-shadow: 0 3px 10px rgba(5, 150, 105, 0.25);
+            }
+
+            .ai-confirm-btn.btn-turn-on:hover {
+              background: linear-gradient(135deg, #047857, #065F46);
+              box-shadow: 0 5px 16px rgba(5, 150, 105, 0.38);
+            }
+
+            .ai-confirm-btn.btn-turn-off {
+              background: linear-gradient(135deg, #EF4444, #DC2626);
+              color: #ffffff;
+              box-shadow: 0 3px 10px rgba(220, 38, 38, 0.25);
+            }
+
+            .ai-confirm-btn.btn-turn-off:hover {
+              background: linear-gradient(135deg, #DC2626, #B91C1C);
+              box-shadow: 0 5px 16px rgba(220, 38, 38, 0.38);
+            }
+
+            .ai-confirm-btn-badge {
+              background: rgba(255, 255, 255, 0.22);
+              color: #ffffff;
+              padding: 2px 7px;
+              border-radius: 12px;
+              font-size: 0.65rem;
+              font-weight: 700;
+              letter-spacing: 0.02em;
+            }
+
+            /* Chat Input Area */
+            .ai-input-area {
+              padding: 10px 16px 5px;
+              border-top: 1px solid #F3F4F6;
+              background: #fff;
+            }
+
+            .ai-input-upload-row {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              margin-bottom: 8px;
+            }
+
+            .ai-upload-chip {
+              display: inline-flex;
+              align-items: center;
+              gap: 5px;
+              background: #F0FDF4;
+              border: 1px solid #A7F3D0;
+              border-radius: 20px;
+              padding: 4px 10px;
+              font-size: 0.7rem;
+              font-weight: 500;
+              color: #047857;
+              cursor: pointer;
+              transition: all 0.18s;
+            }
+
+            .ai-upload-chip:hover {
+              background: #D1FAE5;
+              border-color: #059669;
+            }
+
+            .ai-input-row {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              background: #F9FAFB;
+              border: 1.5px solid #E5E7EB;
+              border-radius: 30px;
+              padding: 6px 8px 6px 14px;
+              transition: border-color 0.2s, box-shadow 0.2s;
+            }
+
+            .ai-input-row:focus-within {
+              border-color: #059669;
+              box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.08);
+              background: #fff;
+            }
+
+            .ai-text-input {
+              flex: 1;
+              border: none;
+              outline: none;
+              background: transparent;
+              font-size: 0.85rem;
+              color: #1F2937;
+              font-family: 'Inter', sans-serif;
+              resize: none;
+              height: 24px;
+              line-height: 1.5;
+            }
+
+            .ai-text-input::placeholder {
+              color: #9CA3AF;
+            }
+
+            .ai-send-btn {
+              width: 36px;
+              height: 36px;
+              background: linear-gradient(135deg, #059669, #047857);
+              border: none;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              transition: all 0.2s;
+              box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+              flex-shrink: 0;
+            }
+
+            .ai-send-btn:hover {
+              background: linear-gradient(135deg, #047857, #065F46);
+              transform: scale(1.05);
+              box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+            }
+
+            .ai-send-btn:active {
+              transform: scale(0.96);
+            }
+
+            .ai-input-hint {
+              font-size: 0.65rem;
+              color: #9CA3AF;
+              text-align: center;
+              margin-top: 3px;
+              margin-bottom: 2px;
+              line-height: 1.2;
+            }
+
+            /* Responsive sidebar hide */
+            @media (max-width: 600px) {
+              .ai-chat-sidebar {
+                display: none;
+              }
+            }
+
+            .ai-history-del-btn {
+              opacity: 0.5;
+              transition: all 0.2s;
+            }
+
+            .ai-history-del-btn:hover {
+              opacity: 1 !important;
+              color: #EF4444 !important;
+            }
+
+            /* ── Mobile: fix input area above bottom nav ── */
+            @media (max-width: 768px) {
+              .ai-input-area {
+                position: fixed;
+                bottom: var(--bottom-nav-height, 64px);
+                left: 0;
+                right: 0;
+                z-index: 250;
+                box-shadow: 0 -2px 12px rgba(5, 150, 105, 0.10);
+                padding: 8px 12px 4px;
+              }
+
+              /* Add padding so messages don't hide behind the fixed input */
+              .ai-messages-area {
+                padding-bottom: 165px !important;
+              }
+            }
+          </style>
+
+          <!-- ── Main Chat Interface ── -->
+          <div class="ai-chat-container" style="flex:1 1 0%;height:100%;min-height:0;">
+
+            <!-- Sidebar: Chat History -->
+            <div class="ai-chat-sidebar">
+              <div class="ai-sidebar-header">
+                <span>Chat History</span>
+                <button class="ai-sidebar-btn"
+                  onclick="Messliner.history._startNewAiChat && Messliner.history._startNewAiChat()">
+                  <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  New Chat
+                </button>
+              </div>
+              <div class="ai-history-list" id="aiChatHistoryList">
+                <div class="ai-history-item active" id="aiHistoryCurrentItem">
+                  <div class="ai-history-title">Current Session</div>
+                  <div class="ai-history-date" id="aiHistoryCurrentDate">Just now</div>
+                </div>
+                <div class="ai-history-empty" id="aiHistoryEmptyMsg" style="display:none;">
+                  No previous chats
+                </div>
+              </div>
+            </div>
+
+            <!-- Main chat panel -->
+            <div class="ai-chat-main">
+              <!-- Slim Auto Meal Toggle Bar -->
+              <div id="aiAutoMealToggleBar"
+                style="display:flex; align-items:center; justify-content:space-between; padding: 10px 16px; background: #F9FAFB; border-bottom: 1px solid #D1FAE5; flex-shrink:0;">
+                <div style="display:flex; align-items:center; gap: 8px;">
+                  <div
+                    style="width:24px; height:24px; background:rgba(5,150,105,0.08); border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <svg width="12" height="12" fill="none" stroke="#059669" stroke-width="2.5" viewBox="0 0 24 24">
+                      <path
+                        d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h6 style="margin:0; font-size:0.75rem; font-weight:700; color:#0F2E1E;">AI Auto Meal System</h6>
+                    <p style="margin:0; font-size:0.62rem; color:#6B7280;">Auto-toggles meals based on class routines
+                    </p>
+                  </div>
+                </div>
+                <label class="toggle-switch" style="flex-shrink:0; transform: scale(0.85); margin: 0;">
+                  <input type="checkbox" id="aiAutoMealToggle"
+                    onchange="Messliner.history.toggleAiAutoMeal(this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- Messages -->
+              <div class="ai-messages-area" id="aiChatWindow">
+
+                <!-- Welcome / Intro -->
+                <div class="ai-welcome-section" id="aiWelcomeBlock">
+                  <div class="ai-welcome-icon">
+                    <svg width="26" height="26" fill="none" stroke="#059669" stroke-width="1.8" viewBox="0 0 24 24">
+                      <rect x="3" y="8" width="18" height="11" rx="3" />
+                      <path d="M8 8V6a4 4 0 0 1 8 0v2" />
+                      <circle cx="9" cy="13" r="1" fill="#059669" stroke="none" />
+                      <circle cx="15" cy="13" r="1" fill="#059669" stroke="none" />
+                      <path d="M9 17h6" stroke-linecap="round" />
+                    </svg>
+                  </div>
+                  <div class="ai-welcome-title" id="aiWelcomeTitle">Hello! 👋</div>
+                  <div class="ai-welcome-sub" id="aiWelcomeSub">How can I help you today?</div>
+                  <div class="ai-chip-row">
+                    <span class="ai-chip chip-blue"
+                      onclick="document.getElementById('aiChatInput').value='What is the meal rate?'; document.getElementById('aiChatInput').focus()">
+                      <span class="ai-chip-icon-plate">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"
+                          viewBox="0 0 24 24">
+                          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                          <polyline points="17 6 23 6 23 12" />
+                        </svg>
+                      </span>
+                      Meal Rate
+                    </span>
+                    <span class="ai-chip chip-red"
+                      onclick="document.getElementById('aiChatInput').value='Turn off my meals'; document.getElementById('aiChatInput').focus()">
+                      <span class="ai-chip-icon-plate">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"
+                          viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                        </svg>
+                      </span>
+                      Off my meal
+                    </span>
+                    <span class="ai-chip chip-amber"
+                      onclick="document.getElementById('aiChatInput').value='Mess rules'; document.getElementById('aiChatInput').focus()">
+                      <span class="ai-chip-icon-plate">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <line x1="18" y1="20" x2="18" y2="10" stroke-linecap="round" />
+                        <line x1="12" y1="20" x2="12" y2="4" stroke-linecap="round" />
+                        <line x1="6" y1="20" x2="6" y2="14" stroke-linecap="round" />
+                        </svg>
+                      </span>
+                      Analyze
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Input Area -->
+              <div class="ai-input-area">
+                <!-- Upload chip row -->
+                <div class="ai-input-upload-row" id="aiInputUploadRow">
+                  <label class="ai-upload-chip" id="aiRoutineUploadLabel" title="Upload routine image (JPEG)">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"
+                      viewBox="0 0 24 24">
+                      <path
+                        d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                    </svg>
+                    Attach Routine
+                    <input type="file" id="aiRoutineUpload" accept="image/jpeg" style="display:none;"
+                      onchange="Messliner.history.handleRoutineUpload(event)">
+                  </label>
+                  <span style="font-size:0.65rem;color:#9CA3AF;">JPEG only · Max 5MB</span>
+                </div>
+                <!-- Input row -->
+                <div class="ai-input-row">
+                  <input type="text" id="aiChatInput" class="ai-text-input"
+                    placeholder="Ask me anything about your dining..."
+                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();Messliner.history.sendAiChatMessage();}"
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff" stroke="none" />
+                  </svg>
+                  </button>
+                </div>
+                <div class="ai-input-hint">Powered by Messliner</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── AI Page Init Script ── -->
+          <script>
+            (function initAiPageUI() {
+              // Expose greeting refresh globally
+              window._aiRefreshGreeting = updateAiGreeting;
+
+              // Greeting with username
+              const userName = (window.Messliner && Messliner.history && Messliner.history.currentUserData && Messliner.history.currentUserData.name)
+                || (window.Messliner && window.Messliner.state && window.Messliner.state.userName)
+                || (window._aiLastUserName)
+                || 'User';
+              window._aiLastUserName = userName;
+
+              const firstName = userName.split(' ')[0];
+              const hour = new Date().getHours();
+              let greeting = 'Good morning';
+              if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
+              else if (hour >= 17) greeting = 'Good evening';
+
+              if (nameEl) nameEl.textContent = `👋 Hello, ${firstName}!`;
+              if (timeEl) timeEl.textContent = `${greeting}! How can I help you today?`;
+              if (welcomeTitleEl) welcomeTitleEl.textContent = `Hello, ${userName}! 👋`;
+              const welcomeSubEl = document.getElementById('aiWelcomeSub');
+              if (welcomeSubEl) welcomeSubEl.textContent = `How can I help you today?`;
+
+              // Customize the top header for AI Assistant page
+              const headerTitle = document.getElementById('headerTitle');
+              const headerSubtitle = document.getElementById('headerSubtitle');
+
+              if (window.Messliner && window.Messliner.router && window.Messliner.router.currentPage === 'aiassistant') {
+                if (headerTitle) {
+                  headerTitle.textContent = 'Messliner AI';
+                }
+                if (headerSubtitle) {
+                  headerSubtitle.textContent = '';
+                  headerSubtitle.style.display = 'none';
+                }
+              }
+            }
+
+              // Try immediately, then retry when page is navigated to
+              updateAiGreeting();
+            setTimeout(updateAiGreeting, 800);
+
+            // Hook into router navigation to refresh greeting & load chat sessions
+            if (window.Messliner && window.Messliner.router) {
+              const origNavigate = window.Messliner.router.navigate.bind(window.Messliner.router);
+              window.Messliner.router.navigate = function (page) {
+                origNavigate(page);
+                if (page === 'aiassistant') {
+                  setTimeout(updateAiGreeting, 300);
+                  if (window._aiChatManager) {
+                    window._aiChatManager.init();
+                  }
+                }
+              };
+            }
+
+            // Bind the StartNewChat to our custom chat manager session creator
+            window._aiStartNewChat = function () {
+              if (window._aiChatManager) {
+                window._aiChatManager.createNewSession();
+              }
+            };
+
+            if (window.Messliner && window.Messliner.history) {
+              window.Messliner.history._startNewAiChat = window._aiStartNewChat;
+            }
+
+            // Expose dynamic chat history manager
+            window._aiChatManager = {
+              sessions: [],
+              currentSessionId: null,
+
+              init() {
+                if (!window.Messliner || !Messliner.history || !Messliner.history.userId) return;
+
+                // Load from localStorage
+                const stored = localStorage.getItem(`messliner_ai_sessions_${Messliner.history.userId}`);
+                if (stored) {
+                  try {
+                    this.sessions = JSON.parse(stored);
+                  } catch (e) {
+                    this.sessions = [];
+                  }
+                }
+
+                if (this.sessions.length === 0) {
+                  this.createNewSession();
+                } else {
+                  this.currentSessionId = this.sessions[0].id;
+                  this.renderSidebar();
+                  this.loadSession(this.currentSessionId);
+                }
+              },
+
+              createNewSession() {
+                const newSession = {
+                  id: 'session_' + Date.now(),
+                  title: 'Current Session',
+                  date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  messages: []
+                };
+                this.sessions.unshift(newSession);
+                this.currentSessionId = newSession.id;
+                this.saveToStorage();
+                this.renderSidebar();
+                this.loadSession(newSession.id);
+              },
+
+              saveMessage(sender, text, timestamp) {
+                const session = this.sessions.find(s => s.id === this.currentSessionId);
+                if (!session) return;
+
+                session.messages.push({ sender, text, timestamp });
+
+                // Update title on first user message
+                if (sender === 'user' && (session.title === 'Current Session' || session.title === 'New Chat')) {
+                  session.title = text.length > 22 ? text.substring(0, 22) + '…' : text;
+                }
+
+                this.saveToStorage();
+                this.renderSidebar();
+              },
+
+              loadSession(id) {
+                this.currentSessionId = id;
+                const session = this.sessions.find(s => s.id === id);
+                if (!session) return;
+
+                const win = document.getElementById('aiChatWindow');
+                if (!win) return;
+
+                // Clear chat window except welcome block
+                const welcomeBlock = document.getElementById('aiWelcomeBlock');
+                win.innerHTML = '';
+                if (welcomeBlock) win.appendChild(welcomeBlock);
+
+                if (session.messages.length === 0) {
+                  if (welcomeBlock) welcomeBlock.style.display = 'flex';
+                } else {
+                  if (welcomeBlock) welcomeBlock.style.display = 'none';
+
+                  session.messages.forEach(msg => {
+                    const el = document.createElement('div');
+                    if (msg.sender === 'user') {
+                      el.className = 'ai-msg-row user-row';
+                      el.innerHTML = `
+                          <div style="display:flex;flex-direction:column;align-items:flex-end;max-width: 85%;">
+                            <div class="ai-chat-bubble-user">${msg.text}</div>
+                            <div class="ai-msg-time">${msg.timestamp}</div>
+                          </div>
+                        `;
+                    } else {
+                      el.className = 'ai-msg-row';
+                      el.innerHTML = `
+                          <div style="max-width: 85%;">
+                            <div class="ai-chat-bubble-bot">${msg.text}</div>
+                            <div class="ai-msg-time">${msg.timestamp}</div>
+                          </div>
+                        `;
+                    }
+                    win.appendChild(el);
+                  });
+                  requestAnimationFrame(() => { win.scrollTop = win.scrollHeight; });
+                }
+
+                this.renderSidebar();
+              },
+
+              deleteSession(id, event) {
+                if (event) event.stopPropagation();
+                if (this.sessions.length <= 1) {
+                  // Clear messages instead of deleting the last session
+                  const session = this.sessions[0];
+                  session.title = 'Current Session';
+                  session.messages = [];
+                  this.saveToStorage();
+                  this.loadSession(session.id);
+                  return;
+                }
+
+                const idx = this.sessions.findIndex(s => s.id === id);
+                if (idx !== -1) {
+                  this.sessions.splice(idx, 1);
+                  if (this.currentSessionId === id) {
+                    this.currentSessionId = this.sessions[0].id;
+                  }
+                  this.saveToStorage();
+                  this.loadSession(this.currentSessionId);
+                }
+              },
+
+              saveToStorage() {
+                localStorage.setItem(`messliner_ai_sessions_${Messliner.history.userId}`, JSON.stringify(this.sessions));
+              },
+
+              renderSidebar() {
+                const list = document.getElementById('aiChatHistoryList');
+                if (!list) return;
+
+                list.innerHTML = '';
+                this.sessions.forEach(s => {
+                  const el = document.createElement('div');
+                  el.className = `ai-history-item${s.id === this.currentSessionId ? ' active' : ''}`;
+                  el.onclick = () => this.loadSession(s.id);
+
+                  el.innerHTML = `
+                      <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:6px;">
+                        <div style="overflow:hidden; flex:1;">
+                          <div class="ai-history-title">${s.title}</div>
+                          <div class="ai-history-date">${s.date}</div>
+                        </div>
+                        <button class="ai-history-del-btn" style="background:none; border:none; color:#EF4444; cursor:pointer; padding:2px; display:flex; align-items:center; transition:opacity 0.2s;" 
+                                onclick="window._aiChatManager.deleteSession('${s.id}', event)">
+                          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        </button>
+                      </div>
+                    `;
+                  list.appendChild(el);
+                });
+              }
+            };
+
+            // Auto initialize on load if history module is ready
+            setTimeout(function () {
+              if (window._aiChatManager && window.Messliner && Messliner.history && Messliner.history.userId) {
+                window._aiChatManager.init();
+              }
+            }, 800);
+            }) ();
+          </script>
+        </section>
+<!-- </body> -->

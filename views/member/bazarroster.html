@@ -1,0 +1,80 @@
+        <section id="page-bazarroster" class="page-section">
+          <div class="custom-subpage-container">
+            <!-- Top Segmented Tabs: Schedule vs Swipe -->
+            <div class="br-tabs-header">
+              <button type="button" class="br-tab-btn active" id="brTabSchedule"
+                onclick="Messliner.userDashboard.switchBazarRosterTab('schedule')">
+                Schedule
+              </button>
+              <button type="button" class="br-tab-btn" id="brTabSwipe"
+                onclick="Messliner.userDashboard.switchBazarRosterTab('swipe')">
+                Swipe
+              </button>
+            </div>
+
+            <!-- SCHEDULE VIEW -->
+            <div id="brScheduleViewSection">
+              <!-- Info Alert Banner -->
+              <div class="br-info-banner">
+                <div class="br-info-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
+                </div>
+                <div class="br-info-text">
+                  Bazar rotation planned by manager. You can request a swap with another member.
+                </div>
+              </div>
+
+              <!-- Section Title Header -->
+              <div class="br-section-header">
+                <h3 class="br-section-title" id="brMonthTitle">This month</h3>
+                <p class="br-section-subtitle" id="brMonthSubtitle">From manager</p>
+              </div>
+
+              <!-- Roster List Card Container -->
+              <div class="br-roster-card">
+                <div id="brRosterListContainer" class="br-roster-list">
+                  <div class="br-loading-state">
+                    <div class="sync-dot" style="width: 8px; height: 8px; background: #059669;"></div>
+                    <span>Loading roster schedule...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SWIPE VIEW -->
+            <div id="brSwipeViewSection" style="display: none;">
+              <!-- User Next Duty Card & Quick Request Action -->
+              <div id="brUserNextDutyContainer" class="br-swipe-next-card">
+                <!-- Dynamically populated -->
+              </div>
+
+              <!-- Pending Incoming Requests for You -->
+              <div class="br-swipe-section-wrapper">
+                <div class="br-swipe-section-header">
+                  <h4 class="br-swipe-section-title">Incoming Requests</h4>
+                  <span class="br-swipe-badge" id="brIncomingBadge">0 Pending</span>
+                </div>
+                <div id="brIncomingRequestsList" class="br-swipe-requests-list">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+
+              <!-- Outgoing / Sent Requests by You -->
+              <div class="br-swipe-section-wrapper" style="margin-top: 18px;">
+                <div class="br-swipe-section-header">
+                  <h4 class="br-swipe-section-title">Sent Requests</h4>
+                  <span class="br-swipe-badge neutral" id="brOutgoingBadge">0 Active</span>
+                </div>
+                <div id="brOutgoingRequestsList" class="br-swipe-requests-list">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+</body>

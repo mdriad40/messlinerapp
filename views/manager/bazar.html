@@ -1,0 +1,337 @@
+        <section id="page-bazar" class="page-section finance-page-pro">
+
+          <!-- USER VIEW: Bazar History List (Members) -->
+          <div id="bazarUserViewContainer" style="display:none;">
+            <!-- Header + Selectors -->
+            <div class="bazar-history-header">
+              <div class="bazar-history-title">
+                <h2>Bazar History</h2>
+                <p>Monthly grocery &amp; market expense records</p>
+              </div>
+              <!-- Year / Month Selectors -->
+              <div class="bazar-history-selectors">
+                <!-- Month Select -->
+                <div class="custom-dropdown" id="bazarHistoryMonthDropdown">
+                  <button class="custom-dropdown-trigger"
+                    onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                    <span id="bazarHistoryMonthValue">Loading...</span>
+                    <div class="custom-dropdown-arrow"></div>
+                  </button>
+                  <div class="custom-dropdown-menu" id="bazarHistoryMonthMenu"></div>
+                </div>
+
+                <!-- Year Select -->
+                <div class="custom-dropdown" id="bazarHistoryYearDropdown">
+                  <button class="custom-dropdown-trigger"
+                    onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                    <span id="bazarHistoryYearValue">Loading...</span>
+                    <div class="custom-dropdown-arrow"></div>
+                  </button>
+                  <div class="custom-dropdown-menu" id="bazarHistoryYearMenu"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Monthly Summary Banner -->
+            <div class="bazar-monthly-summary" id="bazarMonthlySummary" style="display:none;">
+              <div class="bazar-summary-left">
+                <div class="bazar-summary-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <path d="M16 10a4 4 0 01-8 0" />
+                  </svg>
+                </div>
+                <div class="bazar-summary-text">
+                  <span class="bazar-summary-label">TOTAL BAZAR EXPENSE</span>
+                  <span class="bazar-summary-period" id="bazarMonthLabel">—</span>
+                </div>
+              </div>
+              <div class="bazar-summary-amount" id="bazarMonthTotal">৳0</div>
+            </div>
+
+            <!-- Day Cards List -->
+            <div id="bazarHistoryList" class="bazar-history-list">
+              <!-- Rendered by BazarHistoryModule -->
+            </div>
+          </div>
+
+          <!-- ADMIN VIEW: Bazar Management & Routine (Managers) -->
+          <div id="bazarAdminViewContainer" style="display:none;">
+
+            <!-- ═══ Bazar Hero Banner Card ═══ -->
+            <div class="fp-hero-banner fade-up" style="margin-bottom: 20px;">
+              <div class="fp-hero-glow"></div>
+              <div class="fp-hero-content">
+                <div class="fp-hero-icon-box">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <path d="M16 10a4 4 0 0 1-8 0" />
+                  </svg>
+                </div>
+                <div class="fp-hero-text">
+                  <h2 class="fp-hero-title">Bazar Routine &amp; Expenses</h2>
+                  <p class="fp-hero-subtitle">Monthly duty roster, member schedule &amp; grocery expenses</p>
+                </div>
+              </div>
+              <div class="fp-hero-pattern"></div>
+            </div>
+
+            <!-- Top Controls Toolbar: Date Navigator + Quick Actions -->
+            <div class="bazar-topbar">
+              <div class="bazar-topbar-controls" style="width: 100%; justify-content: space-between;">
+                <!-- Month / Year Selector Group -->
+                <div class="bazar-date-selector-group">
+                  <button type="button" class="bazar-nav-arrow-btn" onclick="Messliner.bazar.prevMonth()"
+                    title="Previous Month">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </button>
+
+                  <!-- Month Select -->
+                  <div class="custom-dropdown" id="bazarMonthDropdown">
+                    <button type="button" class="custom-dropdown-trigger"
+                      onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                      <span id="bazarMonthValue">Loading...</span>
+                      <div class="custom-dropdown-arrow"></div>
+                    </button>
+                    <div class="custom-dropdown-menu" id="bazarMonthMenu"></div>
+                  </div>
+
+                  <!-- Year Select -->
+                  <div class="custom-dropdown" id="bazarYearDropdown">
+                    <button type="button" class="custom-dropdown-trigger"
+                      onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                      <span id="bazarYearValue">Loading...</span>
+                      <div class="custom-dropdown-arrow"></div>
+                    </button>
+                    <div class="custom-dropdown-menu" id="bazarYearMenu"></div>
+                  </div>
+
+                  <button type="button" class="bazar-nav-arrow-btn" onclick="Messliner.bazar.nextMonth()"
+                    title="Next Month">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
+
+                  <button type="button" class="bazar-today-btn" onclick="Messliner.bazar.setTodayMonth()"
+                    title="Jump to Current Month">Today</button>
+                </div>
+
+                <!-- Admin Action Buttons -->
+                <div class="bazar-header-actions bazar-admin-only">
+                  <button type="button" class="btn btn-primary btn-sm bazar-action-btn"
+                    onclick="Messliner.bazar.openAddBazarModal()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    <span>Add Entry</span>
+                  </button>
+
+                  <button type="button" class="btn btn-outline btn-sm bazar-action-btn"
+                    onclick="Messliner.bazar.openWeeklyRoutineModal()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M16 2v4M8 2v4M3 10h18" />
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                    </svg>
+                    <span>Weekly Routine</span>
+                  </button>
+
+                  <button type="button" class="btn btn-outline btn-sm bazar-action-btn"
+                    onclick="Messliner.bazar.openAssignModal()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="8.5" cy="7" r="4" />
+                      <line x1="20" y1="8" x2="20" y2="14" />
+                      <line x1="17" y1="11" x2="23" y2="11" />
+                    </svg>
+                    <span>Assign Duty</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top Analytics Banner (Main Card) -->
+            <div class="bazar-overview-card fade-up">
+              <div class="bazar-stats-row">
+                <!-- Stat 1: Days Shopped out of Total Month Days -->
+                <div class="bazar-stat-item">
+                  <div class="bazar-stat-icon-wrapper ring-emerald">
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                  </div>
+                  <div class="bazar-stat-content">
+                    <span class="bazar-stat-title">Shopping Days</span>
+                    <div class="bazar-stat-value" id="bazarStatDaysShopped">
+                      <strong>0</strong> <span class="bazar-stat-total-days">/ 30 Days</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Stat 2: Total Bazar Expense -->
+                <div class="bazar-stat-item">
+                  <div class="bazar-stat-icon-wrapper ring-indigo">
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                      <path d="M16 10a4 4 0 01-8 0" />
+                    </svg>
+                  </div>
+                  <div class="bazar-stat-content">
+                    <span class="bazar-stat-title">Total Bazar Expense</span>
+                    <div class="bazar-stat-value bazar-stat-highlight" id="bazarStatTotalExpense"><span
+                        class="bazar-curr-symbol">৳</span>0</div>
+                  </div>
+                </div>
+
+                <!-- Stat 3: Today's On-Duty Member -->
+                <div class="bazar-stat-item today-duty-wrapper">
+                  <div id="bazarTodayDutyContainer">
+                    <div class="bazar-today-badge unassigned">
+                      <div class="bazar-today-avatar empty">?</div>
+                      <div class="bazar-today-info">
+                        <span class="bazar-today-label">Today's Duty</span>
+                        <strong class="bazar-today-name">Loading...</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Progress Bar: Expense vs Total Balance / Budget -->
+              <div class="bazar-progress-card-section">
+                <div class="bazar-progress-header">
+                  <div class="bazar-progress-title-left">
+                    <span class="bazar-progress-label">Total Balance &amp; Expense Utilization</span>
+                    <span class="bazar-progress-badge" id="bazarStatPercentSpent">0% Spent</span>
+                  </div>
+                  <div class="bazar-progress-meta-right">
+                    <span>Total Deposit: <strong id="bazarStatTotalDeposit">৳0</strong></span>
+                    <span class="bazar-progress-sep">•</span>
+                    <span>Remaining: <strong id="bazarStatRemainingBalance" class="text-emerald-600">৳0</strong></span>
+                  </div>
+                </div>
+
+                <div class="bazar-progress-bar-track">
+                  <div class="bazar-progress-bar-fill" id="bazarStatProgressFill" style="width: 0%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- View Selector Tabs -->
+            <div class="bazar-view-tabs">
+              <button type="button" class="bazar-view-tab-btn active" data-tab="calendar"
+                onclick="Messliner.bazar.switchTab('calendar')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span>Bazar Routine (Calendar)</span>
+              </button>
+
+              <button type="button" class="bazar-view-tab-btn" data-tab="logs"
+                onclick="Messliner.bazar.switchTab('logs')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+                <span>Expense History &amp; Items</span>
+              </button>
+            </div>
+
+            <!-- SECTION 1: CALENDAR & ROUTINE VIEW -->
+            <div id="bazarCalendarViewSection" class="bazar-view-content active">
+              <div class="bazar-calendar-layout-grid">
+
+                <!-- Left: Spacious Calendar Grid -->
+                <!-- Left: Compact Minimal Calendar Card -->
+                <div class="bazar-calendar-main-card">
+                  <div class="bazar-calendar-card-header">
+                    <button type="button" class="bazar-cal-nav-btn" onclick="Messliner.bazar.prevMonth()"
+                      title="Previous Month">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <polyline points="15 18 9 12 15 6" />
+                      </svg>
+                    </button>
+                    <div class="bazar-cal-center-title">
+                      <h3 class="bazar-calendar-card-title" id="bazarCalMonthYear">Oct 2026</h3>
+                      <p class="bazar-calendar-card-subtitle">Tap any day to assign a member</p>
+                    </div>
+                    <button type="button" class="bazar-cal-nav-btn" onclick="Messliner.bazar.nextMonth()"
+                      title="Next Month">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- 7-Column Compact Grid -->
+                  <div class="bazar-calendar-grid" id="bazarCalendarGrid">
+                    <!-- Rendered dynamically by BazarModule -->
+                  </div>
+
+                  <!-- Bottom Legend -->
+                  <div class="bazar-calendar-bottom-legend">
+                    <span class="bazar-legend-item"><span class="legend-dot green"></span> Done</span>
+                    <span class="bazar-legend-item"><span class="legend-dot orange"></span> Missed</span>
+                    <span class="bazar-legend-item"><span class="legend-dot brown"></span> Assigned</span>
+                  </div>
+                </div>
+
+                <!-- Right: Duty Fairness & Distribution Tracker -->
+                <div class="bazar-duty-fairness-card">
+                  <div class="bazar-fairness-header">
+                    <div class="bazar-fairness-title">
+                      <h4>Duty Distribution</h4>
+                      <p>Total duties per member this month</p>
+                    </div>
+                    <button type="button" class="bazar-btn-icon-link bazar-admin-only"
+                      onclick="Messliner.bazar.openWeeklyRoutineModal()" title="Edit Weekly Schedule">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="bazar-fairness-list" id="bazarDutyFairnessList">
+                    <!-- Rendered dynamically by BazarModule -->
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- SECTION 2: EXPENSE LOGS & RECEIPTS VIEW -->
+            <div id="bazarLogsViewSection" class="bazar-view-content" style="display:none;">
+              <div id="bazarExpenseLogsContainer" class="bazar-history-list">
+                <!-- Rendered dynamically by BazarModule -->
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+<!-- </body> -->

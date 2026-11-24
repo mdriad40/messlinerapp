@@ -1,0 +1,161 @@
+        <section id="page-history" class="page-section">
+          <!-- Overview Master Card with Graph Paper Background Styling -->
+          <div class="overview-master-card fade-up">
+            <!-- Master Header -->
+            <div class="overview-master-header">
+              <div class="overview-master-title-block">
+                <div class="overview-master-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                    <path d="M12 7v5l3.5 2.1" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="overview-master-title">Dining History & Activity</h3>
+                  <p class="overview-master-subtitle">Real-time records of Bazar expenses and dining activity logs</p>
+                </div>
+              </div>
+
+              <!-- Filter Pills -->
+              <div class="history-filter-pills">
+                <button class="history-pill active" onclick="HistoryPageModule.filterTab('bazar', this)">Bazar
+                  History</button>
+                <button class="history-pill" onclick="HistoryPageModule.filterTab('activity', this)">Recent
+                  Activity</button>
+              </div>
+            </div>
+
+            <!-- Page Grid: Bazar History + Recent Activity -->
+            <div class="history-page-grid">
+              <!-- Section 1: Bazar History -->
+              <div id="historyBazarBlock" class="history-block-card">
+                <div class="history-block-header flex items-center justify-between">
+                  <div class="history-block-title-wrap">
+                    <div class="history-block-icon theme-bazar-icon"
+                      style="background:#dcfce7;color:#15803d;border:1px solid rgba(22,163,74,0.18);">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 9h16l-1.6 10.4A2 2 0 0 1 16.4 21H7.6a2 2 0 0 1-1.98-1.6L4 9z" fill="currentColor"
+                          fill-opacity="0.1" />
+                        <path d="M8 9V6a4 4 0 0 1 8 0v3" stroke-width="2" />
+                        <line x1="9" y1="13" x2="15" y2="13" stroke-width="1.8" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="history-block-title">Bazar History</h4>
+                      <span class="history-block-count" id="historyBazarCount">Loading...</span>
+                    </div>
+                  </div>
+
+                  <!-- Month & Year Custom Dropdowns (SAME TO SAME as User Panel Bazar) -->
+                  <div class="history-bazar-selectors flex items-center gap-2">
+                    <!-- Month Select -->
+                    <div class="custom-dropdown" id="historyMonthDropdown">
+                      <button type="button" class="custom-dropdown-trigger"
+                        onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                        <span id="historyMonthValue">Loading...</span>
+                        <div class="custom-dropdown-arrow"></div>
+                      </button>
+                      <div class="custom-dropdown-menu" id="historyMonthMenu"></div>
+                    </div>
+
+                    <!-- Year Select -->
+                    <div class="custom-dropdown" id="historyYearDropdown">
+                      <button type="button" class="custom-dropdown-trigger"
+                        onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                        <span id="historyYearValue">Loading...</span>
+                        <div class="custom-dropdown-arrow"></div>
+                      </button>
+                      <div class="custom-dropdown-menu" id="historyYearMenu"></div>
+                    </div>
+                  </div>
+                </div>
+                <div id="historyBazarList" class="timeline">
+                  <div class="empty-state" style="padding:var(--space-6);">
+                    <div class="empty-state-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                      </svg>
+                    </div>
+                    <h3>Loading Bazar Records...</h3>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 2: Recent Activity Timeline -->
+              <div id="historyActivityBlock" class="history-block-card">
+                <div class="history-block-header flex items-center justify-between">
+                  <div class="history-block-title-wrap">
+                    <div class="history-block-icon theme-deposit-icon"
+                      style="background:#dcfce7;color:#15803d;border:1px solid rgba(22,163,74,0.18);">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" />
+                        <polyline points="12 7 12 12 15.5 14" stroke-width="2" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="history-block-title">Recent Activity</h4>
+                      <span class="history-block-count" id="historyActivityCount">Live updates</span>
+                    </div>
+                  </div>
+
+                  <!-- Month & Year Custom Dropdowns for Recent Activity -->
+                  <div class="history-activity-selectors flex items-center gap-2">
+                    <!-- Type Filter Select -->
+                    <div class="custom-dropdown" id="activityTypeDropdown">
+                      <button type="button" class="custom-dropdown-trigger"
+                        onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                        <span id="activityTypeValue">All Activity</span>
+                        <div class="custom-dropdown-arrow"></div>
+                      </button>
+                      <div class="custom-dropdown-menu" id="activityTypeMenu">
+                        <div class="custom-dropdown-item selected" data-value="all"
+                          onclick="Messliner.history.selectActivityType('all')">All Activity</div>
+                        <div class="custom-dropdown-item" data-value="meals"
+                          onclick="Messliner.history.selectActivityType('meals')">Meals</div>
+                        <div class="custom-dropdown-item" data-value="meal_status"
+                          onclick="Messliner.history.selectActivityType('meal_status')">Meal Status</div>
+                      </div>
+                    </div>
+
+                    <!-- Month Select -->
+                    <div class="custom-dropdown" id="activityMonthDropdown">
+                      <button type="button" class="custom-dropdown-trigger"
+                        onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                        <span id="activityMonthValue">Loading...</span>
+                        <div class="custom-dropdown-arrow"></div>
+                      </button>
+                      <div class="custom-dropdown-menu" id="activityMonthMenu"></div>
+                    </div>
+
+                    <!-- Year Select -->
+                    <div class="custom-dropdown" id="activityYearDropdown">
+                      <button type="button" class="custom-dropdown-trigger"
+                        onclick="event.stopPropagation(); this.parentElement.classList.toggle('active')">
+                        <span id="activityYearValue">Loading...</span>
+                        <div class="custom-dropdown-arrow"></div>
+                      </button>
+                      <div class="custom-dropdown-menu" id="activityYearMenu"></div>
+                    </div>
+                  </div>
+                </div>
+                <div id="historyActivityList" class="timeline">
+                  <div class="empty-state" style="padding:var(--space-6);">
+                    <div class="empty-state-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                    </div>
+                    <h3>Loading Recent Activity...</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+<!-- </body> -->

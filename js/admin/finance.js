@@ -9,6 +9,10 @@ const FinanceModule = {
   selectedYear: new Date().getFullYear(),
   selectedMonth: new Date().getMonth() + 1,
   createdDate: null,
+  monthNames: [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ],
 
   /**
    * Initialize finance module with realtime listeners
@@ -21,23 +25,38 @@ const FinanceModule = {
     this.selectedMonth = now.getMonth() + 1;
 
     let startDateStr = initialData?.settings?.historyStartDate;
+    let createdAt = initialData?.info?.createdAt;
     if (startDateStr) {
       this.createdDate = new Date(startDateStr);
-      this.populateDropdowns();
+    } else if (createdAt) {
+      this.createdDate = new Date(createdAt);
     } else {
-      db.ref(`dinings/${diningId}/settings/historyStartDate`).once('value').then(snap => {
-        const val = snap.val();
-        if (val) {
-          this.createdDate = new Date(val);
-        } else {
-          return db.ref(`dinings/${diningId}/createdAt`).once('value').then(cSnap => {
-            const cVal = cSnap.val();
-            this.createdDate = cVal ? new Date(cVal) : new Date(2026, 0, 1);
-            this.populateDropdowns();
-          });
+      this.createdDate = new Date(2026, 0, 1);
+    }
+
+    // Realtime listener for historyStartDate setting updates
+    db.ref(`dinings/${diningId}/settings/historyStartDate`).on('value', snap => {
+      const val = snap.val();
+      if (val) {
+        this.createdDate = new Date(val);
+      } else {
+        const ca = Messliner.diningData?.info?.createdAt || initialData?.info?.createdAt;
+        this.createdDate = ca ? new Date(ca) : new Date(2026, 0, 1);
+      }
+      this.populateDropdowns();
+      if (Router.currentPage === 'finance') {
+        this.renderTransactions();
+      }
+    });
+
+    if (!startDateStr && !createdAt) {
+      db.ref(`dinings/${diningId}/info/createdAt`).once('value').then(infoSnap => {
+        const ca = infoSnap.val();
+        if (ca && !this.createdDate) {
+          this.createdDate = new Date(ca);
+          this.populateDropdowns();
         }
-        this.populateDropdowns();
-      });
+      }).catch(() => {});
     }
 
     if (initialData?.deposits) {
@@ -1842,6 +1861,9 @@ const FinanceModule = {
     const startYear = createdDate.getFullYear();
     const endYear = new Date().getFullYear();
 
+    if (this.selectedYear < startYear) this.selectedYear = startYear;
+    if (this.selectedYear > endYear) this.selectedYear = endYear;
+
     let html = '';
     for (let y = startYear; y <= endYear; y++) {
       const sel = y === this.selectedYear ? 'active selected' : '';
@@ -1857,15 +1879,14 @@ const FinanceModule = {
     const menuEl = document.getElementById('financeMonthMenu');
     if (!valueEl || !menuEl) return;
 
-    const createdDate = this.createdDate || new Date(2026, 0, 1);
-    const startYear = createdDate.getFullYear();
+    const startYear = this.createdDate ? this.createdDate.getFullYear() : 2026;
     const currentYear = new Date().getFullYear();
 
     let startMonth = 1;
     let endMonth = 12;
 
-    if (this.selectedYear === startYear) {
-      startMonth = createdDate.getMonth() + 1;
+    if (this.selectedYear === startYear && this.createdDate) {
+      startMonth = this.createdDate.getMonth() + 1;
     }
     if (this.selectedYear === currentYear) {
       endMonth = new Date().getMonth() + 1;
@@ -1881,7 +1902,7 @@ const FinanceModule = {
                     onclick="Messliner.finance.selectMonth(${m}, this)">${this.monthNames[m - 1]}</div>`;
     }
     menuEl.innerHTML = html;
-    valueEl.textContent = this.monthNames[this.selectedMonth - 1];
+    valueEl.textContent = this.monthNames[this.selectedMonth - 1] || 'Month';
   },
 
   selectYear(year, el) {
@@ -3168,11 +3189,19 @@ const FinanceModule = {
       this.selectedYear = now.getFullYear();
       this.selectedMonth = now.getMonth() + 1;
     }
+
+    if ((!this.deposits || Object.keys(this.deposits).length === 0)) {
+      this.deposits = Messliner.state?.diningData?.deposits || Messliner.state?.deposits || (window.OverviewModule?.cachedData?.deposits) || {};
+    }
+    if ((!this.bazarList || Object.keys(this.bazarList).length === 0)) {
+      this.bazarList = Messliner.state?.diningData?.bazar || Messliner.state?.bazar || (window.OverviewModule?.cachedData?.bazar) || {};
+    }
+
     this.populateDropdowns();
-    this.renderSummary();
-    this.renderTransactions();
+    try { this.renderSummary(); } catch (e) { console.warn('[Finance] renderSummary error:', e); }
+    try { this.renderTransactions(); } catch (e) { console.warn('[Finance] renderTransactions error:', e); }
     if (document.getElementById('financeFixModal')?.classList.contains('active')) {
-      this.renderFinanceFixList();
+      try { this.renderFinanceFixList(); } catch (_) {}
     }
   },
 

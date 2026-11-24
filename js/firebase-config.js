@@ -3,7 +3,7 @@
    ============================================ */
 
 const firebaseConfig = (window.__ENV__ && window.__ENV__.FIREBASE) ? window.__ENV__.FIREBASE : {
-  apiKey: (window.__ENV__ && window.__ENV__.FIREBASE && window.__ENV__.FIREBASE.apiKey) || "",
+  apiKey: (window.__ENV__ && window.__ENV__.FIREBASE && window.__ENV__.FIREBASE.apiKey) || "AIzaSyAlVTCLnmnQIPYItROJnawi98ztHv00wSU",
   authDomain: "meiner-6ec2e.firebaseapp.com",
   databaseURL: "https://meiner-6ec2e-default-rtdb.firebaseio.com",
   projectId: "meiner-6ec2e",

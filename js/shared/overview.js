@@ -486,7 +486,7 @@ const OverviewModule = {
           </div>
         </div>
 
-        <div class="stat-card theme-meal-rate">
+        <div class="stat-card theme-meal-rate" onclick="if(window.UserDashboard && UserDashboard.showMealRateInfoModal){ UserDashboard.showMealRateInfoModal(); } else if(window.Messliner && Messliner.userDashboard){ Messliner.userDashboard.showMealRateInfoModal(); }" style="cursor: pointer;" title="Click to view Meal Rate details">
           <div class="stat-icon theme-meal-rate-icon">
             ${icons.mealRate}
           </div>
@@ -658,7 +658,7 @@ const OverviewModule = {
               </div>
               <div class="mymeal-shelf-h-divider"></div>
               <div class="mymeal-shelf-row">
-                <div class="mymeal-shelf-col">
+                <div class="mymeal-shelf-col mymeal-shelf-rate" onclick="if(window.UserDashboard && UserDashboard.showMealRateInfoModal){ UserDashboard.showMealRateInfoModal(); } else if(window.Messliner && Messliner.userDashboard){ Messliner.userDashboard.showMealRateInfoModal(); }" style="cursor: pointer;" title="Click to view Meal Rate details">
                   <div class="mymeal-shelf-label">Meal Rate</div>
                   <div class="mymeal-shelf-val"><span class="tk-symbol"></span>${(mealRate || 0).toFixed(2)}</div>
                 </div>
@@ -869,6 +869,7 @@ const OverviewModule = {
    * Load and calculate stats for a specific month for the export modal
    */
   async loadExportDataForMonth(year, month) {
+    this.diningId = this.diningId || (window.Messliner && Messliner.state && Messliner.state.diningId);
     const y = parseInt(year) || new Date().getFullYear();
     const m = parseInt(month) || (new Date().getMonth() + 1);
     this.exportSelectedYear = y;
@@ -1154,6 +1155,7 @@ const OverviewModule = {
    * Called by router when export-slip page becomes active
    */
   async initExportPage() {
+    this.diningId = this.diningId || (window.Messliner && Messliner.state && Messliner.state.diningId);
     // Scroll the preview canvas to top on re-entry
     const previewCanvas = document.querySelector('.export-preview-canvas');
     if (previewCanvas) previewCanvas.scrollTop = 0;
@@ -1269,15 +1271,16 @@ const OverviewModule = {
     try {
       const slipHTML = this._buildCorporateSlipHTML(selectedUserIds);
 
-      // Render HTML into temporary off-screen DOM element for html2canvas
+      // Render HTML into temporary background DOM element for html2canvas
       const container = document.createElement('div');
       container.id = 'corporateSlipExportContainer';
       container.style.position = 'fixed';
       container.style.top = '0';
-      container.style.left = '-9999px';
+      container.style.left = '0';
       container.style.width = '820px';
       container.style.background = '#ffffff';
       container.style.zIndex = '-9999';
+      container.style.pointerEvents = 'none';
       container.innerHTML = slipHTML;
       document.body.appendChild(container);
 
@@ -1289,7 +1292,12 @@ const OverviewModule = {
         scale: 2,
         useCORS: true,
         logging: false,
-        width: 820
+        width: 820,
+        x: 0,
+        y: 0,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 820
       });
 
       document.body.removeChild(container);
