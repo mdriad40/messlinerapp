@@ -23,6 +23,8 @@
         "url": "https://messliner.com/",
         "name": "MessLiner",
         "alternateName": ["Messliner", "Messliner App", "MessLiner Smart Dining"],
+        "name": "Messliner",
+        "alternateName": ["MessLiner", "Messliner App", "MessLiner Smart Dining"],
         "description": "Smart dining, mess, and hostel meal management platform. Track daily meals, bazaar expenses, and compute real-time Bazar Ratio.",
         "publisher": {
           "@id": "https://messliner.com/#organization"
@@ -33,12 +35,17 @@
         "@type": "Organization",
         "@id": "https://messliner.com/#organization",
         "name": "MessLiner",
+        "name": "Messliner",
         "url": "https://messliner.com/",
         "logo": {
           "@type": "ImageObject",
           "url": "https://messliner.com/assets/messLiner-logo.png",
+          "url": "https://messliner.com/assets/Messliner-favicon.png",
           "caption": "Messliner Logo"
         },
+        "sameAs": [
+          "https://github.com/mdriad40/mdriad40"
+        ],
         "contactPoint": [
           {
             "@type": "ContactPoint",
@@ -48,9 +55,40 @@
         ]
       },
       {
+        "@type": "FAQPage",
+        "@id": "https://messliner.com/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is Messliner?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Messliner is an automated dining, mess, and hostel meal management web and mobile application designed to calculate daily meal counts, bazar expenses, and real-time meal rates with complete transparency."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does Messliner calculate Meal Rate (Bazar Ratio)?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Messliner divides the total verified bazar expenses by the total number of consumed meals across all members to establish the exact meal rate automatically."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can members turn off meals before cutoff times?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, Messliner includes a daily meal toggle that lets members turn their breakfast, lunch, or dinner ON or OFF before the manager's configured cutoff deadline."
+            }
+          }
+        ]
+      },
+      {
         "@type": "WebApplication",
         "@id": "https://messliner.com/#webapp",
         "name": "MessLiner",
+        "name": "Messliner",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "All (Web, Android, iOS, Windows)",
         "url": "https://messliner.com/",
@@ -117,6 +155,7 @@
   <!-- Open Graph / Facebook / WhatsApp -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="MessLiner">
+  <meta property="og:site_name" content="Messliner">
   <meta property="og:url" content="https://messliner.com/">
   <meta property="og:title" content="MessLiner - Smart Dining & Mess Management Platform">
   <meta property="og:description"
@@ -166,6 +205,11 @@
 
   <!-- Favicon -->
   <link rel="icon" href="assets/messLiner-logo.png" type="image/png">
+  <!-- Favicon & PWA Icons -->
+  <link rel="icon" href="assets/Messliner-favicon.png" type="image/png" sizes="512x512">
+  <link rel="icon" href="assets/Messliner-favicon.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/Messliner-favicon.png">
+  <link rel="manifest" href="manifest.webmanifest">
 
   <!-- Vercel Web Analytics -->
   <script>
@@ -191,7 +235,7 @@
        ========================================== -->
   <header class="navbar" id="navbar">
     <div class="container navbar-container">
-      <a href="https://www.messliner.com/" class="nav-brand">
+      <a href="/" class="nav-brand">
         <img src="assets/messLiner-logo.png" alt="Messliner Logo" class="brand-logo-img"
           onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'80\' font-size=\'80\'>🍽</text></svg>'">
         <span class="text-gradient">Messliner</span>
@@ -237,12 +281,12 @@
         <span class="glass-pill">
           <span
             style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; animation: pulseGlow 1.5s infinite;"></span>
-          Messliner 2.4 — Complete Dining & Mess Automation System
+          Messliner 1.0.0 — Complete Dining & Mess Automation System
         </span>
       </div>
 
       <h1 class="hero-title" data-animate="fade-up" data-delay="100">
-        Smart Mess Management with <br>
+        <span class="sr-only">Messliner — </span>Smart Mess Management with <br>
         <span class="text-gradient typewriter-text" id="typewriterTarget">Zero Billing Disputes</span><span
           class="typewriter-cursor">|</span>
       </h1>
@@ -328,7 +372,7 @@
                   <span class="mockup-dot dot-green"></span>
                 </div>
                 <div class="mockup-title-bar">
-                  https://www.messliner.com/dashboard
+                  https://messliner.com/dashboard
                 </div>
                 <div style="width:52px;"></div>
               </div>
@@ -2485,166 +2529,169 @@
           </div>
           <div><strong>Official Website:</strong> <a href="https://www.messliner.com/" target="_blank"
               style="color: var(--primary, #10b981); font-weight: 600; text-decoration: underline;">https://www.messliner.com/</a>
-          </div>
-        </div>
-
-        <form onsubmit="event.preventDefault(); triggerAppDownload('Support Ticket'); closeAllModals();">
-          <div class="calc-field">
-            <div class="calc-label"><span>Your Name</span></div>
-            <input type="text" class="calc-input" placeholder="e.g. Anisur Rahman" required>
-          </div>
-          <div class="calc-field">
-            <div class="calc-label"><span>Email Address</span></div>
-            <input type="email" class="calc-input" placeholder="e.g. manager@messliner.com" required>
-          </div>
-          <div class="calc-field">
-            <div class="calc-label"><span>Message / Issue</span></div>
-            <textarea class="calc-input" rows="4" placeholder="How can we help your mess?" required></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary" style="width:100%;">Submit Support Inquiry</button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- 6. Messliner Pro Pre-Order Checkout Modal -->
-  <div class="modal-overlay" id="modalCheckoutPro">
-    <div class="modal-card checkout-modal-card">
-      <div class="checkout-minimal-header">
-        <div class="checkout-minimal-title">Pre-Order · Messliner Pro</div>
-        <button class="modal-close-btn" aria-label="Close Checkout">&times;</button>
-      </div>
-
-      <div class="checkout-modal-body-split">
-        <!-- Left Side: Order & Payment Form -->
-        <div class="checkout-left-pane">
-          <!-- Minimal Plan Summary -->
-          <div class="checkout-mini-plan">
-            <div>
-              <span class="mini-plan-badge">Pre-Order</span>
-              <div class="mini-plan-name">Messliner Pro (1 Year)</div>
-              <p class="mini-plan-sub">Annual VIP License</p>
-            </div>
-            <div class="mini-plan-price">
-              <div class="mini-plan-amount">৳ 499</div>
-              <div class="mini-plan-term">/ year</div>
+            <div><strong>Official Website:</strong> <a href="https://messliner.com/" target="_blank"
+                style="color: var(--primary, #10b981); font-weight: 600; text-decoration: underline;">https://messliner.com/</a>
             </div>
           </div>
 
-          <!-- 4 Minimal Input Fields -->
-          <div class="checkout-fields-wrap">
-            <div class="checkout-field">
-              <label for="preorderName">Full Name</label>
-              <input type="text" id="preorderName" placeholder="e.g. Md. Riad Hasan" required>
+          <form onsubmit="event.preventDefault(); triggerAppDownload('Support Ticket'); closeAllModals();">
+            <div class="calc-field">
+              <div class="calc-label"><span>Your Name</span></div>
+              <input type="text" class="calc-input" placeholder="e.g. Anisur Rahman" required>
             </div>
-
-            <div class="checkout-field">
-              <label for="preorderPhone">Mobile Number</label>
-              <input type="tel" id="preorderPhone" placeholder="01XXXXXXXXX" maxlength="11" required>
+            <div class="calc-field">
+              <div class="calc-label"><span>Email Address</span></div>
+              <input type="email" class="calc-input" placeholder="e.g. manager@messliner.com" required>
             </div>
-
-            <div class="checkout-field">
-              <label for="preorderEmail">Email Address</label>
-              <input type="email" id="preorderEmail" placeholder="e.g. riad@gmail.com" required>
+            <div class="calc-field">
+              <div class="calc-label"><span>Message / Issue</span></div>
+              <textarea class="calc-input" rows="4" placeholder="How can we help your mess?" required></textarea>
             </div>
-
-            <div class="checkout-field">
-              <label for="preorderMessName">Mess / Hostel Name</label>
-              <input type="text" id="preorderMessName" placeholder="e.g. Riverview Mess" required>
-            </div>
-          </div>
-
-          <!-- Payment Method with Official bKash Logo from assets/Bkash-Logo.png -->
-          <div class="checkout-bkash-pill">
-            <div class="bkash-pill-left">
-              <input type="radio" name="preorder_payment" value="bkash" checked disabled class="bkash-pill-radio">
-              <img src="assets/Bkash-Logo.png" alt="bKash" class="bkash-pill-logo"
-                onerror="this.src='https://mygateway.netlify.app/bkash_logo.png'">
-            </div>
-            <span
-              style="font-size:0.75rem; font-weight:700; color:#e2136e; background:#fdf2f8; padding:3px 8px; border-radius:9999px;">Online
-              Payment</span>
-          </div>
-
-          <!-- Clean Pay Button (No extra text, no lock icon) -->
-          <button type="button" id="btnBkashPreorderPay" class="btn-bkash-minimal" onclick="initiateProPreorderBkash()">
-            Pay ৳ 499 with bKash
-          </button>
-        </div>
-
-        <!-- Right Side: Pro Perks & Features List -->
-        <div class="checkout-right-pane">
-          <div class="pro-perks-title">What's Included in Pro</div>
-          <div class="pro-perks-list">
-            <div class="pro-perk-item">
-              <div class="pro-perk-icon">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-              <span class="pro-perk-text">50 Dining Members</span>
-            </div>
-
-            <div class="pro-perk-item">
-              <div class="pro-perk-icon">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-              <span class="pro-perk-text">Multiple Mess Group Control</span>
-            </div>
-
-            <div class="pro-perk-item">
-              <div class="pro-perk-icon">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-              <span class="pro-perk-text">Instant SMS & Push Deposit Alerts</span>
-            </div>
-
-            <div class="pro-perk-item">
-              <div class="pro-perk-icon">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-              <span class="pro-perk-text">Custom Domain & Branding</span>
-            </div>
-
-            <div class="pro-perk-item">
-              <div class="pro-perk-icon">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-              <span class="pro-perk-text">Automated Audit & Priority Backups</span>
-            </div>
-
-            <div class="pro-perk-item">
-              <div class="pro-perk-icon">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-              <span class="pro-perk-text">Priority 24/7 Support</span>
-            </div>
-          </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">Submit Support Inquiry</button>
+          </form>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- JavaScript -->
-  <script src="js/qrcode-lib.js?v=1.0.0"></script>
-  <script src="js/env.js?v=1.0.0"></script>
-  <script src="js/main.js?v=1.0.0"></script>
+    <!-- 6. Messliner Pro Pre-Order Checkout Modal -->
+    <div class="modal-overlay" id="modalCheckoutPro">
+      <div class="modal-card checkout-modal-card">
+        <div class="checkout-minimal-header">
+          <div class="checkout-minimal-title">Pre-Order · Messliner Pro</div>
+          <button class="modal-close-btn" aria-label="Close Checkout">&times;</button>
+        </div>
+
+        <div class="checkout-modal-body-split">
+          <!-- Left Side: Order & Payment Form -->
+          <div class="checkout-left-pane">
+            <!-- Minimal Plan Summary -->
+            <div class="checkout-mini-plan">
+              <div>
+                <span class="mini-plan-badge">Pre-Order</span>
+                <div class="mini-plan-name">Messliner Pro (1 Year)</div>
+                <p class="mini-plan-sub">Annual VIP License</p>
+              </div>
+              <div class="mini-plan-price">
+                <div class="mini-plan-amount">৳ 499</div>
+                <div class="mini-plan-term">/ year</div>
+              </div>
+            </div>
+
+            <!-- 4 Minimal Input Fields -->
+            <div class="checkout-fields-wrap">
+              <div class="checkout-field">
+                <label for="preorderName">Full Name</label>
+                <input type="text" id="preorderName" placeholder="e.g. Md. Riad Hasan" required>
+              </div>
+
+              <div class="checkout-field">
+                <label for="preorderPhone">Mobile Number</label>
+                <input type="tel" id="preorderPhone" placeholder="01XXXXXXXXX" maxlength="11" required>
+              </div>
+
+              <div class="checkout-field">
+                <label for="preorderEmail">Email Address</label>
+                <input type="email" id="preorderEmail" placeholder="e.g. riad@gmail.com" required>
+              </div>
+
+              <div class="checkout-field">
+                <label for="preorderMessName">Mess / Hostel Name</label>
+                <input type="text" id="preorderMessName" placeholder="e.g. Riverview Mess" required>
+              </div>
+            </div>
+
+            <!-- Payment Method with Official bKash Logo from assets/Bkash-Logo.png -->
+            <div class="checkout-bkash-pill">
+              <div class="bkash-pill-left">
+                <input type="radio" name="preorder_payment" value="bkash" checked disabled class="bkash-pill-radio">
+                <img src="assets/Bkash-Logo.png" alt="bKash" class="bkash-pill-logo"
+                  onerror="this.src='https://mygateway.netlify.app/bkash_logo.png'">
+              </div>
+              <span
+                style="font-size:0.75rem; font-weight:700; color:#e2136e; background:#fdf2f8; padding:3px 8px; border-radius:9999px;">Online
+                Payment</span>
+            </div>
+
+            <!-- Clean Pay Button (No extra text, no lock icon) -->
+            <button type="button" id="btnBkashPreorderPay" class="btn-bkash-minimal"
+              onclick="initiateProPreorderBkash()">
+              Pay ৳ 499 with bKash
+            </button>
+          </div>
+
+          <!-- Right Side: Pro Perks & Features List -->
+          <div class="checkout-right-pane">
+            <div class="pro-perks-title">What's Included in Pro</div>
+            <div class="pro-perks-list">
+              <div class="pro-perk-item">
+                <div class="pro-perk-icon">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <span class="pro-perk-text">50 Dining Members</span>
+              </div>
+
+              <div class="pro-perk-item">
+                <div class="pro-perk-icon">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <span class="pro-perk-text">Multiple Mess Group Control</span>
+              </div>
+
+              <div class="pro-perk-item">
+                <div class="pro-perk-icon">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <span class="pro-perk-text">Instant SMS & Push Deposit Alerts</span>
+              </div>
+
+              <div class="pro-perk-item">
+                <div class="pro-perk-icon">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <span class="pro-perk-text">Custom Domain & Branding</span>
+              </div>
+
+              <div class="pro-perk-item">
+                <div class="pro-perk-icon">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <span class="pro-perk-text">Automated Audit & Priority Backups</span>
+              </div>
+
+              <div class="pro-perk-item">
+                <div class="pro-perk-icon">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <span class="pro-perk-text">Priority 24/7 Support</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/qrcode-lib.js?v=1.0.0"></script>
+    <script src="js/env.js?v=1.0.0"></script>
+    <script src="js/main.js?v=1.0.0"></script>
 </body>
 
 </html>

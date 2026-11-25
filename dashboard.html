@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover">
   <base href="/">
   <script>
     (function () {
@@ -190,6 +191,7 @@
         visibility: hidden !important;
         display: none !important;
       }
+
       html.ml-has-cache #appShell {
         display: flex !important;
       }
@@ -202,6 +204,7 @@
       visibility: hidden !important;
       display: none !important;
     }
+
     body.role-admin.ml-has-cache #appShell,
     html.ml-is-admin.ml-has-cache #appShell {
       display: flex !important;
@@ -248,9 +251,15 @@
   <link rel="stylesheet" href="css/prayer.css?v=1.0.0">
   <link rel="stylesheet" href="css/dashboard-extra.css?v=1.0.1">
   <link rel="stylesheet" href="css/profile.css?v=1.0.1">
+  <link rel="stylesheet" href="css/notifications.css?v=1.0.1">
 
   <!-- Favicon -->
   <link rel="icon" href="assets/messLiner-logo.png" type="image/png">
+  <!-- Favicon & PWA Icons -->
+  <link rel="icon" href="assets/Messliner-favicon.png" type="image/png" sizes="512x512">
+  <link rel="icon" href="assets/Messliner-favicon.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/Messliner-favicon.png">
+  <link rel="manifest" href="manifest.webmanifest">
 </head>
 
 <body>
@@ -1373,7 +1382,8 @@
                     <span id="subCardBadgeText">30 Days Trial</span>
                   </span>
                 </div>
-                <p class="premium-banner-subtitle" id="subCardSubtitle">Upgrade to Premium for unlimited members, AI assist &amp; priority support</p>
+                <p class="premium-banner-subtitle" id="subCardSubtitle">Upgrade to Premium for unlimited members, AI
+                  assist &amp; priority support</p>
               </div>
             </div>
             <div class="premium-banner-arrow" id="subCardArrow">
@@ -2131,7 +2141,7 @@
             window._modalsLoaded = true;
           }
         }
-      } catch (_) {}
+      } catch (_) { }
 
       // Fallback fetch if synchronous XHR was blocked or not yet hydrated
       if (!window._modalsLoaded) {

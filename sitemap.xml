@@ -3,7 +3,7 @@
   <!-- Homepage -->
   <url>
     <loc>https://messliner.com/</loc>
-    <lastmod>2026-11-21</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -11,7 +11,7 @@
   <!-- Login & Portal -->
   <url>
     <loc>https://messliner.com/login</loc>
-    <lastmod>2026-11-21</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -19,7 +19,7 @@
   <!-- Guide & Onboarding -->
   <url>
     <loc>https://messliner.com/how-it-works.html</loc>
-    <lastmod>2026-11-21</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -27,7 +27,7 @@
   <!-- Data Safety & Compliance -->
   <url>
     <loc>https://messliner.com/data-safety.html</loc>
-    <lastmod>2026-11-21</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -35,7 +35,7 @@
   <!-- Legal & Terms -->
   <url>
     <loc>https://messliner.com/terms-and-conditions.html</loc>
-    <lastmod>2026-11-21</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -43,7 +43,7 @@
   <!-- Privacy Policy -->
   <url>
     <loc>https://messliner.com/privacy-policy.html</loc>
-    <lastmod>2026-11-21</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

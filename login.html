@@ -3,18 +3,23 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
   <title>Login - Messliner | Smart Mess & Dining Management</title>
   <meta name="description"
     content="Log in to your Messliner account. Access your mess dashboard, track daily meals, record bazaar expenses, check member balances, and manage mess accounts.">
   <meta name="keywords" content="Messliner login, sign in, mess dashboard, meal manager login">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://messliner.com/login">
-  <link rel="icon" href="assets/messLiner-logo.png" type="image/png">
+  <!-- Favicon & PWA Icons -->
+  <link rel="icon" href="assets/Messliner-favicon.png" type="image/png" sizes="512x512">
+  <link rel="icon" href="assets/Messliner-favicon.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/Messliner-favicon.png">
+  <link rel="manifest" href="manifest.webmanifest">
 
   <!-- Open Graph / Social -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="MessLiner">
+  <meta property="og:site_name" content="Messliner">
   <meta property="og:url" content="https://messliner.com/login">
   <meta property="og:title" content="Login - Messliner | Smart Mess & Dining Management">
   <meta property="og:description"
@@ -97,6 +102,7 @@
     html.ml-guest-ready #pageLoader {
       display: none !important;
     }
+
     html.ml-guest-ready #authPage {
       display: flex !important;
     }
@@ -877,7 +883,7 @@
     /* -- Email inline validation (Strict Gmail Enforcement) -- */
     document.getElementById('regEmail').addEventListener('input', function () {
       const val = this.value.trim();
-      const hintEl = document.getElementById('emailHint') || (function() {
+      const hintEl = document.getElementById('emailHint') || (function () {
         const span = document.createElement('span');
         span.id = 'emailHint';
         span.className = 'field-hint';

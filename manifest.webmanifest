@@ -1,0 +1,23 @@
+{
+  "name": "Messliner — Smart Dining & Mess Management Platform",
+  "short_name": "Messliner",
+  "description": "Smart dining, mess, and hostel meal management platform. Track daily meals, bazaar expenses, and member balances effortlessly.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#064e3b",
+  "icons": [
+    {
+      "src": "/assets/Messliner-favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/Messliner-favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

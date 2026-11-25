@@ -5,12 +5,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment Status · Messliner Subscription</title>
-  <link rel="icon" type="image/png" href="assets/messLiner-logo.png">
+  <link rel="icon" type="image/png" href="assets/Messliner-favicon.png">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
 
   <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -30,7 +32,8 @@
   <script defer src="/_vercel/insights/script.js"></script>
 
   <style>
-    html, body {
+    html,
+    body {
       height: 100%;
       margin: 0;
       padding: 0;
@@ -52,9 +55,11 @@
         transform: scale(0.6);
         opacity: 0;
       }
+
       70% {
         transform: scale(1.08);
       }
+
       100% {
         transform: scale(1);
         opacity: 1;
@@ -69,9 +74,11 @@
       body {
         background: #ffffff !important;
       }
+
       .no-print {
         display: none !important;
       }
+
       .print-shadow-none {
         box-shadow: none !important;
         border: 1px solid #e2e8f0 !important;
@@ -83,18 +90,21 @@
 <body class="h-screen w-screen flex items-center justify-center p-3 sm:p-5 selection:bg-pink-500 selection:text-white">
 
   <!-- Main Container (Viewport Fitted, No Scrolling Required) -->
-  <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden relative flex flex-col max-h-[96vh] print-shadow-none" id="mainContainer">
-    
+  <div
+    class="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden relative flex flex-col max-h-[96vh] print-shadow-none"
+    id="mainContainer">
+
     <!-- Top Decorative Gradient Header -->
     <div class="h-2 bkash-gradient w-full flex-shrink-0"></div>
 
     <div class="p-4 sm:p-6 flex-1 flex flex-col justify-center" id="cardBody">
-      
+
       <!-- Loading State -->
       <div id="stateLoading" class="flex flex-col items-center justify-center py-10 space-y-3">
         <div class="relative flex items-center justify-center">
           <div class="w-12 h-12 rounded-full border-4 border-slate-100 border-t-[#E2136E] animate-spin"></div>
-          <img src="assets/Bkash-Logo.png" alt="bKash" class="h-4 absolute object-contain" onerror="this.style.display='none'">
+          <img src="assets/Bkash-Logo.png" alt="bKash" class="h-4 absolute object-contain"
+            onerror="this.style.display='none'">
         </div>
         <div class="text-center">
           <h3 class="text-base font-extrabold text-slate-900 tracking-tight">Verifying Subscription Payment...</h3>
@@ -108,14 +118,16 @@
     </div>
 
     <!-- Security & Brand Footer -->
-    <div class="bg-slate-50 px-5 py-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 no-print flex-shrink-0">
+    <div
+      class="bg-slate-50 px-5 py-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 no-print flex-shrink-0">
       <div class="flex items-center gap-1.5 font-medium text-slate-500">
         <i data-lucide="shield-check" class="h-3.5 w-3.5 text-emerald-600"></i>
         <span>bKash Secured · 256-Bit SSL Encrypted</span>
       </div>
       <div class="flex items-center gap-2">
         <span class="font-extrabold tracking-wider text-slate-700">MESSLINER</span>
-        <span class="text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">Billing</span>
+        <span
+          class="text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">Billing</span>
       </div>
     </div>
   </div>
@@ -139,16 +151,16 @@
       let subData = {};
       try {
         subData = JSON.parse(localStorage.getItem("ml_pending_subscription") || "{}");
-      } catch (_) {}
+      } catch (_) { }
       if (!subData.amount) {
         try {
           subData = JSON.parse(localStorage.getItem("ml_pending_universal_payment") || "{}");
-        } catch (_) {}
+        } catch (_) { }
       }
       if (!subData.amount) {
         try {
           subData = JSON.parse(localStorage.getItem("ml_pending_bkash_recharge") || "{}");
-        } catch (_) {}
+        } catch (_) { }
       }
 
       const meta = subData.metadata || {};
@@ -216,7 +228,7 @@
               try {
                 localStorage.setItem('ml_last_completed_subscription', JSON.stringify(completedPayload));
                 localStorage.removeItem('ml_pending_subscription');
-              } catch (_) {}
+              } catch (_) { }
 
               window.location.replace(`checkout.html?status=success&paymentID=${encodeURIComponent(paymentID)}&trxID=${encodeURIComponent(verifiedTrx)}`);
               return;

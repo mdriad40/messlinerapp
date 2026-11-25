@@ -5,12 +5,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Confirmation · Messliner Pro</title>
-  <link rel="icon" type="image/png" href="assets/messLiner-logo.png">
+  <link rel="icon" type="image/png" href="assets/Messliner-favicon.png">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
 
   <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -50,9 +52,11 @@
         transform: scale(0.6);
         opacity: 0;
       }
+
       70% {
         transform: scale(1.08);
       }
+
       100% {
         transform: scale(1);
         opacity: 1;
@@ -67,9 +71,11 @@
       body {
         background: #ffffff !important;
       }
+
       .no-print {
         display: none !important;
       }
+
       .print-shadow-none {
         box-shadow: none !important;
         border: 1px solid #e2e8f0 !important;
@@ -81,22 +87,26 @@
 <body class="flex items-center justify-center p-3 sm:p-6 selection:bg-pink-500 selection:text-white">
 
   <!-- Main Container -->
-  <div class="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden relative print-shadow-none" id="mainContainer">
-    
+  <div
+    class="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden relative print-shadow-none"
+    id="mainContainer">
+
     <!-- Top Decorative Gradient Header -->
     <div class="h-2.5 bkash-gradient w-full"></div>
 
     <div class="p-5 sm:p-8" id="cardBody">
-      
+
       <!-- Loading State -->
       <div id="stateLoading" class="flex flex-col items-center justify-center py-14 space-y-4">
         <div class="relative flex items-center justify-center">
           <div class="w-16 h-16 rounded-full border-4 border-slate-100 border-t-[#E2136E] animate-spin"></div>
-          <img src="assets/Bkash-Logo.png" alt="bKash" class="h-5 absolute object-contain" onerror="this.style.display='none'">
+          <img src="assets/Bkash-Logo.png" alt="bKash" class="h-5 absolute object-contain"
+            onerror="this.style.display='none'">
         </div>
         <div class="text-center">
           <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Verifying Your bKash Payment...</h3>
-          <p class="text-xs text-slate-500 mt-1">Please wait a few seconds while we register your Messliner Pro pre-order license.</p>
+          <p class="text-xs text-slate-500 mt-1">Please wait a few seconds while we register your Messliner Pro
+            pre-order license.</p>
         </div>
       </div>
 
@@ -109,7 +119,8 @@
     </div>
 
     <!-- Security & Brand Footer -->
-    <div class="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 no-print">
+    <div
+      class="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 no-print">
       <div class="flex items-center gap-1.5 font-medium text-slate-500">
         <i data-lucide="shield-check" class="h-4 w-4 text-emerald-600"></i>
         <span>bKash Secured · 256-Bit SSL Encrypted</span>
@@ -141,13 +152,13 @@
       let preorderData = {};
       try {
         preorderData = JSON.parse(localStorage.getItem("ml_pending_pro_preorder") || "{}");
-      } catch (_) {}
+      } catch (_) { }
 
       // Fallback to secondary recharge cache if needed
       if (!preorderData.name) {
         try {
           preorderData = JSON.parse(localStorage.getItem("ml_pending_bkash_recharge") || "{}");
-        } catch (_) {}
+        } catch (_) { }
       }
 
       const custName = preorderData.name || "Valued Manager";
@@ -236,8 +247,8 @@
                 invoiceNo: invoiceNo,
                 status: "paid",
                 verified: true,
-                createdAt: (typeof firebase !== "undefined" && firebase.database && firebase.database.ServerValue) 
-                  ? firebase.database.ServerValue.TIMESTAMP 
+                createdAt: (typeof firebase !== "undefined" && firebase.database && firebase.database.ServerValue)
+                  ? firebase.database.ServerValue.TIMESTAMP
                   : Date.now()
               });
             }
@@ -434,4 +445,3 @@
 </body>
 
 </html>
-
